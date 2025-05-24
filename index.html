@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Forum Anonyme</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: 
+        linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%),
+        url('image/wze.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .background-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* Ajout du fond d'écran spécifique à la page de discussion */
+    .forum-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: 
+        linear-gradient(135deg, rgba(102, 126, 234, 0.7) 0%, rgba(118, 75, 162, 0.7) 100%),
+        url('image/fond.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      display: none; /* Par défaut caché, affiché quand #forum est affiché */
+    }
+    
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 0;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: rgb(21, 21, 21);
+      padding: 20px 15px 15px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 300;
+      margin-bottom: 5px;
+    }
+    
+    .header .subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    #signup-form {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    
+    .signup-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+    }
+    
+    .signup-card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: 400;
+    }
+    
+    .signup-card p {
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    #forum {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      height: calc(100vh - 80px);
+    }
+    
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      background: rgba(248, 249, 250, 0.8);
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .message {
+      background: white;
+      border-radius: 18px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      max-width: 85%;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message .user {
+      font-weight: 600;
+      color: #667eea;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #667eea;
+      flex-shrink: 0;
+    }
+    
+    .message .content {
+      color: #333;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    
+    .message.sticker {
+      background: transparent;
+      box-shadow: none;
+      padding: 8px;
+    }
+    
+    .message.sticker .content {
+      font-size: 48px;
+      text-align: center;
+    }
+    
+    .message-input-container {
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .sticker-btn {
+      background: #f0f0f0;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .sticker-btn:hover {
+      background: #e0e0e0;
+      transform: scale(1.1);
+    }
+    
+    #message {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      border-radius: 25px;
+      padding: 12px 18px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    #message:focus {
+      border-color: #667eea;
+    }
+    
+    .send-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .send-btn:hover {
+      transform: scale(1.1);
+    }
+    
+    .sticker-panel {
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      padding: 15px;
+      display: none;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .sticker {
+      font-size: 32px;
+      padding: 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      user-select: none;
+    }
+    
+    .sticker:hover {
+      transform: scale(1.2);
+      background: #f0f0f0;
+    }
+    
+    input[type="tel"] {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+    }
+    
+    input[type="tel"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .signup-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      width: 100%;
+    }
+    
+    .signup-btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .no-messages {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container {
+        border-radius: 0;
+      }
+      
+      .header {
+        padding: 15px 10px 10px;
+      }
+      
+      .header h1 {
+        font-size: 20px;
+      }
+      
+      .messages {
+        padding: 10px;
+      }
+      
+      .message-input-container {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-overlay"></div>
+  <div class="forum-background" id="forumBg"></div>
+  <div class="container">
+    <div class="header">
+      <h1>💬 Forum Anonyme</h1>
+      <div class="subtitle">Discutez librement et anonymement (LE GBÈRÈ c'est ici) chété 1X</div>
+    </div>
+
+    <div id="signup-form">
+      <div class="signup-card">
+        <h2>🚀 Rejoignez-nous</h2>
+        <p>Entrez votre numéro de téléphone pour accéder au forum. Vos messages resteront anonymes !</p>
+        <form id="registerForm">
+          <input type="tel" id="phone" name="phone" required pattern="[0-9]{7,15}" placeholder="📱 Votre numéro de téléphone">
+          <button type="submit" class="signup-btn">Accéder au forum</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="forum">
+      <div class="messages" id="messages"></div>
+      
+      <div class="sticker-panel" id="stickerPanel">
+        <div class="sticker" data-sticker="😀">😀</div>
+        <div class="sticker" data-sticker="😂">😂</div>
+        <div class="sticker" data-sticker="😍">😍</div>
+        <div class="sticker" data-sticker="🤔">🤔</div>
+        <div class="sticker" data-sticker="😭">😭</div>
+        <div class="sticker" data-sticker="😡">😡</div>
+        <div class="sticker" data-sticker="👍">👍</div>
+        <div class="sticker" data-sticker="👎">👎</div>
+        <div class="sticker" data-sticker="❤️">❤️</div>
+        <div class="sticker" data-sticker="🔥">🔥</div>
+        <div class="sticker" data-sticker="✨">✨</div>
+        <div class="sticker" data-sticker="🎉">🎉</div>
+        <div class="sticker" data-sticker="💯">💯</div>
+        <div class="sticker" data-sticker="🚀">🚀</div>
+        <div class="sticker" data-sticker="💎">💎</div>
+        <div class="sticker" data-sticker="🌟">🌟</div>
+      </div>
+      
+      <div class="message-input-container">
+        <button class="sticker-btn" id="stickerToggle">😊</button>
+        <form id="messageForm" style="display: flex; flex: 1; align-items: center; gap: 10px;">
+          <input type="text" id="message" placeholder="Tapez votre message..." required maxlength="256" autocomplete="off">
+          <button type="submit" class="send-btn">➤</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === Firebase config ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
+      authDomain: "data-fae4a.firebaseapp.com",
+      databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
+      projectId: "data-fae4a",
+      storageBucket: "data-fae4a.firebasestorage.app",
+      messagingSenderId: "1077301559347",
+      appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
+      measurementId: "G-C631QW9NDN"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // === Variables globales ===
+    const signupDiv = document.getElementById('signup-form');
+    const forumDiv = document.getElementById('forum');
+    const registerForm = document.getElementById('registerForm');
+    const messageForm = document.getElementById('messageForm');
+    const phoneInput = document.getElementById('phone');
+    const messageInput = document.getElementById('message');
+    const messagesDiv = document.getElementById('messages');
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerToggle = document.getElementById('stickerToggle');
+    const forumBg = document.getElementById('forumBg');
+
+    let username = "";
+    let userPhone = "";
+    let stickerPanelOpen = false;
+
+    // === Utilitaires ===
+    function generateUsername() {
+      const ua = navigator.userAgent;
+      let hash = 0, i, chr;
+      for (i = 0; i < ua.length; i++) {
+        chr = ua.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0;
+      }
+      const rand = Math.floor(Math.random() * 1000);
+      return "users" + Math.abs((hash + rand) % 1000);
+    }
+
+    function getUniqueAvatar() {
+      // Une seule photo pour tous les utilisateurs
+      return 'image/wze.jpg';
+    }
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function showSignup() {
+      signupDiv.style.display = 'flex';
+      forumDiv.style.display = 'none';
+      if (forumBg) forumBg.style.display = 'none';
+    }
+
+    function showForum() {
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      if (forumBg) forumBg.style.display = 'block';
+    }
+
+    // === Gestion de l'inscription unique ===
+    function checkRegistration() {
+      // Créer un identifiant unique pour ce navigateur
+      let browserId = localStorage.getItem('forumBrowserId');
+      if (!browserId) {
+        browserId = 'browser_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('forumBrowserId', browserId);
+      }
+
+      const storedPhone = localStorage.getItem('forumPhone_' + browserId);
+      const storedUsername = localStorage.getItem('forumUsername_' + browserId);
+      
+      if (storedPhone && storedUsername) {
+        userPhone = storedPhone;
+        username = storedUsername;
+        showForum();
+        loadMessages();
+        return true;
+      }
+      return false;
+    }
+
+    function saveRegistration() {
+      const browserId = localStorage.getItem('forumBrowserId');
+      localStorage.setItem('forumPhone_' + browserId, userPhone);
+      localStorage.setItem('forumUsername_' + browserId, username);
+    }
+
+    // === Gestion des stickers ===
+    function toggleStickerPanel() {
+      stickerPanelOpen = !stickerPanelOpen;
+      stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
+      stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
+    }
+
+    function sendSticker(stickerEmoji) {
+      const msg = {
+        username,
+        text: stickerEmoji,
+        timestamp: Date.now(),
+        isSticker: true
+      };
+      db.ref('messages').push(msg);
+      toggleStickerPanel();
+    }
+
+    // === Chargement et affichage des messages ===
+    function loadMessages() {
+      messagesDiv.innerHTML = '<div class="loading">💫 Chargement des messages...</div>';
+      
+      db.ref('messages').limitToLast(100).on('value', function(snapshot) {
+        messagesDiv.innerHTML = '';
+        const msgs = snapshot.val();
+        
+        if (!msgs) {
+          messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à envoyer un message !</div>';
+          return;
+        }
+
+        Object.values(msgs).forEach(m => {
+          const div = document.createElement('div');
+          div.className = m.isSticker ? 'message sticker' : 'message';
+          
+          const userAvatar = getUniqueAvatar();
+          
+          if (m.isSticker) {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${m.text}</div>
+            `;
+          } else {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${escapeHtml(m.text)}</div>
+            `;
+          }
+          
+          messagesDiv.appendChild(div);
+        });
+        
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    // === Event Listeners ===
+    window.onload = function() {
+      if (!checkRegistration()) {
+        showSignup();
+      }
+    };
+
+    registerForm.onsubmit = function(e) {
+      e.preventDefault();
+      const phone = phoneInput.value.replace(/\D/g, '');
+      if (phone.length < 7) {
+        alert('❌ Numéro de téléphone non valide !');
+        return;
+      }
+      userPhone = phone;
+      username = generateUsername();
+      saveRegistration();
+      showForum();
+      loadMessages();
+    };
+
+    messageForm.onsubmit = function(e) {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text) return;
+      
+      const msg = {
+        username,
+        text,
+        timestamp: Date.now(),
+        isSticker: false
+      };
+      
+      db.ref('messages').push(msg).then(() => {
+        messageInput.value = '';
+      });
+    };
+
+    stickerToggle.onclick = toggleStickerPanel;
+
+    // Gestion des clics sur les stickers
+    document.querySelectorAll('.sticker').forEach(sticker => {
+      sticker.onclick = function() {
+        const emoji = this.getAttribute('data-sticker');
+        sendSticker(emoji);
+      };
+    });
+
+    // Fermer le panneau de stickers si on clique ailleurs
+    document.addEventListener('click', function(e) {
+      if (stickerPanelOpen && !stickerPanel.contains(e.target) && e.target !== stickerToggle) {
+        toggleStickerPanel();
+      }
+    });
+  </script>
+</body>
+</html>
