@@ -35,6 +35,9 @@
       min-height: 100vh;
       overflow-x: hidden;
       font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     body {
@@ -267,6 +270,8 @@
       font-size: 15px;
       line-height: 1.5;
       margin-left: 36px;
+      word-wrap: break-word;
+      word-break: break-word;
     }
 
     .message.sticker {
@@ -309,6 +314,7 @@
       justify-content: center;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
     }
 
     .sticker-btn:hover, .sticker-btn:active {
@@ -328,6 +334,8 @@
       outline: none;
       transition: all 0.3s ease;
       font-family: 'Poppins', sans-serif;
+      min-height: 44px;
+      resize: none;
     }
 
     #message::placeholder {
@@ -354,6 +362,7 @@
       color: white;
       transition: all 0.3s ease;
       box-shadow: var(--shadow-neon);
+      flex-shrink: 0;
     }
 
     .send-btn:hover, .send-btn:active {
@@ -379,6 +388,7 @@
       bottom: 80px;
       box-shadow: var(--shadow-glass);
       animation: slideUp 0.3s ease-out;
+      -webkit-overflow-scrolling: touch;
     }
 
     @keyframes slideUp {
@@ -396,6 +406,11 @@
       backdrop-filter: blur(10px);
       border: 1px solid var(--glass-border);
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      min-width: 56px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .sticker:hover, .sticker:active {
@@ -416,6 +431,7 @@
       transition: all 0.3s ease;
       margin-bottom: 20px;
       font-family: 'Poppins', sans-serif;
+      min-height: 54px;
     }
 
     input[type="tel"]::placeholder {
@@ -442,6 +458,7 @@
       width: 100%;
       box-shadow: var(--shadow-neon);
       font-family: 'Poppins', sans-serif;
+      min-height: 54px;
     }
 
     .signup-btn:hover, .signup-btn:active {
@@ -491,196 +508,56 @@
       box-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
     }
 
-    html, body {
-  font-size: 16px;
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+    .sticker-panel::-webkit-scrollbar {
+      width: 4px;
+    }
 
-/* 2. Mise à l'échelle automatique du texte sur petits écrans */
-@media (max-width: 600px) {
-  html {
-    font-size: 14px;
-  }
-}
+    .sticker-panel::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
 
-/* 3. Conteneur principal flexible */
-.container {
-  padding: 0 5px;
-  width: 100%;
-  max-width: 100vw;
-  box-sizing: border-box;
-}
+    .sticker-panel::-webkit-scrollbar-thumb {
+      background: var(--accent-gradient);
+      border-radius: 10px;
+    }
 
-/* 4. Header et titres adaptés */
-.header {
-  margin: 0 2px;
-  padding: 12px 5px;
-  border-radius: 0 0 16px 16px;
-}
-.header h1 {
-  font-size: 1.3em;
-  word-break: break-word;
-}
-.header .subtitle {
-  font-size: 0.95em;
-}
-
-/* 5. Carte d'inscription et champs */
-.signup-card {
-  margin: 0 5px;
-  padding: 15px 8px;
-  border-radius: 14px;
-  font-size: 0.96em;
-  max-width: 98vw;
-}
-.signup-card h2 {
-  font-size: 1.1em;
-}
-.signup-card p {
-  font-size: 0.98em;
-}
-
-/* 6. Champ numéro de téléphone */
-input[type="tel"] {
-  font-size: 1em;
-  padding: 10px 8px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-/* 7. Forum et messages */
-#forum {
-  padding: 0 2px;
-}
-.messages {
-  border-radius: 12px;
-  padding: 10px 4px;
-  font-size: 1em;
-}
-.message {
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 0.97em;
-}
-.message .content {
-  font-size: 0.95em;
-  margin-left: 30px;
-  word-break: break-word;
-}
-.message .user {
-  font-size: 0.92em;
-  gap: 5px;
-}
-.user-avatar {
-  width: 24px;
-  height: 24px;
-}
-
-/* 8. Champ de saisie du message */
-.message-input-container {
-  padding: 10px 7px;
-  gap: 7px;
-  border-radius: 14px;
-}
-#message {
-  font-size: 0.98em;
-  padding: 10px 8px;
-  border-radius: 10px;
-}
-
-/* 9. Boutons (stickers, envoi) */
-.sticker-btn, .send-btn {
-  width: 38px;
-  height: 38px;
-  font-size: 1.1em;
-  border-radius: 50%;
-}
-
-/* 10. Panneau de stickers */
-.sticker-panel {
-  left: 3px;
-  right: 3px;
-  bottom: 65px;
-  border-radius: 14px 14px 0 0;
-  padding: 10px 2px;
-  max-height: 130px;
-  gap: 7px;
-}
-.sticker {
-  font-size: 1.4em;
-  padding: 5px;
-  border-radius: 8px;
-}
-
-/* 11. Scrollbar discrète pour les messages */
-.messages::-webkit-scrollbar {
-  width: 3px;
-}
-.messages::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-}
-
-/* 12. Suppression des effets CSS trop lourds sur mobile */
-@media (max-width: 480px) {
-  .header h1,
-  .signup-card h2 {
-    font-size: 1.05em;
-  }
-  .message .content {
-    font-size: 0.92em;
-  }
-  .sticker {
-    font-size: 1.1em;
-    padding: 3px;
-  }
-  .user-avatar {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-/* 13. Meilleure adaptation verticale */
-@media (max-height: 500px) {
-  .signup-card, .messages, .message-input-container {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
-  }
-  .header {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
-  }
-}
-
-/* 14. Ajustement pour les écrans très petits (type Apple Watch) */
-@media (max-width: 320px) {
-  .header, .signup-card, .message-input-container {
-    padding-left: 2px !important;
-    padding-right: 2px !important;
-  }
-  .sticker-panel {
-    left: 1px;
-    right: 1px;
-  }
-}
-
-    /* Responsive */
+    /* Optimisations pour petits écrans */
     @media (max-width: 768px) {
+      html, body {
+        font-size: 14px;
+      }
+
       .header {
         margin: 0 5px;
         margin-top: 5px;
         border-radius: 0 0 20px 20px;
-        padding: 15px;
+        padding: 12px 15px;
       }
       
       .header h1 {
-        font-size: 22px;
+        font-size: 20px;
+        margin-bottom: 5px;
+      }
+
+      .header .subtitle {
+        font-size: 12px;
       }
       
       .signup-card {
         margin: 0 10px;
         padding: 25px 20px;
+        border-radius: 20px;
+      }
+
+      .signup-card h2 {
+        font-size: 20px;
+        margin-bottom: 12px;
+      }
+
+      .signup-card p {
+        font-size: 14px;
+        margin-bottom: 20px;
       }
       
       #forum {
@@ -689,41 +566,295 @@ input[type="tel"] {
       
       .messages {
         border-radius: 20px;
-        padding: 15px 10px;
+        padding: 12px 10px;
+        margin-bottom: 12px;
       }
       
       .message {
         padding: 12px 15px;
         border-radius: 15px;
+        margin-bottom: 10px;
+      }
+
+      .message .user {
+        font-size: 12px;
+        gap: 6px;
+        margin-bottom: 5px;
+      }
+
+      .user-avatar {
+        width: 24px;
+        height: 24px;
       }
       
       .message .content {
-        margin-left: 32px;
+        margin-left: 30px;
         font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .message.sticker .content {
+        font-size: 2.5em;
+        margin: 0;
+      }
+
+      .message-input-container {
+        padding: 12px 15px;
+        gap: 10px;
+        border-radius: 20px;
+      }
+
+      .sticker-btn, .send-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+
+      #message {
+        padding: 10px 15px;
+        font-size: 14px;
+        border-radius: 15px;
+        min-height: 40px;
       }
       
       .sticker-panel {
         left: 5px;
         right: 5px;
+        bottom: 65px;
+        padding: 15px 10px;
+        max-height: 180px;
+        border-radius: 20px 20px 0 0;
+        gap: 8px;
+      }
+
+      .sticker {
+        font-size: 28px;
+        padding: 8px;
+        min-width: 48px;
+        min-height: 48px;
+        border-radius: 12px;
+      }
+
+      input[type="tel"] {
+        padding: 12px 15px;
+        font-size: 16px;
+        min-height: 48px;
+        border-radius: 12px;
+      }
+
+      .signup-btn {
+        padding: 12px 0;
+        font-size: 15px;
+        min-height: 48px;
+        border-radius: 12px;
+      }
+
+      .no-messages {
+        padding: 30px 15px;
+        font-size: 14px;
+        border-radius: 15px;
+      }
+
+      .loading {
+        padding: 25px;
+        font-size: 14px;
       }
     }
 
     @media (max-width: 480px) {
+      html, body {
+        font-size: 13px;
+      }
+
+      .header {
+        padding: 10px 12px;
+      }
+
       .header h1 {
-        font-size: 20px;
+        font-size: 18px;
+      }
+
+      .header .subtitle {
+        font-size: 11px;
       }
       
+      .signup-card {
+        padding: 20px 15px;
+        border-radius: 15px;
+      }
+
       .signup-card h2 {
-        font-size: 20px;
+        font-size: 18px;
+      }
+
+      .signup-card p {
+        font-size: 13px;
+      }
+
+      .messages {
+        padding: 10px 8px;
+        border-radius: 15px;
+      }
+
+      .message {
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+      }
+
+      .message .user {
+        font-size: 11px;
+        gap: 5px;
+      }
+
+      .user-avatar {
+        width: 20px;
+        height: 20px;
       }
       
       .message .content {
         font-size: 13px;
+        margin-left: 25px;
       }
-      
+
+      .message.sticker .content {
+        font-size: 2em;
+      }
+
+      .message-input-container {
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 15px;
+      }
+
+      .sticker-btn, .send-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      #message {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-radius: 12px;
+        min-height: 36px;
+      }
+
+      .sticker-panel {
+        bottom: 55px;
+        padding: 12px 8px;
+        max-height: 160px;
+        gap: 6px;
+      }
+
       .sticker {
-        font-size: 28px;
-        padding: 10px;
+        font-size: 24px;
+        padding: 6px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: 10px;
+      }
+
+      input[type="tel"] {
+        padding: 10px 12px;
+        font-size: 16px;
+        min-height: 44px;
+        border-radius: 10px;
+      }
+
+      .signup-btn {
+        padding: 10px 0;
+        font-size: 14px;
+        min-height: 44px;
+        border-radius: 10px;
+      }
+    }
+
+    /* Optimisations pour très petits écrans */
+    @media (max-width: 360px) {
+      .header {
+        margin: 0 2px;
+        margin-top: 2px;
+        padding: 8px 10px;
+      }
+
+      .header h1 {
+        font-size: 16px;
+      }
+
+      .signup-card {
+        margin: 0 5px;
+        padding: 15px 12px;
+      }
+
+      #forum {
+        padding: 0 2px;
+      }
+
+      .messages {
+        padding: 8px 6px;
+      }
+
+      .message {
+        padding: 8px 10px;
+      }
+
+      .message .content {
+        margin-left: 22px;
+        font-size: 12px;
+      }
+
+      .sticker-panel {
+        left: 2px;
+        right: 2px;
+      }
+
+      .sticker {
+        font-size: 20px;
+        min-width: 36px;
+        min-height: 36px;
+      }
+    }
+
+    /* Gestion du viewport pour les claviers virtuels */
+    @media (max-height: 600px) {
+      .messages {
+        flex: 1;
+        min-height: 200px;
+      }
+
+      .sticker-panel {
+        max-height: 120px;
+      }
+    }
+
+    /* Amélioration du touch feedback */
+    @media (hover: none) and (pointer: coarse) {
+      .sticker-btn:active,
+      .send-btn:active,
+      .sticker:active,
+      .signup-btn:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+      }
+
+      #message:focus {
+        transform: none;
+      }
+
+      input[type="tel"]:focus {
+        transform: none;
+      }
+    }
+
+    /* Support pour les notchs */
+    @supports (padding: max(0px)) {
+      .header {
+        padding-top: max(20px, env(safe-area-inset-top) + 10px);
+      }
+
+      .message-input-container {
+        margin-bottom: max(10px, env(safe-area-inset-bottom));
       }
     }
   </style>
