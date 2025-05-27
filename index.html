@@ -2,248 +2,309 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Forum Moderne - Chat Anonyme</title>
+  <title>Forum Moderne - Notifications & Réponses</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     
     :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --success: #25d366;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --info: #17a2b8;
-      --light: #f8f9fa;
-      --dark: #343a40;
-      --white: #ffffff;
-      --gray-100: #f8f9fa;
-      --gray-200: #e9ecef;
-      --gray-300: #dee2e6;
-      --gray-400: #ced4da;
-      --gray-500: #adb5bd;
-      --gray-600: #6c757d;
-      --gray-700: #495057;
-      --gray-800: #343a40;
-      --gray-900: #212529;
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-dark: #1e40af;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --warning: #f97316;
       
-      --bg-primary: #ffffff;
-      --bg-secondary: #f8f9fa;
-      --text-primary: #212529;
-      --text-secondary: #6c757d;
-      --border-color: #dee2e6;
-      --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-      --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --bg-card: rgba(30, 41, 59, 0.8);
+      --bg-glass: rgba(15, 23, 42, 0.9);
       
-      --border-radius: 0.5rem;
-      --border-radius-sm: 0.25rem;
-      --border-radius-lg: 1rem;
-      --border-radius-xl: 1.5rem;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
       
-      --transition: all 0.15s ease-in-out;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-primary: #1a1a1a;
-        --bg-secondary: #2d2d2d;
-        --text-primary: #ffffff;
-        --text-secondary: #b3b3b3;
-        --border-color: #404040;
-        --gray-100: #2d2d2d;
-        --gray-200: #404040;
-        --gray-300: #525252;
-        --gray-700: #b3b3b3;
-        --gray-800: #ffffff;
-      }
+      --border: rgba(148, 163, 184, 0.1);
+      --border-light: rgba(148, 163, 184, 0.2);
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.3);
+      
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
     }
 
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    html {
-      font-size: 16px;
-      scroll-behavior: smooth;
+    html, body {
+      width: 100vw;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 14px;
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-secondary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      background-attachment: fixed;
       color: var(--text-primary);
       line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
+      touch-action: manipulation;
     }
 
     .container {
-      max-width: 100%;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background-color: var(--bg-primary);
+      max-width: 100vw;
+      position: relative;
     }
 
-    /* Header */
+    /* Header moderne */
     .header {
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: var(--white);
-      padding: 1rem 1.5rem;
-      box-shadow: var(--shadow-md);
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
       position: sticky;
       top: 0;
-      z-index: 1000;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .header h1 {
-      font-size: 1.5rem;
+      font-size: 18px;
       font-weight: 600;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      color: var(--text-primary);
     }
 
-    .header .subtitle {
-      font-size: 0.875rem;
-      opacity: 0.9;
-      margin-top: 0.25rem;
+    .online-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--secondary);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
     }
 
-    /* Signup Form */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .notification-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .notification-toggle:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .notification-toggle.enabled {
+      background: var(--secondary);
+      color: white;
+    }
+
+    /* Page d'inscription moderne */
     #signup-form {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+      padding: 40px 20px;
     }
 
     .signup-card {
-      background: var(--bg-primary);
-      border-radius: var(--border-radius-xl);
-      padding: 2rem;
-      box-shadow: var(--shadow-lg);
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 40px 32px;
       width: 100%;
       max-width: 400px;
-      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
     }
 
     .signup-card h2 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--primary);
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
       text-align: center;
     }
 
     .signup-card p {
       color: var(--text-secondary);
-      margin-bottom: 1.5rem;
       text-align: center;
-      font-size: 0.875rem;
+      margin-bottom: 32px;
+      font-size: 14px;
     }
 
-    /* Forum */
+    .input-group {
+      margin-bottom: 24px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="tel"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 16px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    input[type="tel"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .signup-btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px 0;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .signup-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* Interface du forum */
     #forum {
       display: none;
       flex: 1;
       flex-direction: column;
-      height: calc(100vh - 80px);
-      overflow: hidden;
+      min-height: 0;
     }
 
-    .messages {
+    .messages-container {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
-      background-color: var(--bg-secondary);
+      padding: 20px;
       scroll-behavior: smooth;
     }
 
     .message {
-      background: var(--bg-primary);
-      border-radius: var(--border-radius-lg);
-      padding: 1rem;
-      margin-bottom: 0.75rem;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
       position: relative;
-      transition: var(--transition);
-      opacity: 0;
-      transform: translateY(20px);
-      animation: messageSlideIn 0.3s ease-out forwards;
-    }
-
-    @keyframes messageSlideIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      backdrop-filter: blur(10px);
     }
 
     .message:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+      border-color: var(--border-light);
+      transform: translateY(-1px);
     }
 
-    .message.replying-to {
-      border-left: 4px solid var(--primary);
-      background: linear-gradient(90deg, rgba(0, 123, 255, 0.05), var(--bg-primary));
+    .message.reply {
+      margin-left: 40px;
+      border-left: 3px solid var(--primary);
+      background: var(--bg-secondary);
+    }
+
+    .message.reply::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 20px;
+      width: 16px;
+      height: 2px;
+      background: var(--border-light);
     }
 
     .message-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.5rem;
+      margin-bottom: 12px;
     }
 
     .user-info {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
     }
 
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--success));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white);
-      font-weight: 600;
-      font-size: 0.875rem;
-      flex-shrink: 0;
+      object-fit: cover;
+      border: 2px solid var(--border-light);
     }
 
     .user-name {
       font-weight: 600;
-      color: var(--primary);
-      font-size: 0.875rem;
+      color: var(--text-primary);
+      font-size: 13px;
     }
 
     .message-time {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .message-actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 8px;
       opacity: 0;
-      transition: var(--transition);
+      transition: opacity 0.2s ease;
     }
 
     .message:hover .message-actions {
@@ -251,194 +312,150 @@
     }
 
     .action-btn {
-      background: var(--gray-100);
-      border: none;
-      border-radius: var(--border-radius-sm);
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
-      font-size: 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      font-size: 12px;
       color: var(--text-secondary);
-      transition: var(--transition);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .action-btn:hover {
-      background: var(--gray-200);
-      color: var(--text-primary);
+      background: var(--primary);
+      color: white;
     }
 
     .message-content {
       color: var(--text-primary);
-      font-size: 0.9375rem;
+      font-size: 14px;
       line-height: 1.5;
       word-wrap: break-word;
     }
 
-    .reply-indicator {
-      background: var(--gray-100);
-      border-left: 3px solid var(--primary);
-      border-radius: var(--border-radius-sm);
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.8125rem;
+    .message.sticker .message-content {
+      font-size: 2.5em;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .reply-info {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
       color: var(--text-secondary);
     }
 
-    .reply-indicator .reply-user {
-      font-weight: 600;
-      color: var(--primary);
+    .reply-info .reply-author {
+      color: var(--primary-light);
+      font-weight: 500;
     }
 
-    .reply-indicator .reply-content {
-      margin-top: 0.25rem;
+    .reply-info .reply-text {
+      margin-top: 4px;
+      opacity: 0.8;
       font-style: italic;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
-    .message.sticker {
-      text-align: center;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      padding: 0.5rem;
+    /* Interface de saisie moderne */
+    .input-container {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
     }
 
-    .message.sticker .message-content {
-      font-size: 3rem;
-      line-height: 1;
-    }
-
-    /* Message Input */
-    .message-input-container {
-      background: var(--bg-primary);
-      padding: 1rem 1.5rem;
-      border-top: 1px solid var(--border-color);
-      position: sticky;
-      bottom: 0;
-    }
-
-    .reply-preview {
-      background: var(--gray-100);
-      border-radius: var(--border-radius);
-      padding: 0.75rem;
-      margin-bottom: 0.75rem;
-      border-left: 3px solid var(--primary);
+    .reply-indicator {
       display: none;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      position: relative;
     }
 
-    .reply-preview.active {
+    .reply-indicator.active {
       display: block;
-      animation: slideDown 0.2s ease-out;
     }
 
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .reply-preview-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .reply-preview-title {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--primary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .reply-close {
+    .reply-indicator .cancel-reply {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       cursor: pointer;
-      font-size: 1.25rem;
-      line-height: 1;
-      padding: 0;
+      font-size: 16px;
     }
 
-    .reply-preview-content {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      font-style: italic;
-    }
-
-    .input-group {
+    .message-input-row {
       display: flex;
-      gap: 0.75rem;
       align-items: flex-end;
+      gap: 12px;
     }
 
     .sticker-btn {
-      background: var(--gray-100);
-      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 1.25rem;
-      transition: var(--transition);
-      flex-shrink: 0;
+      transition: all 0.2s ease;
+      font-size: 18px;
     }
 
     .sticker-btn:hover {
-      background: var(--gray-200);
+      background: var(--primary);
       transform: scale(1.05);
     }
 
     #message {
       flex: 1;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius-lg);
-      padding: 0.75rem 1rem;
-      font-size: 0.9375rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      font-size: 14px;
       color: var(--text-primary);
       resize: none;
-      outline: none;
-      transition: var(--transition);
-      font-family: inherit;
-      min-height: 48px;
+      min-height: 40px;
       max-height: 120px;
+      font-family: inherit;
+      transition: all 0.2s ease;
     }
 
     #message:focus {
+      outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-
-    #message::placeholder {
-      color: var(--text-secondary);
+      box-shadow: var(--shadow-glow);
     }
 
     .send-btn {
       background: var(--primary);
       border: none;
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: var(--white);
-      font-size: 1.25rem;
-      transition: var(--transition);
-      flex-shrink: 0;
+      transition: all 0.2s ease;
+      color: white;
+      font-size: 16px;
     }
 
     .send-btn:hover {
@@ -446,303 +463,189 @@
       transform: scale(1.05);
     }
 
-    .send-btn:active {
-      transform: scale(0.95);
-    }
-
     .send-btn:disabled {
-      background: var(--gray-400);
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
       cursor: not-allowed;
       transform: none;
     }
 
-    /* Sticker Panel */
+    /* Panel de stickers moderne */
     .sticker-panel {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
-      padding: 1rem;
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 16px;
       display: none;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
+      grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+      gap: 8px;
       max-height: 200px;
       overflow-y: auto;
-      position: absolute;
-      left: 1.5rem;
-      right: 1.5rem;
-      bottom: 100%;
-      box-shadow: var(--shadow-md);
-      z-index: 100;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
     }
 
     .sticker-panel.active {
-      display: flex;
-      animation: slideUp 0.2s ease-out;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      display: grid;
     }
 
     .sticker {
-      font-size: 2rem;
-      padding: 0.5rem;
-      border-radius: var(--border-radius);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border-radius: var(--radius);
       cursor: pointer;
-      transition: var(--transition);
-      background: var(--gray-100);
-      border: 1px solid var(--border-color);
-      line-height: 1;
+      transition: all 0.2s ease;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
     }
 
     .sticker:hover {
-      transform: scale(1.2);
-      background: var(--gray-200);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Form Elements */
-    input[type="tel"] {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      color: var(--text-primary);
-      transition: var(--transition);
-      margin-bottom: 1.5rem;
-      font-family: inherit;
-    }
-
-    input[type="tel"]:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-
-    input[type="tel"]::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .signup-btn {
+      transform: scale(1.1);
       background: var(--primary);
-      color: var(--white);
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      width: 100%;
-      font-family: inherit;
     }
 
-    .signup-btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .signup-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Notification */
+    /* Notifications */
     .notification {
       position: fixed;
-      top: 100px;
-      right: 1rem;
-      background: var(--success);
-      color: var(--white);
-      padding: 1rem 1.5rem;
-      border-radius: var(--border-radius-lg);
+      top: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      max-width: 300px;
       box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(100%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .notification-header {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      font-weight: 500;
-      z-index: 2000;
-      transform: translateX(100%);
-      transition: transform 0.3s ease-out;
+      gap: 12px;
+      margin-bottom: 8px;
     }
 
-    .notification.show {
-      transform: translateX(0);
-    }
-
-    .notification-icon {
-      font-size: 1.25rem;
-    }
-
-    .notification-content {
-      flex: 1;
+    .notification-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
     }
 
     .notification-title {
       font-weight: 600;
-      margin-bottom: 0.125rem;
+      font-size: 12px;
+      color: var(--text-primary);
     }
 
-    .notification-message {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
-
-    .notification-close {
-      background: none;
-      border: none;
-      color: var(--white);
-      cursor: pointer;
-      font-size: 1.125rem;
-      opacity: 0.8;
-      padding: 0;
-    }
-
-    .notification-close:hover {
-      opacity: 1;
-    }
-
-    /* Loading and Empty States */
-    .loading, .no-messages {
-      text-align: center;
-      padding: 3rem 2rem;
+    .notification-content {
+      font-size: 13px;
       color: var(--text-secondary);
-      font-style: italic;
+      line-height: 1.4;
     }
 
     .loading {
-      animation: pulse 2s ease-in-out infinite;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-style: italic;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
+    .no-messages {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
     }
 
-    /* Scrollbar */
-    .messages::-webkit-scrollbar {
+    /* Scrollbar personnalisée */
+    .messages-container::-webkit-scrollbar {
       width: 6px;
     }
 
-    .messages::-webkit-scrollbar-track {
-      background: var(--gray-200);
+    .messages-container::-webkit-scrollbar-track {
+      background: transparent;
     }
 
-    .messages::-webkit-scrollbar-thumb {
-      background: var(--gray-400);
+    .messages-container::-webkit-scrollbar-thumb {
+      background: var(--border-light);
       border-radius: 3px;
     }
 
-    .messages::-webkit-scrollbar-thumb:hover {
-      background: var(--gray-500);
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
     }
 
-    /* Responsive Design */
+    /* Responsive */
     @media (max-width: 768px) {
       .header {
-        padding: 0.75rem 1rem;
+        padding: 12px 16px;
       }
       
-      .header h1 {
-        font-size: 1.25rem;
+      .messages-container {
+        padding: 16px 12px;
       }
       
-      .signup-card {
-        margin: 1rem;
-        padding: 1.5rem;
-      }
-      
-      .messages {
-        padding: 0.75rem;
+      .input-container {
+        padding: 12px 16px;
       }
       
       .message {
-        padding: 0.75rem;
+        padding: 12px;
       }
       
-      .message-input-container {
-        padding: 0.75rem 1rem;
+      .signup-card {
+        margin: 0 16px;
+        padding: 32px 24px;
       }
       
       .sticker-panel {
-        left: 1rem;
-        right: 1rem;
-        padding: 0.75rem;
-      }
-      
-      .sticker {
-        font-size: 1.75rem;
-        padding: 0.375rem;
+        left: 16px;
+        right: 16px;
+        bottom: 70px;
       }
       
       .notification {
-        right: 0.75rem;
-        left: 0.75rem;
-        top: 90px;
+        right: 16px;
+        max-width: calc(100vw - 32px);
       }
     }
 
     @media (max-width: 480px) {
-      .header h1 {
-        font-size: 1.125rem;
+      body {
+        font-size: 13px;
       }
       
-      .user-avatar {
+      .header h1 {
+        font-size: 16px;
+      }
+      
+      .message.reply {
+        margin-left: 20px;
+      }
+      
+      .sticker-panel {
+        grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+      }
+      
+      .sticker {
         width: 36px;
         height: 36px;
-      }
-      
-      .sticker-btn, .send-btn {
-        width: 44px;
-        height: 44px;
-      }
-      
-      #message {
-        font-size: 0.875rem;
-      }
-    }
-
-    /* Accessibility */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* Focus styles for keyboard navigation */
-    button:focus-visible,
-    input:focus-visible,
-    textarea:focus-visible {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-      :root {
-        --shadow: none;
-        --shadow-sm: none;
-        --shadow-md: none;
-        --shadow-lg: none;
-      }
-      
-      .message,
-      .signup-card,
-      input,
-      button {
-        border-width: 2px;
+        font-size: 20px;
       }
     }
   </style>
@@ -750,56 +653,66 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>💬 Forum Chat Moderne</h1>
-      <div class="subtitle">Conversations anonymes en temps réel</div>
+      <div class="header-left">
+        <div class="online-indicator"></div>
+        <h1>Forum Moderne</h1>
+      </div>
+      <button class="notification-toggle" id="notificationToggle">
+        🔔 Notifications
+      </button>
     </div>
 
     <div id="signup-form">
       <div class="signup-card">
-        <h2>🚀 Rejoignez la Discussion</h2>
-        <p>Entrez votre numéro de téléphone pour accéder au chat. Vos conversations restent anonymes et sécurisées.</p>
+        <h2>Rejoignez la conversation</h2>
+        <p>Entrez votre numéro de téléphone pour commencer à échanger avec la communauté</p>
         <form id="registerForm">
-          <input type="tel" id="phone" name="phone" required pattern="[0-9]{7,15}" autocomplete="tel" placeholder="Votre numéro de téléphone">
-          <button type="submit" class="signup-btn">Commencer à Chatter</button>
+          <div class="input-group">
+            <label for="phone">Numéro de téléphone</label>
+            <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="+33 6 12 34 56 78">
+          </div>
+          <button type="submit" class="signup-btn">Rejoindre</button>
         </form>
       </div>
     </div>
 
     <div id="forum">
-      <div class="messages" id="messages"></div>
-      
-      <div class="message-input-container">
-        <div class="reply-preview" id="replyPreview">
-          <div class="reply-preview-header">
-            <span class="reply-preview-title">Répondre à</span>
-            <button class="reply-close" id="replyClose">&times;</button>
+      <div class="messages-container" id="messages"></div>
+
+      <div class="sticker-panel" id="stickerPanel">
+        <div class="sticker" data-sticker="😀">😀</div>
+        <div class="sticker" data-sticker="😂">😂</div>
+        <div class="sticker" data-sticker="😍">😍</div>
+        <div class="sticker" data-sticker="🤔">🤔</div>
+        <div class="sticker" data-sticker="😭">😭</div>
+        <div class="sticker" data-sticker="😡">😡</div>
+        <div class="sticker" data-sticker="👍">👍</div>
+        <div class="sticker" data-sticker="👎">👎</div>
+        <div class="sticker" data-sticker="❤️">❤️</div>
+        <div class="sticker" data-sticker="🔥">🔥</div>
+        <div class="sticker" data-sticker="✨">✨</div>
+        <div class="sticker" data-sticker="🎉">🎉</div>
+        <div class="sticker" data-sticker="💯">💯</div>
+        <div class="sticker" data-sticker="🚀">🚀</div>
+        <div class="sticker" data-sticker="💎">💎</div>
+        <div class="sticker" data-sticker="🌟">🌟</div>
+      </div>
+
+      <div class="input-container">
+        <div class="reply-indicator" id="replyIndicator">
+          <div>
+            <span class="reply-author"></span>
+            <div class="reply-text"></div>
           </div>
-          <div class="reply-preview-content" id="replyPreviewContent"></div>
+          <button class="cancel-reply" onclick="cancelReply()">✕</button>
         </div>
         
-        <div class="sticker-panel" id="stickerPanel">
-          <div class="sticker" data-sticker="😀">😀</div>
-          <div class="sticker" data-sticker="😂">😂</div>
-          <div class="sticker" data-sticker="😍">😍</div>
-          <div class="sticker" data-sticker="🤔">🤔</div>
-          <div class="sticker" data-sticker="😭">😭</div>
-          <div class="sticker" data-sticker="😡">😡</div>
-          <div class="sticker" data-sticker="👍">👍</div>
-          <div class="sticker" data-sticker="👎">👎</div>
-          <div class="sticker" data-sticker="❤️">❤️</div>
-          <div class="sticker" data-sticker="🔥">🔥</div>
-          <div class="sticker" data-sticker="✨">✨</div>
-          <div class="sticker" data-sticker="🎉">🎉</div>
-          <div class="sticker" data-sticker="💯">💯</div>
-          <div class="sticker" data-sticker="🚀">🚀</div>
-          <div class="sticker" data-sticker="💎">💎</div>
-          <div class="sticker" data-sticker="🌟">🌟</div>
-        </div>
-        
-        <div class="input-group">
-          <button type="button" class="sticker-btn" id="stickerToggle" aria-label="Stickers">😊</button>
-          <textarea id="message" placeholder="Tapez votre message..." rows="1"></textarea>
-          <button type="button" class="send-btn" id="sendBtn" aria-label="Envoyer">➤</button>
+        <div class="message-input-row">
+          <button class="sticker-btn" id="stickerToggle">😊</button>
+          <form id="messageForm" style="flex: 1; display: flex; gap: 12px;">
+            <textarea id="message" placeholder="Tapez votre message..." required maxlength="500" autocomplete="off"></textarea>
+            <button type="submit" class="send-btn" id="sendBtn">➤</button>
+          </form>
         </div>
       </div>
     </div>
@@ -822,48 +735,29 @@
     const db = firebase.database();
 
     // Variables globales
-    const elements = {
-      signupDiv: document.getElementById('signup-form'),
-      forumDiv: document.getElementById('forum'),
-      registerForm: document.getElementById('registerForm'),
-      phoneInput: document.getElementById('phone'),
-      messageInput: document.getElementById('message'),
-      messagesDiv: document.getElementById('messages'),
-      stickerPanel: document.getElementById('stickerPanel'),
-      stickerToggle: document.getElementById('stickerToggle'),
-      sendBtn: document.getElementById('sendBtn'),
-      replyPreview: document.getElementById('replyPreview'),
-      replyPreviewContent: document.getElementById('replyPreviewContent'),
-      replyClose: document.getElementById('replyClose')
-    };
+    const signupDiv = document.getElementById('signup-form');
+    const forumDiv = document.getElementById('forum');
+    const registerForm = document.getElementById('registerForm');
+    const messageForm = document.getElementById('messageForm');
+    const phoneInput = document.getElementById('phone');
+    const messageInput = document.getElementById('message');
+    const messagesDiv = document.getElementById('messages');
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerToggle = document.getElementById('stickerToggle');
+    const replyIndicator = document.getElementById('replyIndicator');
+    const notificationToggle = document.getElementById('notificationToggle');
+    const sendBtn = document.getElementById('sendBtn');
 
-    let currentUser = {
-      username: "",
-      phone: "",
-      id: ""
-    };
-
+    let username = "user";
+    let userPhone = "";
     let replyingTo = null;
-    let stickerPanelOpen = false;
-    let messages = {};
+    let notificationsEnabled = false;
+    let lastMessageTime = 0;
 
-    // Utility functions
-    function generateId() {
-      return Math.random().toString(36).substr(2, 9);
-    }
+    // Avatar unique pour tous les utilisateurs
+    const AVATAR_URL = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=';
 
-    function generateUsername() {
-      const adjectives = ['Cool', 'Smart', 'Happy', 'Brave', 'Kind', 'Quick', 'Bright', 'Lucky'];
-      const nouns = ['Tiger', 'Eagle', 'Lion', 'Wolf', 'Fox', 'Bear', 'Hawk', 'Star'];
-      return adjectives[Math.floor(Math.random() * adjectives.length)] + 
-             nouns[Math.floor(Math.random() * nouns.length)] + 
-             Math.floor(Math.random() * 100);
-    }
-
-    function getUserInitials(username) {
-      return username.substring(0, 2).toUpperCase();
-    }
-
+    // Fonctions utilitaires
     function escapeHtml(text) {
       const map = {
         '&': '&amp;',
@@ -872,7 +766,7 @@
         '"': '&quot;',
         "'": '&#039;'
       };
-      return text.replace(/[&<>"']/g, m => map[m]);
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
     function formatTime(timestamp) {
@@ -880,374 +774,405 @@
       const now = new Date();
       const diff = now - date;
       
-      if (diff < 60000) return 'Maintenant';
-      if (diff < 3600000) return Math.floor(diff / 60000) + 'min';
-      if (date.toDateString() === now.toDateString()) {
-        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      }
+      if (diff < 60000) return 'À l\'instant';
+      if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
       return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     }
 
-    // Cookie management (alternative to localStorage)
-    function setCookie(name, value, days = 30) {
-      const expires = new Date();
-      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-      document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+    // Génération d'un nom d'utilisateur unique basé sur le numéro
+    function generateUsername(phone) {
+      // Retirer tous les caractères non numériques
+      const cleanPhone = phone.replace(/\D/g, '');
+      // Prendre les 4 derniers chiffres du numéro
+      const lastDigits = cleanPhone.slice(-4);
+      return `Utilisateur${lastDigits}`;
     }
 
-    function getCookie(name) {
-      const nameEQ = name + "=";
-      const ca = document.cookie.split(';');
-      for(let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    // Gestion des réponses
+    function replyToMessage(messageId, author, text) {
+      replyingTo = messageId;
+      replyIndicator.classList.add('active');
+      replyIndicator.querySelector('.reply-author').textContent = `Répondre à ${author}`;
+      replyIndicator.querySelector('.reply-text').textContent = text.length > 50 ? text.substring(0, 50) + '...' : text;
+      messageInput.focus();
+    }
+
+    function cancelReply() {
+      replyingTo = null;
+      replyIndicator.classList.remove('active');
+    }
+
+    // Gestion des notifications
+    async function requestNotificationPermission() {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        notificationsEnabled = permission === 'granted';
+        updateNotificationButton();
       }
-      return null;
     }
 
-    // Notification system
-    function showNotification(title, message, type = 'success') {
+    function updateNotificationButton() {
+      notificationToggle.textContent = notificationsEnabled ? '🔔 Activées' : '🔕 Désactivées';
+      notificationToggle.classList.toggle('enabled', notificationsEnabled);
+    }
+
+    function showNotification(message) {
+      if (!notificationsEnabled || document.visibilityState === 'visible') return;
+      
+      // Notification navigateur
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification('Nouveau message - Forum', {
+          body: `${message.username}: ${message.text}`,
+          icon: AVATAR_URL,
+          badge: AVATAR_URL,
+          tag: 'forum-message'
+        });
+        
+        notification.onclick = function() {
+          window.focus();
+          notification.close();
+        };
+        
+        setTimeout(() => notification.close(), 5000);
+      }
+
+      // Notification in-app
+      showInAppNotification(message);
+    }
+
+    function showInAppNotification(message) {
       const notification = document.createElement('div');
       notification.className = 'notification';
       notification.innerHTML = `
-        <div class="notification-icon">${type === 'success' ? '✓' : '!'}</div>
-        <div class="notification-content">
-          <div class="notification-title">${escapeHtml(title)}</div>
-          <div class="notification-message">${escapeHtml(message)}</div>
+        <div class="notification-header">
+          <img src="${AVATAR_URL}" alt="Avatar" class="notification-avatar">
+          <div class="notification-title">Nouveau message</div>
         </div>
-        <button class="notification-close">&times;</button>
+        <div class="notification-content">${escapeHtml(message.text)}</div>
       `;
-
+      
       document.body.appendChild(notification);
-
-      // Show notification
-      setTimeout(() => notification.classList.add('show'), 100);
-
-      // Auto hide after 4 seconds
-      const hideTimeout = setTimeout(() => hideNotification(notification), 4000);
-
-      // Close button
-      notification.querySelector('.notification-close').onclick = () => {
-        clearTimeout(hideTimeout);
-        hideNotification(notification);
-      };
-
-      // Play notification sound
-      playNotificationSound();
-
-      // Vibrate on mobile
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
-    }
-
-    function hideNotification(notification) {
-      notification.classList.remove('show');
+      
       setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
     }
 
-    function playNotificationSound() {
-      try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
-        
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.5);
-      } catch (e) {
-        // Fallback silencieux si l'audio ne marche pas
-      }
-    }
-
-    // User registration
-    function registerUser(phone) {
-      const username = generateUsername();
-      const userId = generateId();
-      
-      currentUser = {
-        username: username,
-        phone: phone,
-        id: userId
-      };
-
-      // Save user info in cookies
-      setCookie('chatUser', JSON.stringify(currentUser), 7);
-
-      // Add user to database
-      db.ref('users/' + userId).set({
-        username: username,
-        phone: phone,
-        lastSeen: firebase.database.ServerValue.TIMESTAMP,
-        joinedAt: firebase.database.ServerValue.TIMESTAMP
-      });
-
-      showForum();
-      showNotification('Bienvenue!', `Vous êtes maintenant connecté en tant que ${username}`);
-    }
-
-    function showForum() {
-      elements.signupDiv.style.display = 'none';
-      elements.forumDiv.style.display = 'flex';
-      loadMessages();
-      setupMessageListener();
-    }
-
-    // Message functions
-    function sendMessage(content, isSticker = false, replyToId = null) {
-      if (!content.trim() && !isSticker) return;
-
-      const messageId = generateId();
-      const messageData = {
-        id: messageId,
-        content: content,
-        username: currentUser.username,
-        userId: currentUser.id,
-        timestamp: firebase.database.ServerValue.TIMESTAMP,
-        isSticker: isSticker
-      };
-
-      if (replyToId) {
-        messageData.replyTo = replyToId;
-      }
-
-      // Add to database
-      db.ref('messages/' + messageId).set(messageData);
-
-      // Clear input
-      elements.messageInput.value = '';
-      clearReply();
-      adjustTextareaHeight();
-    }
-
-    function loadMessages() {
-      elements.messagesDiv.innerHTML = '<div class="loading">Chargement des messages...</div>';
-      
-      db.ref('messages').orderByChild('timestamp').limitToLast(50).once('value', (snapshot) => {
-        elements.messagesDiv.innerHTML = '';
-        const messagesData = snapshot.val();
-        
-        if (!messagesData) {
-          elements.messagesDiv.innerHTML = '<div class="no-messages">Aucun message pour le moment. Soyez le premier à écrire!</div>';
-          return;
-        }
-
-        messages = messagesData;
-        const sortedMessages = Object.values(messagesData).sort((a, b) => a.timestamp - b.timestamp);
-        
-        sortedMessages.forEach(message => {
-          displayMessage(message);
-        });
-        
-        scrollToBottom();
-      });
-    }
-
-    function setupMessageListener() {
-      db.ref('messages').orderByChild('timestamp').limitToLast(1).on('child_added', (snapshot) => {
-        const message = snapshot.val();
-        if (message && !messages[message.id]) {
-          messages[message.id] = message;
-          displayMessage(message);
-          scrollToBottom();
-          
-          // Show notification for new messages from others
-          if (message.userId !== currentUser.id) {
-            playNotificationSound();
-            if (navigator.vibrate) {
-              navigator.vibrate(100);
-            }
-          }
-        }
-      });
-    }
-
-    function displayMessage(message) {
-      const messageEl = document.createElement('div');
-      messageEl.className = 'message' + (message.isSticker ? ' sticker' : '');
-      messageEl.dataset.messageId = message.id;
+    // Affichage des messages
+    function displayMessage(messageData, messageId) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${messageData.type === 'sticker' ? 'sticker' : ''} ${messageData.replyTo ? 'reply' : ''}`;
+      messageDiv.setAttribute('data-id', messageId);
 
       let replyHtml = '';
-      if (message.replyTo && messages[message.replyTo]) {
-        const replyMsg = messages[message.replyTo];
+      if (messageData.replyTo && messageData.replyToData) {
         replyHtml = `
-          <div class="reply-indicator">
-            <div class="reply-user">${escapeHtml(replyMsg.username)}</div>
-            <div class="reply-content">${escapeHtml(replyMsg.content.substring(0, 50))}</div>
+          <div class="reply-info">
+            <div class="reply-author">${escapeHtml(messageData.replyToData.username)}</div>
+            <div class="reply-text">${escapeHtml(messageData.replyToData.text)}</div>
           </div>
         `;
       }
 
-      const isOwnMessage = message.userId === currentUser.id;
-      
-      messageEl.innerHTML = `
+      messageDiv.innerHTML = `
+        ${replyHtml}
         <div class="message-header">
           <div class="user-info">
-            <div class="user-avatar">${getUserInitials(message.username)}</div>
-            <div>
-              <div class="user-name">${escapeHtml(message.username)}</div>
-              <div class="message-time">${formatTime(message.timestamp)}</div>
+            <img src="${AVATAR_URL}" alt="Avatar" class="user-avatar">
+            <span class="user-name">${escapeHtml(messageData.username)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="message-time">${formatTime(messageData.timestamp)}</span>
+            <div class="message-actions">
+              <button class="action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(messageData.username)}', '${escapeHtml(messageData.text)}')">
+                Répondre
+              </button>
             </div>
           </div>
-          <div class="message-actions">
-            <button class="action-btn reply-btn" data-message-id="${message.id}">Répondre</button>
-          </div>
         </div>
-        ${replyHtml}
-        <div class="message-content">${escapeHtml(message.content)}</div>
+        <div class="message-content">${escapeHtml(messageData.text)}</div>
       `;
 
-      elements.messagesDiv.appendChild(messageEl);
+      return messageDiv;
+    }
 
-      // Add reply functionality
-      const replyBtn = messageEl.querySelector('.reply-btn');
-      replyBtn.addEventListener('click', () => {
-        startReply(message);
+    // Chargement des messages
+    function loadMessages() {
+      messagesDiv.innerHTML = '<div class="loading">Chargement des messages...</div>';
+      
+      db.ref('messages').orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
+        messagesDiv.innerHTML = '';
+        const messages = [];
+        
+        snapshot.forEach((child) => {
+          messages.push({ id: child.key, data: child.val() });
+        });
+
+        if (messages.length === 0) {
+          messagesDiv.innerHTML = '<div class="no-messages">Aucun message pour le moment. Soyez le premier à écrire !</div>';
+          return;
+        }
+
+        messages.forEach(({ id, data }) => {
+          const messageElement = displayMessage(data, id);
+          messagesDiv.appendChild(messageElement);
+          
+          // Notification pour les nouveaux messages
+          if (data.timestamp > lastMessageTime && data.phone !== userPhone) {
+            showNotification(data);
+          }
+        });
+
+        // Scroll vers le bas
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        // Mettre à jour le timestamp du dernier message
+        if (messages.length > 0) {
+          lastMessageTime = Math.max(lastMessageTime, messages[messages.length - 1].data.timestamp);
+        }
       });
     }
 
-    function startReply(message) {
-      replyingTo = message;
-      elements.replyPreview.classList.add('active');
-      elements.replyPreviewContent.textContent = `${message.username}: ${message.content.substring(0, 100)}`;
-      elements.messageInput.focus();
+    // Envoi de message
+    function sendMessage(text, type = 'text') {
+      if (!text.trim()) return;
+
+      const messageData = {
+        text: text.trim(),
+        username: username,
+        phone: userPhone,
+        timestamp: Date.now(),
+        type: type
+      };
+
+      // Ajouter les données de réponse si nécessaire
+      if (replyingTo) {
+        messageData.replyTo = replyingTo;
+        
+        // Récupérer les données du message original
+        db.ref(`messages/${replyingTo}`).once('value', (snapshot) => {
+          const originalMessage = snapshot.val();
+          if (originalMessage) {
+            messageData.replyToData = {
+              username: originalMessage.username,
+              text: originalMessage.text
+            };
+          }
+          
+          // Envoyer le message avec les données de réponse
+          db.ref('messages').push(messageData);
+        });
+        
+        cancelReply();
+      } else {
+        // Envoyer le message normal
+        db.ref('messages').push(messageData);
+      }
+
+      // Réinitialiser le formulaire
+      messageInput.value = '';
+      adjustTextareaHeight();
     }
 
-    function clearReply() {
-      replyingTo = null;
-      elements.replyPreview.classList.remove('active');
-    }
-
-    function scrollToBottom() {
-      elements.messagesDiv.scrollTop = elements.messagesDiv.scrollHeight;
-    }
-
+    // Ajustement automatique de la hauteur du textarea
     function adjustTextareaHeight() {
-      elements.messageInput.style.height = 'auto';
-      elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 120) + 'px';
+      messageInput.style.height = 'auto';
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
     }
 
-    // Event listeners
-    elements.registerForm.addEventListener('submit', (e) => {
+    // Gestion du formulaire d'inscription
+    registerForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const phone = elements.phoneInput.value.trim();
       
-      if (phone.length < 7 || phone.length > 15) {
-        showNotification('Erreur', 'Veuillez entrer un numéro de téléphone valide (7-15 chiffres)', 'error');
+      const phone = phoneInput.value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
         return;
       }
+
+      // Accepter n'importe quel numéro (pas de validation stricte)
+      userPhone = phone;
+      username = generateUsername(phone);
       
-      registerUser(phone);
-    });
-
-    elements.sendBtn.addEventListener('click', () => {
-      const content = elements.messageInput.value.trim();
-      if (content) {
-        sendMessage(content, false, replyingTo?.id);
+      // Masquer le formulaire d'inscription et afficher le forum
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      
+      // Charger les messages
+      loadMessages();
+      
+      // Initialiser les notifications
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
       }
     });
 
-    elements.messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const content = elements.messageInput.value.trim();
-        if (content) {
-          sendMessage(content, false, replyingTo?.id);
-        }
+    // Gestion du formulaire de message
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (text) {
+        sendMessage(text);
       }
     });
 
-    elements.messageInput.addEventListener('input', adjustTextareaHeight);
-
-    elements.stickerToggle.addEventListener('click', () => {
-      stickerPanelOpen = !stickerPanelOpen;
-      elements.stickerPanel.classList.toggle('active', stickerPanelOpen);
+    // Gestion des stickers
+    stickerToggle.addEventListener('click', () => {
+      stickerPanel.classList.toggle('active');
     });
 
-    elements.replyClose.addEventListener('click', clearReply);
+    // Fermer le panneau de stickers en cliquant ailleurs
+    document.addEventListener('click', (e) => {
+      if (!stickerToggle.contains(e.target) && !stickerPanel.contains(e.target)) {
+        stickerPanel.classList.remove('active');
+      }
+    });
 
-    // Sticker functionality
+    // Gestion des clics sur les stickers
     document.querySelectorAll('.sticker').forEach(sticker => {
       sticker.addEventListener('click', () => {
-        const stickerEmoji = sticker.dataset.sticker;
-        sendMessage(stickerEmoji, true, replyingTo?.id);
-        elements.stickerPanel.classList.remove('active');
-        stickerPanelOpen = false;
+        const stickerText = sticker.getAttribute('data-sticker');
+        sendMessage(stickerText, 'sticker');
+        stickerPanel.classList.remove('active');
       });
     });
 
-    // Close sticker panel when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!elements.stickerPanel.contains(e.target) && 
-          !elements.stickerToggle.contains(e.target) && 
-          stickerPanelOpen) {
-        elements.stickerPanel.classList.remove('active');
-        stickerPanelOpen = false;
+    // Ajustement automatique du textarea
+    messageInput.addEventListener('input', adjustTextareaHeight);
+
+    // Gestion des notifications
+    notificationToggle.addEventListener('click', () => {
+      if (notificationsEnabled) {
+        notificationsEnabled = false;
+        localStorage.removeItem('notifications_enabled');
+      } else {
+        requestNotificationPermission();
       }
+      updateNotificationButton();
     });
 
-    // Phone number formatting
-    elements.phoneInput.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length > 15) {
-        value = value.substring(0, 15);
-      }
-      e.target.value = value;
-    });
-
-    // Auto-login if user data exists
-    window.addEventListener('load', () => {
-      const savedUser = getCookie('chatUser');
-      if (savedUser) {
-        try {
-          currentUser = JSON.parse(savedUser);
-          showForum();
-          showNotification('Reconnexion', `Bon retour, ${currentUser.username}!`);
-        } catch (e) {
-          console.error('Erreur lors de la reconnexion:', e);
+    // Gestion des raccourcis clavier
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const text = messageInput.value.trim();
+        if (text) {
+          sendMessage(text);
         }
       }
+      
+      if (e.key === 'Escape' && replyingTo) {
+        cancelReply();
+      }
     });
 
-    // Update last seen timestamp periodically
+    // Mise à jour des temps en temps réel
     setInterval(() => {
-      if (currentUser.id) {
-        db.ref('users/' + currentUser.id + '/lastSeen').set(firebase.database.ServerValue.TIMESTAMP);
-      }
-    }, 60000); // Every minute
+      document.querySelectorAll('.message-time').forEach((timeElement, index) => {
+        const messageElement = timeElement.closest('.message');
+        const messageId = messageElement.getAttribute('data-id');
+        if (messageId) {
+          db.ref(`messages/${messageId}`).once('value', (snapshot) => {
+            const messageData = snapshot.val();
+            if (messageData) {
+              timeElement.textContent = formatTime(messageData.timestamp);
+            }
+          });
+        }
+      });
+    }, 60000); // Mise à jour chaque minute
 
-    // Handle visibility change
+    // Initialisation
+    updateNotificationButton();
+    
+    // Auto-focus sur le champ de téléphone
+    phoneInput.focus();
+
+    // Gestion de la visibilité de la page pour les notifications
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && currentUser.id) {
-        db.ref('users/' + currentUser.id + '/lastSeen').set(firebase.database.ServerValue.TIMESTAMP);
+      if (document.visibilityState === 'visible') {
+        // Marquer tous les messages comme lus quand la page devient visible
+        setTimeout(() => {
+          lastMessageTime = Date.now();
+        }, 1000);
       }
     });
 
-    // Service Worker for notifications (optional)
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // Service worker registration failed, continue without it
-      });
+    // Vérifier si l'utilisateur est déjà connecté (persistance)
+    const savedPhone = localStorage.getItem('user_phone');
+    const savedUsername = localStorage.getItem('user_username');
+    
+    if (savedPhone && savedUsername) {
+      userPhone = savedPhone;
+      username = savedUsername;
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      loadMessages();
+      
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
+      }
     }
 
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    // Sauvegarder les données utilisateur lors de l'inscription
+    const originalSubmitHandler = registerForm.onsubmit;
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const phone = phoneInput.value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
+        return;
+      }
+
+      userPhone = phone;
+      username = generateUsername(phone);
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem('user_phone', userPhone);
+      localStorage.setItem('user_username', username);
+      
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      loadMessages();
+      
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
+      }
+    });
+
+    // Fonction pour se déconnecter (optionnelle)
+    function logout() {
+      localStorage.removeItem('user_phone');
+      localStorage.removeItem('user_username');
+      localStorage.removeItem('notifications_enabled');
+      location.reload();
     }
+
+    // Ajouter un bouton de déconnexion dans le header (optionnel)
+    const logoutBtn = document.createElement('button');
+    logoutBtn.textContent = '↩ Déconnexion';
+    logoutBtn.className = 'notification-toggle';
+    logoutBtn.style.marginLeft = '8px';
+    logoutBtn.onclick = logout;
+    
+    // Ajouter le bouton seulement quand l'utilisateur est connecté
+    const checkUserStatus = () => {
+      if (userPhone && forumDiv.style.display === 'flex') {
+        if (!document.querySelector('.logout-btn')) {
+          logoutBtn.className += ' logout-btn';
+          document.querySelector('.header').appendChild(logoutBtn);
+        }
+      }
+    };
+
+    // Vérifier le statut utilisateur périodiquement
+    setInterval(checkUserStatus, 1000);
   </script>
 </body>
 </html>
