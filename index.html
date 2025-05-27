@@ -1129,5 +1129,329 @@
 
     console.log('🌌 Forum Cosmique initialisé avec succès!');
   </script>
+  <script>
+    // ===== SCRIPT DE NOTIFICATIONS POUR MESSAGES =====
+// À ajouter dans la section <script> de votre code HTML
+
+// Variables pour la gestion des notifications
+let lastKnownMessageCount = 0;
+let notificationsEnabled = false;
+let isPageHidden = false;
+let notificationSound = null;
+
+// Initialisation du système de notifications
+async function initializeNotifications() {
+  // Demander la permission pour les notifications
+  if ('Notification' in window) {
+    const permission = await Notification.requestPermission();
+    notificationsEnabled = permission === 'granted';
+    
+    if (notificationsEnabled) {
+      console.log('✅ Notifications activées');
+      showToastNotification('Notifications', 'Les notifications sont maintenant activées !');
+    } else {
+      console.log('❌ Notifications refusées');
+      showToastNotification('Notifications', 'Activez les notifications pour ne rien manquer !');
+    }
+  }
+  
+  // Créer un son de notification (optionnel)
+  createNotificationSound();
+}
+
+// Créer un son de notification simple
+function createNotificationSound() {
+  try {
+    // Créer un son avec Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    notificationSound = {
+      play: function() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      }
+    };
+  } catch (error) {
+    console.log('Son de notification non disponible');
+  }
+}
+
+// Gestion de la visibilité de la page
+function setupPageVisibilityHandler() {
+  document.addEventListener('visibilitychange', function() {
+    isPageHidden = document.hidden;
+    
+    if (isPageHidden) {
+      console.log('📱 Page cachée - surveillance des messages activée');
+    } else {
+      console.log('👀 Page visible - notifications désactivées');
+      // Réinitialiser le compteur quand l'utilisateur revient
+      updateMessageCount();
+    }
+  });
+  
+  // Gérer aussi les événements de focus/blur de la fenêtre
+  window.addEventListener('blur', function() {
+    isPageHidden = true;
+  });
+  
+  window.addEventListener('focus', function() {
+    isPageHidden = false;
+    updateMessageCount();
+  });
+}
+
+// Mettre à jour le compteur de messages
+function updateMessageCount() {
+  db.ref('messages').once('value', function(snapshot) {
+    const messages = snapshot.val();
+    lastKnownMessageCount = messages ? Object.keys(messages).length : 0;
+  });
+}
+
+// Surveiller les nouveaux messages
+function watchForNewMessages() {
+  db.ref('messages').on('child_added', function(snapshot) {
+    // Attendre un peu pour s'assurer que la page est chargée
+    setTimeout(() => {
+      if (isPageHidden && notificationsEnabled) {
+        const messageData = snapshot.val();
+        
+        // Ne pas notifier ses propres messages
+        if (messageData.username !== username) {
+          showNewMessageNotification(messageData);
+        }
+      }
+    }, 1000);
+  });
+}
+
+// Afficher une notification pour un nouveau message
+function showNewMessageNotification(messageData) {
+  const title = '💬 Nouveau message';
+  let body = '';
+  
+  if (messageData.isSticker) {
+    body = `${messageData.username} a envoyé un sticker ${messageData.text}`;
+  } else {
+    // Limiter la longueur du message dans la notification
+    const shortText = messageData.text.length > 50 
+      ? messageData.text.substring(0, 50) + '...' 
+      : messageData.text;
+    body = `${messageData.username}: ${shortText}`;
+  }
+  
+  // Notification native du navigateur
+  if (notificationsEnabled) {
+    const notification = new Notification(title, {
+      body: body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">💬</text></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/></svg>',
+      tag: 'forum-new-message',
+      requireInteraction: false,
+      silent: false
+    });
+    
+    // Clic sur la notification pour revenir au forum
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+    
+    // Auto-fermeture après 8 secondes
+    setTimeout(() => {
+      notification.close();
+    }, 8000);
+  }
+  
+  // Son de notification (si disponible)
+  if (notificationSound) {
+    try {
+      notificationSound.play();
+    } catch (error) {
+      console.log('Impossible de jouer le son');
+    }
+  }
+  
+  // Faire clignoter le titre de la page
+  flashPageTitle(messageData.username);
+}
+
+// Faire clignoter le titre de la page
+function flashPageTitle(senderName) {
+  const originalTitle = document.title;
+  let flashCount = 0;
+  const maxFlashes = 6;
+  
+  const flashInterval = setInterval(() => {
+    if (flashCount >= maxFlashes || !isPageHidden) {
+      document.title = originalTitle;
+      clearInterval(flashInterval);
+      return;
+    }
+    
+    document.title = flashCount % 2 === 0 
+      ? `💬 Nouveau message de ${senderName}!` 
+      : originalTitle;
+    
+    flashCount++;
+  }, 1000);
+}
+
+// Ajouter un bouton pour tester les notifications
+function addNotificationTestButton() {
+  // Créer un bouton de test (à supprimer en production)
+  const testBtn = document.createElement('button');
+  testBtn.textContent = '🔔 Tester notifications';
+  testBtn.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+  `;
+  
+  testBtn.onclick = function() {
+    showNewMessageNotification({
+      username: 'Test User',
+      text: 'Ceci est un message de test pour les notifications !',
+      isSticker: false
+    });
+  };
+  
+  document.body.appendChild(testBtn);
+}
+
+// Amélioration de la fonction de toast existante
+function showEnhancedToastNotification(title, message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = 'notification-toast enhanced';
+  
+  let icon = '💬';
+  let bgColor = 'var(--glass-bg)';
+  
+  switch(type) {
+    case 'success': icon = '✅'; bgColor = 'rgba(16, 185, 129, 0.2)'; break;
+    case 'warning': icon = '⚠️'; bgColor = 'rgba(245, 158, 11, 0.2)'; break;
+    case 'error': icon = '❌'; bgColor = 'rgba(239, 68, 68, 0.2)'; break;
+  }
+  
+  toast.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 24px;">${icon}</span>
+      <div>
+        <div class="notification-title">${escapeHtml(title)}</div>
+        <div class="notification-message">${escapeHtml(message)}</div>
+      </div>
+    </div>
+  `;
+  
+  toast.style.background = bgColor;
+  toast.style.backdropFilter = 'blur(20px)';
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add('show'), 100);
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 5000);
+}
+
+// Fonction d'initialisation principale
+function initNotificationSystem() {
+  console.log('🔔 Initialisation du système de notifications...');
+  
+  // Attendre que l'utilisateur soit connecté
+  const checkUserReady = setInterval(() => {
+    if (username && username !== "") {
+      clearInterval(checkUserReady);
+      
+      // Initialiser le système
+      initializeNotifications();
+      setupPageVisibilityHandler();
+      updateMessageCount();
+      watchForNewMessages();
+      
+      // Ajouter le bouton de test (commentez cette ligne en production)
+      // addNotificationTestButton();
+      
+      console.log('✅ Système de notifications prêt !');
+    }
+  }, 500);
+}
+
+// Démarrer le système quand la page est chargée
+document.addEventListener('DOMContentLoaded', function() {
+  // Attendre un peu pour s'assurer que tout est chargé
+  setTimeout(initNotificationSystem, 2000);
+});
+
+// Gestion des permissions refusées - proposer de les réactiver
+function offerToEnableNotifications() {
+  if (!notificationsEnabled && 'Notification' in window) {
+    const enableBtn = document.createElement('div');
+    enableBtn.innerHTML = `
+      <div style="
+        position: fixed; 
+        bottom: 20px; 
+        right: 20px; 
+        background: var(--primary-color); 
+        color: white; 
+        padding: 16px 20px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        max-width: 250px;
+        font-size: 14px;
+      ">
+        🔔 Activez les notifications pour ne manquer aucun message !
+        <div style="margin-top: 8px; font-size: 12px; opacity: 0.8;">
+          Cliquez ici pour activer
+        </div>
+      </div>
+    `;
+    
+    enableBtn.onclick = function() {
+      initializeNotifications();
+      document.body.removeChild(enableBtn);
+    };
+    
+    document.body.appendChild(enableBtn);
+    
+    // Supprimer automatiquement après 10 secondes
+    setTimeout(() => {
+      if (document.body.contains(enableBtn)) {
+        document.body.removeChild(enableBtn);
+      }
+    }, 10000);
+  }
+}
+
+// Proposer d'activer les notifications après 5 secondes
+setTimeout(offerToEnableNotifications, 5000);
+
+console.log('📱 Script de notifications chargé !');
+  </script>
 </body>
 </html>
