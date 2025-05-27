@@ -212,7 +212,7 @@
       scroll-behavior: smooth;
     }
 
-.message {
+    .message {
       background: var(--glass-bg);
       backdrop-filter: blur(10px);
       border: 1px solid var(--glass-border);
@@ -223,91 +223,436 @@
       animation: messageSlide 0.4s ease-out;
       position: relative;
       overflow: hidden;
-      transition: box-shadow 0.2s;
-    }
-    .message.selected, .message:hover {
-      box-shadow: 0 0 16px 2px #4facfe99, var(--shadow-neon);
-      background: rgba(79, 172, 254, 0.07);
-    }
-    .message .reply-btn {
-      position: absolute;
-      right: 18px;
-      top: 12px;
-      background: var(--glass-bg);
-      border: none;
-      color: #4facfe;
-      font-size: 17px;
-      border-radius: 10px;
-      cursor: pointer;
-      padding: 3px 10px;
-      opacity: 0.8;
-      transition: background 0.2s, opacity 0.2s;
-      z-index: 3;
-      display: none;
-    }
-    .message:hover .reply-btn { display: block; }
-
-    .message .reply-quote {
-      font-size: 13px;
-      color: #9ad6ff;
-      background: rgba(79, 172, 254, 0.08);
-      border-left: 3px solid #4facfe;
-      padding: 5px 10px;
-      border-radius: 8px;
-      margin-bottom: 7px;
-      margin-left: 36px;
-      word-break: break-word;
     }
 
-    /* ... (continue le style responsive comme avant) ... */
-    /* Ajoute une badge de notification simple */
-    .notif-badge {
+    .message::before {
+      content: '';
       position: absolute;
-      top: 3px;
-      right: 2px;
-      background: #f5576c;
-      color: #fff;
-      font-size: 11px;
-      border-radius: 8px;
-      padding: 1px 7px;
-      font-weight: 600;
-      z-index: 99;
-      box-shadow: 0 0 10px #f5576c33;
-      display: none;
-    }
-    /* Style pour notification toast */
-    .toast-notif {
-      position: fixed;
-      left: 50%;
-      bottom: 40px;
-      transform: translateX(-50%);
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
       background: var(--accent-gradient);
-      color: #fff;
-      border-radius: 16px;
-      padding: 14px 27px;
-      font-size: 15px;
-      font-weight: 500;
-      box-shadow: 0 4px 20px #4facfe44;
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s, transform 0.4s;
+      border-radius: 0 10px 10px 0;
     }
-    .toast-notif.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateX(-50%) scale(1.04);
+
+    @keyframes messageSlide {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .message .user {
+      font-weight: 600;
+      color: #4facfe;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      text-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #4facfe;
+      box-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+      flex-shrink: 0;
+    }
+
+    .message .content {
+      color: var(--text-light);
+      font-size: 15px;
+      line-height: 1.5;
+      margin-left: 36px;
+    }
+
+    .message.sticker {
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .message.sticker .content {
+      font-size: 3em;
+      margin: 0;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .message-input-container {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 25px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-glass), var(--shadow-neon);
+      margin-bottom: 10px;
+      flex-wrap: nowrap;
+    }
+
+    .sticker-btn {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+    }
+
+    .sticker-btn:hover, .sticker-btn:active {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-neon);
+    }
+
+    #message {
+      flex: 1;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 12px 18px;
+      font-size: 15px;
+      color: var(--text-light);
+      outline: none;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+      min-width: 0;
+    }
+
+    #message::placeholder {
+      color: var(--text-muted);
+    }
+
+    #message:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+      transform: scale(1.02);
+    }
+
+    .send-btn {
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-neon);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover, .send-btn:active {
+      transform: scale(1.1) rotate(15deg);
+      box-shadow: 0 0 25px rgba(79, 172, 254, 0.5);
+    }
+
+    #messageForm {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sticker-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 25px 25px 0 0;
+      padding: 20px 15px;
+      display: none;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 80px;
+      box-shadow: var(--shadow-glass);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sticker {
+      font-size: 32px;
+      padding: 12px;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sticker:hover, .sticker:active {
+      transform: scale(1.2) rotate(5deg);
+      box-shadow: var(--shadow-neon);
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+
+    input[type="tel"] {
+      width: 100%;
+      padding: 15px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 15px;
+      font-size: 16px;
+      color: var(--text-light);
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    input[type="tel"]::placeholder {
+      color: var(--text-muted);
+    }
+
+    input[type="tel"]:focus {
+      outline: none;
+      border-color: #4facfe;
+      box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+      transform: scale(1.02);
+    }
+
+    .signup-btn {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      padding: 15px 0;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: var(--shadow-neon);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .signup-btn:hover, .signup-btn:active {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .no-messages {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 16px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Scrollbar personnalisée */
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: var(--accent-gradient);
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+    }
+
+    /* Responsive - Version améliorée */
+    @media (max-width: 768px) {
+      .header {
+        margin: 0 5px;
+        margin-top: 5px;
+        border-radius: 0 0 20px 20px;
+        padding: 15px;
+      }
+      
+      .header h1 {
+        font-size: 22px;
+      }
+      
+      .signup-card {
+        margin: 0 10px;
+        padding: 25px 20px;
+      }
+      
+      #forum {
+        padding: 0 5px;
+      }
+      
+      .messages {
+        border-radius: 20px;
+        padding: 15px 10px;
+      }
+      
+      .message {
+        padding: 12px 15px;
+        border-radius: 15px;
+      }
+      
+      .message .content {
+        margin-left: 32px;
+        font-size: 14px;
+      }
+      
+      .sticker-panel {
+        left: 5px;
+        right: 5px;
+      }
+      
+      .message-input-container {
+        padding: 12px 15px;
+        gap: 8px;
+        flex-wrap: nowrap;
+        align-items: center;
+      }
+      
+      .sticker-btn, .send-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        font-size: 16px;
+      }
+      
+      #message {
+        min-width: 0;
+        flex: 1;
+        padding: 10px 15px;
+        font-size: 14px;
+      }
+      
+      #messageForm {
+        display: flex !important;
+        flex: 1;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 20px;
+      }
+      
+      .signup-card h2 {
+        font-size: 20px;
+      }
+      
+      .message .content {
+        font-size: 13px;
+      }
+      
+      .sticker {
+        font-size: 28px;
+        padding: 10px;
+      }
+      
+      .message-input-container {
+        padding: 10px 12px;
+        gap: 6px;
+      }
+      
+      .sticker-btn, .send-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+      
+      #message {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      #messageForm {
+        gap: 6px;
+      }
+    }
+
+    /* Améliorations supplémentaires pour mobile */
+    @media (max-width: 600px) {
+      body {
+        background-attachment: scroll;
+      }
+      
+      .container {
+        overflow-x: hidden;
+      }
+      
+      input, button, textarea {
+        -webkit-appearance: none;
+        border-radius: 15px;
+      }
+      
+      .message-input-container {
+        position: relative;
+        z-index: 50;
+      }
+      
+      #message:focus {
+        transform: none;
+      }
+      
+      .send-btn:active, .sticker-btn:active {
+        transform: scale(0.95);
+      }
     }
   </style>
 </head>
 <body>
   <div class="cosmic-particles" id="particles"></div>
+  
   <div class="container">
     <div class="header">
       <h1>🌌 Forum Cosmique Anonyme</h1>
       <div class="subtitle">Explorez l'univers des conversations anonymes</div>
-      <span class="notif-badge" id="notifBadge"></span>
     </div>
+
     <div id="signup-form">
       <div class="signup-card">
         <h2>🚀 Embarquez dans l'Aventure</h2>
@@ -318,14 +663,33 @@
         </form>
       </div>
     </div>
+
     <div id="forum">
       <div class="messages" id="messages"></div>
+
       <div class="sticker-panel" id="stickerPanel">
         <div class="sticker" data-sticker="😀">😀</div>
         <div class="sticker" data-sticker="😂">😂</div>
-        <!-- ... (reste des stickers) ... -->
+        <div class="sticker" data-sticker="😍">😍</div>
+        <div class="sticker" data-sticker="🤔">🤔</div>
+        <div class="sticker" data-sticker="😭">😭</div>
+        <div class="sticker" data-sticker="😡">😡</div>
+        <div class="sticker" data-sticker="👍">👍</div>
+        <div class="sticker" data-sticker="👎">👎</div>
+        <div class="sticker" data-sticker="❤️">❤️</div>
+        <div class="sticker" data-sticker="🔥">🔥</div>
+        <div class="sticker" data-sticker="✨">✨</div>
+        <div class="sticker" data-sticker="🎉">🎉</div>
+        <div class="sticker" data-sticker="💯">💯</div>
+        <div class="sticker" data-sticker="🚀">🚀</div>
+        <div class="sticker" data-sticker="💎">💎</div>
+        <div class="sticker" data-sticker="🌟">🌟</div>
+        <div class="sticker" data-sticker="🌌">🌌</div>
+        <div class="sticker" data-sticker="⭐">⭐</div>
+        <div class="sticker" data-sticker="🌙">🌙</div>
         <div class="sticker" data-sticker="🌈">🌈</div>
       </div>
+
       <div class="message-input-container">
         <button type="button" class="sticker-btn" id="stickerToggle" aria-label="Stickers">😊</button>
         <form id="messageForm">
@@ -334,126 +698,365 @@
         </form>
       </div>
     </div>
-    <div class="toast-notif" id="toastNotif"></div>
   </div>
-  <script>
-    // ... (particules et firebase config inchangés) ...
 
-    // --- Ajout notification toast ---
-    function showToast(msg) {
-      const toast = document.getElementById('toastNotif');
-      toast.textContent = msg;
-      toast.classList.add('active');
-      setTimeout(() => toast.classList.remove('active'), 3000);
+  <script>
+    // Création des particules cosmiques
+    function createCosmicParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 50;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        particlesContainer.appendChild(particle);
+      }
     }
-    // --- Badge notification ---
-    function setNotifBadge(count) {
-      const badge = document.getElementById('notifBadge');
-      badge.textContent = count;
-      badge.style.display = count > 0 ? 'inline-block' : 'none';
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
+      authDomain: "data-fae4a.firebaseapp.com",
+      databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
+      projectId: "data-fae4a",
+      storageBucket: "data-fae4a.firebasestorage.app",
+      messagingSenderId: "1077301559347",
+      appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
+      measurementId: "G-C631QW9NDN"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Variables globales
+    const signupDiv = document.getElementById('signup-form');
+    const forumDiv = document.getElementById('forum');
+    const registerForm = document.getElementById('registerForm');
+    const messageForm = document.getElementById('messageForm');
+    const phoneInput = document.getElementById('phone');
+    const messageInput = document.getElementById('message');
+    const messagesDiv = document.getElementById('messages');
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerToggle = document.getElementById('stickerToggle');
+
+    let username = "";
+    let userPhone = "";
+    let stickerPanelOpen = false;
+
+    // Génération du nom d'utilisateur (tous les utilisateurs s'appellent "user's")
+    function generateUsername() {
+      return "user's";
     }
-    // --- Réponses ---
-    let replyToMsg = null;
-    function setReplyTo(msgId, username, text) {
-      replyToMsg = msgId;
-      messageInput.placeholder = `Répondre à ${username} : ${text.slice(0, 30)}...`;
-      messageInput.focus();
-      messageInput.classList.add('replying');
+
+    function getUniqueAvatar() {
+      return 'image/wze.jpg';
     }
-    function clearReply() {
-      replyToMsg = null;
-      messageInput.placeholder = "✨ Partagez vos pensées cosmiques...";
-      messageInput.classList.remove('replying');
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
-    // Gestion des messages et réponses
-    let latestMsgTimestamp = 0, unreadCount = 0, forumFocused = true;
+
+    function showSignup() {
+      signupDiv.style.display = 'flex';
+      forumDiv.style.display = 'none';
+    }
+
+    function showForum() {
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+    }
+
+    // Gestion de l'inscription unique avec cookies (alternative à localStorage)
+    function setCookie(name, value, days) {
+      const expires = new Date();
+      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+      document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+    }
+
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
+
+    function checkRegistration() {
+      const storedPhone = getCookie('forum_phone');
+      const storedUsername = getCookie('forum_username');
+
+      if (storedPhone && storedUsername) {
+        userPhone = storedPhone;
+        username = storedUsername;
+        showForum();
+        loadMessages();
+        return true;
+      }
+      return false;
+    }
+
+    function saveRegistration() {
+      // Sauvegarder pour 30 jours
+      setCookie('forum_phone', userPhone, 30);
+      setCookie('forum_username', username, 30);
+    }
+
+    // Gestion des stickers
+    function toggleStickerPanel() {
+      stickerPanelOpen = !stickerPanelOpen;
+      stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
+      stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
+    }
+
+    function sendSticker(stickerEmoji) {
+      const msg = {
+        username,
+        text: stickerEmoji,
+        timestamp: Date.now(),
+        isSticker: true
+      };
+      db.ref('messages').push(msg);
+      toggleStickerPanel();
+    }
+
+    // Chargement et affichage des messages
     function loadMessages() {
       messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
+
       db.ref('messages').limitToLast(100).on('value', function(snapshot) {
         messagesDiv.innerHTML = '';
         const msgs = snapshot.val();
-        let newLatest = latestMsgTimestamp;
+
         if (!msgs) {
           messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos avec votre message !</div>';
-          setNotifBadge(0); return;
+          return;
         }
-        Object.entries(msgs).forEach(([msgId, m]) => {
+        
+        Object.values(msgs).forEach(m => {
           const div = document.createElement('div');
           div.className = m.isSticker ? 'message sticker' : 'message';
-          div.dataset.msgid = msgId;
-
-          // Affiche la citation si c'est une réponse
-          if (m.replyTo) {
-            const repliedMsg = msgs[m.replyTo];
-            if (repliedMsg) {
-              div.innerHTML += `<div class="reply-quote"><b>${escapeHtml(repliedMsg.username)}</b>: ${escapeHtml(repliedMsg.text).slice(0, 80)}${repliedMsg.text.length > 80 ? '...' : ''}</div>`;
-            }
-          }
           const userAvatar = getUniqueAvatar();
-          div.innerHTML += `
-            <span class="user">
-              <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
-              ${escapeHtml(m.username)}
-            </span>
-            <div class="content">${m.isSticker ? m.text : escapeHtml(m.text)}</div>
-            <button class="reply-btn" title="Répondre">↩</button>
-          `;
-          // Gestion bouton réponse
-          div.querySelector('.reply-btn').onclick = (e) => {
-            e.stopPropagation();
-            setReplyTo(msgId, m.username, m.text);
-            vibrateOnAction();
-          };
-          div.onclick = () => {
-            if (div.classList.contains('selected')) { div.classList.remove('selected'); clearReply(); }
-            else {
-              document.querySelectorAll('.message').forEach(d => d.classList.remove('selected'));
-              div.classList.add('selected');
-            }
-          };
-          messagesDiv.appendChild(div);
-          newLatest = Math.max(newLatest, m.timestamp || 0);
-        });
-        // Scroll auto
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        // Notification
-        if (newLatest > latestMsgTimestamp && !forumFocused) {
-          unreadCount++;
-          setNotifBadge(unreadCount);
-          showToast('🌠 Nouveau message reçu !');
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Forum Cosmique', { body: 'Nouveau message reçu !', icon: '/favicon.ico' });
+          
+          if (m.isSticker) {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${m.text}</div>
+            `;
+          } else {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${escapeHtml(m.text)}</div>
+            `;
           }
-        }
-        latestMsgTimestamp = newLatest;
+          messagesDiv.appendChild(div);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
-    // Demande notification navigateur
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
-    // Focus/unfocus
-    window.addEventListener('focus', () => { forumFocused = true; unreadCount=0; setNotifBadge(0); });
-    window.addEventListener('blur', () => { forumFocused = false; });
-    // -- Envoi message / réponse
+
+    // Event Listeners
+    window.onload = function() {
+      createCosmicParticles();
+      if (!checkRegistration()) {
+        showSignup();
+      }
+    };
+
+    registerForm.onsubmit = function(e) {
+      e.preventDefault();
+      const phone = phoneInput.value.replace(/\D/g, '');
+      if (phone.length < 7) {
+        alert('🌟 Numéro de téléphone non valide pour entrer dans le cosmos !');
+        return;
+      }
+      userPhone = phone;
+      username = generateUsername();
+      saveRegistration();
+      showForum();
+      loadMessages();
+    };
+
     messageForm.onsubmit = function(e) {
       e.preventDefault();
       const text = messageInput.value.trim();
       if (!text) return;
+      
       const msg = {
-        username, text, timestamp: Date.now(), isSticker: false,
-        ...(replyToMsg ? { replyTo: replyToMsg } : {})
+        username,
+        text,
+        timestamp: Date.now(),
+        isSticker: false
       };
       db.ref('messages').push(msg).then(() => {
-        messageInput.value = ''; clearReply();
+        messageInput.value = '';
       });
     };
-    // ... (reste du JS : stickers, cookies, login, resize, etc. inchangé) ...
-    // Ajout raccourci pour annuler la réponse
-    messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && replyToMsg) clearReply();
+
+    stickerToggle.onclick = toggleStickerPanel;
+    
+    // Gestion des clics sur les stickers
+    document.querySelectorAll('.sticker').forEach(sticker => {
+      sticker.onclick = function() {
+        const emoji = this.getAttribute('data-sticker');
+        sendSticker(emoji);
+      };
     });
-    // ... (autres scripts, animation, vibration, etc. inchangés) ...
+
+    // Fermer le panneau de stickers si on clique ailleurs
+    document.addEventListener('click', function(e) {
+      if (stickerPanelOpen && !stickerPanel.contains(e.target) && e.target !== stickerToggle) {
+        toggleStickerPanel();
+      }
+    });
+
+    // Amélioration de l'expérience mobile
+    messageInput.addEventListener('focus', function() {
+      setTimeout(() => {
+        this.scrollIntoView({block: "center", behavior: "smooth"});
+      }, 300);
+    });
+
+    // Effet de parallaxe sur les particules
+    window.addEventListener('scroll', function() {
+      const particles = document.querySelectorAll('.particle');
+      const scrolled = window.pageYOffset;
+      particles.forEach((particle, index) => {
+        const speed = (index % 3 + 1) * 0.5;
+        particle.style.transform = `translateY(${scrolled * speed}px)`;
+      });
+    });
+
+    // Animation d'entrée pour les messages
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -10px 0px'
+    };
+
+    const messageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateX(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observer les nouveaux messages
+    const observeNewMessages = () => {
+      const messages = document.querySelectorAll('.message');
+      messages.forEach(message => {
+        if (!message.dataset.observed) {
+          messageObserver.observe(message);
+          message.dataset.observed = 'true';
+        }
+      });
+    };
+
+    // Appeler l'observateur après le chargement des messages
+    const originalLoadMessages = loadMessages;
+    loadMessages = function() {
+      originalLoadMessages();
+      setTimeout(observeNewMessages, 100);
+    };
+
+    // Effet de typing indicator
+    let typingTimeout;
+    messageInput.addEventListener('input', function() {
+      clearTimeout(typingTimeout);
+      // Ici on pourrait ajouter un indicateur de frappe
+      typingTimeout = setTimeout(() => {
+        // L'utilisateur a arrêté de taper
+      }, 1000);
+    });
+
+    // Gestion des raccourcis clavier
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && stickerPanelOpen) {
+        toggleStickerPanel();
+      }
+      if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
+        messageForm.dispatchEvent(new Event('submit'));
+      }
+    });
+
+    // Animation des boutons au survol
+    document.querySelectorAll('.sticker-btn, .send-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.1)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+      });
+    });
+
+    // Effet de vibration sur mobile (si supporté)
+    function vibrateOnAction() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }
+
+    // Ajouter la vibration aux actions importantes
+    document.querySelectorAll('.send-btn, .signup-btn').forEach(btn => {
+      btn.addEventListener('click', vibrateOnAction);
+    });
+
+    // Auto-resize du champ de texte
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Gestion du mode sombre/clair automatique
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    function updateTheme() {
+      if (prefersDark.matches) {
+        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.05)');
+        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.1)');
+      } else {
+        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.1)');
+        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.2)');
+      }
+    }
+
+    prefersDark.addEventListener('change', updateTheme);
+    updateTheme();
+
+    // Notification de nouveau message (si la page n'est pas visible)
+    let pageVisible = true;
+    document.addEventListener('visibilitychange', function() {
+      pageVisible = !document.hidden;
+    });
+
+    // Animation de pulsation pour les nouveaux messages hors écran
+    function highlightNewMessage(messageElement) {
+      if (!pageVisible) {
+        messageElement.style.animation = 'pulse 2s ease-in-out 3';
+      }
+    }
+
+    console.log('🌌 Forum Cosmique initialisé avec succès!');
   </script>
 </body>
 </html>
