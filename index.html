@@ -863,4 +863,316 @@
     // Affichage des messages
     function displayMessage(messageData, messageId) {
       const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${messageData.type === 'sticker
+      messageDiv.className = `message ${messageData.type === 'sticker' ? 'sticker' : ''} ${messageData.replyTo ? 'reply' : ''}`;
+      messageDiv.setAttribute('data-id', messageId);
+
+      let replyHtml = '';
+      if (messageData.replyTo && messageData.replyToData) {
+        replyHtml = `
+          <div class="reply-info">
+            <div class="reply-author">${escapeHtml(messageData.replyToData.username)}</div>
+            <div class="reply-text">${escapeHtml(messageData.replyToData.text)}</div>
+          </div>
+        `;
+      }
+
+      messageDiv.innerHTML = `
+        ${replyHtml}
+        <div class="message-header">
+          <div class="user-info">
+            <img src="${AVATAR_URL}" alt="Avatar" class="user-avatar">
+            <span class="user-name">${escapeHtml(messageData.username)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="message-time">${formatTime(messageData.timestamp)}</span>
+            <div class="message-actions">
+              <button class="action-btn" onclick="replyToMessage('${messageId}', '${escapeHtml(messageData.username)}', '${escapeHtml(messageData.text)}')">
+                Répondre
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="message-content">${escapeHtml(messageData.text)}</div>
+      `;
+
+      return messageDiv;
+    }
+
+    // Chargement des messages
+    function loadMessages() {
+      messagesDiv.innerHTML = '<div class="loading">Chargement des messages...</div>';
+      
+      db.ref('messages').orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
+        messagesDiv.innerHTML = '';
+        const messages = [];
+        
+        snapshot.forEach((child) => {
+          messages.push({ id: child.key, data: child.val() });
+        });
+
+        if (messages.length === 0) {
+          messagesDiv.innerHTML = '<div class="no-messages">Aucun message pour le moment. Soyez le premier à écrire !</div>';
+          return;
+        }
+
+        messages.forEach(({ id, data }) => {
+          const messageElement = displayMessage(data, id);
+          messagesDiv.appendChild(messageElement);
+          
+          // Notification pour les nouveaux messages
+          if (data.timestamp > lastMessageTime && data.phone !== userPhone) {
+            showNotification(data);
+          }
+        });
+
+        // Scroll vers le bas
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        // Mettre à jour le timestamp du dernier message
+        if (messages.length > 0) {
+          lastMessageTime = Math.max(lastMessageTime, messages[messages.length - 1].data.timestamp);
+        }
+      });
+    }
+
+    // Envoi de message
+    function sendMessage(text, type = 'text') {
+      if (!text.trim()) return;
+
+      const messageData = {
+        text: text.trim(),
+        username: username,
+        phone: userPhone,
+        timestamp: Date.now(),
+        type: type
+      };
+
+      // Ajouter les données de réponse si nécessaire
+      if (replyingTo) {
+        messageData.replyTo = replyingTo;
+        
+        // Récupérer les données du message original
+        db.ref(`messages/${replyingTo}`).once('value', (snapshot) => {
+          const originalMessage = snapshot.val();
+          if (originalMessage) {
+            messageData.replyToData = {
+              username: originalMessage.username,
+              text: originalMessage.text
+            };
+          }
+          
+          // Envoyer le message avec les données de réponse
+          db.ref('messages').push(messageData);
+        });
+        
+        cancelReply();
+      } else {
+        // Envoyer le message normal
+        db.ref('messages').push(messageData);
+      }
+
+      // Réinitialiser le formulaire
+      messageInput.value = '';
+      adjustTextareaHeight();
+    }
+
+    // Ajustement automatique de la hauteur du textarea
+    function adjustTextareaHeight() {
+      messageInput.style.height = 'auto';
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+    }
+
+    // Gestion du formulaire d'inscription
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const phone = phoneInput.value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
+        return;
+      }
+
+      // Accepter n'importe quel numéro (pas de validation stricte)
+      userPhone = phone;
+      username = generateUsername(phone);
+      
+      // Masquer le formulaire d'inscription et afficher le forum
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      
+      // Charger les messages
+      loadMessages();
+      
+      // Initialiser les notifications
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
+      }
+    });
+
+    // Gestion du formulaire de message
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (text) {
+        sendMessage(text);
+      }
+    });
+
+    // Gestion des stickers
+    stickerToggle.addEventListener('click', () => {
+      stickerPanel.classList.toggle('active');
+    });
+
+    // Fermer le panneau de stickers en cliquant ailleurs
+    document.addEventListener('click', (e) => {
+      if (!stickerToggle.contains(e.target) && !stickerPanel.contains(e.target)) {
+        stickerPanel.classList.remove('active');
+      }
+    });
+
+    // Gestion des clics sur les stickers
+    document.querySelectorAll('.sticker').forEach(sticker => {
+      sticker.addEventListener('click', () => {
+        const stickerText = sticker.getAttribute('data-sticker');
+        sendMessage(stickerText, 'sticker');
+        stickerPanel.classList.remove('active');
+      });
+    });
+
+    // Ajustement automatique du textarea
+    messageInput.addEventListener('input', adjustTextareaHeight);
+
+    // Gestion des notifications
+    notificationToggle.addEventListener('click', () => {
+      if (notificationsEnabled) {
+        notificationsEnabled = false;
+        localStorage.removeItem('notifications_enabled');
+      } else {
+        requestNotificationPermission();
+      }
+      updateNotificationButton();
+    });
+
+    // Gestion des raccourcis clavier
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const text = messageInput.value.trim();
+        if (text) {
+          sendMessage(text);
+        }
+      }
+      
+      if (e.key === 'Escape' && replyingTo) {
+        cancelReply();
+      }
+    });
+
+    // Mise à jour des temps en temps réel
+    setInterval(() => {
+      document.querySelectorAll('.message-time').forEach((timeElement, index) => {
+        const messageElement = timeElement.closest('.message');
+        const messageId = messageElement.getAttribute('data-id');
+        if (messageId) {
+          db.ref(`messages/${messageId}`).once('value', (snapshot) => {
+            const messageData = snapshot.val();
+            if (messageData) {
+              timeElement.textContent = formatTime(messageData.timestamp);
+            }
+          });
+        }
+      });
+    }, 60000); // Mise à jour chaque minute
+
+    // Initialisation
+    updateNotificationButton();
+    
+    // Auto-focus sur le champ de téléphone
+    phoneInput.focus();
+
+    // Gestion de la visibilité de la page pour les notifications
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Marquer tous les messages comme lus quand la page devient visible
+        setTimeout(() => {
+          lastMessageTime = Date.now();
+        }, 1000);
+      }
+    });
+
+    // Vérifier si l'utilisateur est déjà connecté (persistance)
+    const savedPhone = localStorage.getItem('user_phone');
+    const savedUsername = localStorage.getItem('user_username');
+    
+    if (savedPhone && savedUsername) {
+      userPhone = savedPhone;
+      username = savedUsername;
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      loadMessages();
+      
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
+      }
+    }
+
+    // Sauvegarder les données utilisateur lors de l'inscription
+    const originalSubmitHandler = registerForm.onsubmit;
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const phone = phoneInput.value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
+        return;
+      }
+
+      userPhone = phone;
+      username = generateUsername(phone);
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem('user_phone', userPhone);
+      localStorage.setItem('user_username', username);
+      
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+      loadMessages();
+      
+      const notifSetting = localStorage.getItem('notifications_enabled');
+      if (notifSetting === 'true') {
+        requestNotificationPermission();
+      }
+    });
+
+    // Fonction pour se déconnecter (optionnelle)
+    function logout() {
+      localStorage.removeItem('user_phone');
+      localStorage.removeItem('user_username');
+      localStorage.removeItem('notifications_enabled');
+      location.reload();
+    }
+
+    // Ajouter un bouton de déconnexion dans le header (optionnel)
+    const logoutBtn = document.createElement('button');
+    logoutBtn.textContent = '↩ Déconnexion';
+    logoutBtn.className = 'notification-toggle';
+    logoutBtn.style.marginLeft = '8px';
+    logoutBtn.onclick = logout;
+    
+    // Ajouter le bouton seulement quand l'utilisateur est connecté
+    const checkUserStatus = () => {
+      if (userPhone && forumDiv.style.display === 'flex') {
+        if (!document.querySelector('.logout-btn')) {
+          logoutBtn.className += ' logout-btn';
+          document.querySelector('.header').appendChild(logoutBtn);
+        }
+      }
+    };
+
+    // Vérifier le statut utilisateur périodiquement
+    setInterval(checkUserStatus, 1000);
+  </script>
+</body>
+</html>
