@@ -1,1 +1,1133 @@
-je fait des mis aa jour
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Forum Anonyme - Design Moderne</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4338ca;
+      --secondary-color: #f59e0b;
+      --accent-color: #10b981;
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border-color: #334155;
+      --border-hover: #475569;
+      --glass-bg: rgba(30, 41, 59, 0.8);
+      --glass-border: rgba(148, 163, 184, 0.1);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --glow-primary: 0 0 20px rgba(99, 102, 241, 0.3);
+      --glow-accent: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100vw;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: 
+        radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        linear-gradient(135deg, var(--bg-primary) 0%, #0c1121 50%, var(--bg-primary) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: var(--text-primary);
+      touch-action: manipulation;
+      overflow-x: hidden;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .floating-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1));
+      animation: float 20s ease-in-out infinite;
+      backdrop-filter: blur(1px);
+    }
+
+    .shape:nth-child(1) { width: 80px; height: 80px; top: 20%; left: 10%; animation-delay: 0s; }
+    .shape:nth-child(2) { width: 120px; height: 120px; top: 60%; right: 15%; animation-delay: -5s; }
+    .shape:nth-child(3) { width: 60px; height: 60px; bottom: 30%; left: 20%; animation-delay: -10s; }
+    .shape:nth-child(4) { width: 100px; height: 100px; top: 10%; right: 30%; animation-delay: -15s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+      33% { transform: translateY(-30px) rotate(120deg); opacity: 0.6; }
+      66% { transform: translateY(20px) rotate(240deg); opacity: 0.4; }
+    }
+
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+      max-width: 100vw;
+    }
+
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 0 0 24px 24px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      margin: 0 16px 20px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 50%, var(--accent-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    #signup-form {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .signup-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 40px 32px;
+      box-shadow: var(--shadow-xl);
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signup-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    }
+
+    .signup-card h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .signup-card p {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    #forum {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      padding: 0 16px 16px;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-lg);
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      background: rgba(51, 65, 85, 0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      animation: messageSlide 0.4s ease-out;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .message:hover {
+      background: rgba(51, 65, 85, 0.6);
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .message::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      border-radius: 0 8px 8px 0;
+    }
+
+    @keyframes messageSlide {
+      from { opacity: 0; transform: translateX(-15px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .message .user {
+      font-weight: 600;
+      color: var(--primary-color);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+      box-shadow: var(--glow-primary);
+      flex-shrink: 0;
+    }
+
+    .message .content {
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.5;
+      margin-left: 42px;
+      word-wrap: break-word;
+    }
+
+    .message.sticker {
+      background: rgba(99, 102, 241, 0.1);
+      backdrop-filter: blur(15px);
+      text-align: center;
+      padding: 24px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .message.sticker .content {
+      font-size: 3em;
+      margin: 0;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+    }
+
+    .message-input-container {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+      flex-wrap: nowrap;
+    }
+
+    .sticker-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .sticker-btn:hover, .sticker-btn:active {
+      background: var(--border-hover);
+      transform: scale(1.05);
+      box-shadow: var(--shadow-md);
+    }
+
+    #message {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: 'Inter', sans-serif;
+      min-width: 0;
+      resize: none;
+    }
+
+    #message::placeholder {
+      color: var(--text-muted);
+    }
+
+    #message:focus {
+      border-color: var(--primary-color);
+      box-shadow: var(--glow-primary);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      border: none;
+      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: white;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-md);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover, .send-btn:active {
+      transform: scale(1.05);
+      box-shadow: var(--glow-primary), var(--shadow-lg);
+    }
+
+    #messageForm {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sticker-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px;
+      display: none;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 80px;
+      box-shadow: var(--shadow-xl);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sticker {
+      font-size: 28px;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sticker:hover, .sticker:active {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-md);
+      background: var(--border-hover);
+    }
+
+    input[type="tel"] {
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 16px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      margin-bottom: 24px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    input[type="tel"]::placeholder {
+      color: var(--text-muted);
+    }
+
+    input[type="tel"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: var(--glow-primary);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .signup-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 16px 0;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+      box-shadow: var(--shadow-md);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .signup-btn:hover, .signup-btn:active {
+      transform: translateY(-2px);
+      box-shadow: var(--glow-primary), var(--shadow-lg);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .no-messages {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 16px;
+      background: rgba(51, 65, 85, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Notification Toast */
+    .notification-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-xl);
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+    }
+
+    .notification-toast.show {
+      transform: translateX(0);
+    }
+
+    .notification-toast .notification-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .notification-toast .notification-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Scrollbar personnalisée */
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: rgba(51, 65, 85, 0.3);
+      border-radius: 10px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      border-radius: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        margin: 0 8px 16px;
+        border-radius: 0 0 16px 16px;
+        padding: 20px 16px;
+      }
+      
+      .header h1 {
+        font-size: 24px;
+      }
+      
+      .signup-card {
+        margin: 0 16px;
+        padding: 32px 24px;
+      }
+      
+      #forum {
+        padding: 0 8px 16px;
+      }
+      
+      .messages {
+        border-radius: 16px;
+        padding: 20px 16px;
+      }
+      
+      .message {
+        padding: 14px 16px;
+        border-radius: 12px;
+      }
+      
+      .message .content {
+        margin-left: 38px;
+        font-size: 14px;
+      }
+      
+      .sticker-panel {
+        left: 8px;
+        right: 8px;
+      }
+      
+      .message-input-container {
+        padding: 12px 16px;
+        gap: 10px;
+      }
+      
+      .sticker-btn, .send-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+      
+      #message {
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 22px;
+      }
+      
+      .signup-card h2 {
+        font-size: 24px;
+      }
+      
+      .sticker {
+        font-size: 24px;
+        padding: 10px;
+      }
+      
+      .notification-toast {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+  body {
+    background-attachment: scroll;
+  }
+  input,
+  button,
+  textarea {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 12px;
+  }
+
+
+      #message:focus {
+        transform: none;
+      }
+      
+      .send-btn:active, .sticker-btn:active {
+        transform: scale(0.98);
+      }
+    }
+
+    /* Animation pour les nouveaux messages */
+    .message.new-message {
+      animation: newMessagePulse 1s ease-out;
+    }
+
+    @keyframes newMessagePulse {
+      0% { 
+        background: rgba(99, 102, 241, 0.2);
+        transform: scale(1.02);
+      }
+      100% { 
+        background: rgba(51, 65, 85, 0.4);
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+  
+  <div class="container">
+    <div class="header">
+      <h1>💬 Forum Anonyme</h1>
+      <div class="subtitle">Discussions anonymes et sécurisées</div>
+    </div>
+
+    <div id="signup-form">
+      <div class="signup-card">
+        <h2>🚀 Rejoignez-nous</h2>
+        <p>Entrez votre numéro de téléphone pour accéder au forum. Vos conversations restent entièrement anonymes et sécurisées.</p>
+        <form id="registerForm">
+          <input type="tel" id="phone" name="phone" required pattern="[0-9]{7,15}" autocomplete="tel" placeholder="Votre numéro de téléphone">
+          <button type="submit" class="signup-btn">Entrer dans le forum</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="forum">
+      <div class="messages" id="messages"></div>
+
+      <div class="sticker-panel" id="stickerPanel">
+        <div class="sticker" data-sticker="😀">😀</div>
+        <div class="sticker" data-sticker="😂">😂</div>
+        <div class="sticker" data-sticker="😍">😍</div>
+        <div class="sticker" data-sticker="🤔">🤔</div>
+        <div class="sticker" data-sticker="😭">😭</div>
+        <div class="sticker" data-sticker="😡">😡</div>
+        <div class="sticker" data-sticker="👍">👍</div>
+        <div class="sticker" data-sticker="👎">👎</div>
+        <div class="sticker" data-sticker="❤️">❤️</div>
+        <div class="sticker" data-sticker="🔥">🔥</div>
+        <div class="sticker" data-sticker="✨">✨</div>
+        <div class="sticker" data-sticker="🎉">🎉</div>
+        <div class="sticker" data-sticker="💯">💯</div>
+        <div class="sticker" data-sticker="🚀">🚀</div>
+        <div class="sticker" data-sticker="💎">💎</div>
+        <div class="sticker" data-sticker="🌟">🌟</div>
+        <div class="sticker" data-sticker="🌌">🌌</div>
+        <div class="sticker" data-sticker="⭐">⭐</div>
+        <div class="sticker" data-sticker="🌙">🌙</div>
+        <div class="sticker" data-sticker="🌈">🌈</div>
+      </div>
+
+      <div class="message-input-container">
+        <button type="button" class="sticker-btn" id="stickerToggle" aria-label="Stickers">😊</button>
+        <form id="messageForm">
+          <input type="text" id="message" placeholder="Écrivez votre message..." required maxlength="256" autocomplete="off">
+          <button type="submit" class="send-btn" aria-label="Envoyer">📤</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
+      authDomain: "data-fae4a.firebaseapp.com",
+      databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
+      projectId: "data-fae4a",
+      storageBucket: "data-fae4a.firebasestorage.app",
+      messagingSenderId: "1077301559347",
+      appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
+      measurementId: "G-C631QW9NDN"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Variables globales
+    const signupDiv = document.getElementById('signup-form');
+    const forumDiv = document.getElementById('forum');
+    const registerForm = document.getElementById('registerForm');
+    const messageForm = document.getElementById('messageForm');
+    const phoneInput = document.getElementById('phone');
+    const messageInput = document.getElementById('message');
+    const messagesDiv = document.getElementById('messages');
+    const stickerPanel = document.getElementById('stickerPanel');
+    const stickerToggle = document.getElementById('stickerToggle');
+
+    let username = "";
+    let userPhone = "";
+    let stickerPanelOpen = false;
+    let lastMessageCount = 0;
+    let isPageVisible = true;
+    let notificationPermission = false;
+
+    // Gestion des notifications
+    async function requestNotificationPermission() {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        notificationPermission = permission === 'granted';
+        return notificationPermission;
+      }
+      return false;
+    }
+
+    function showNotification(title, message, options = {}) {
+      if (!notificationPermission || isPageVisible) return;
+
+      if ('Notification' in window) {
+        const notification = new Notification(title, {
+          body: message,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">💬</text></svg>',
+          badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/></svg>',
+          tag: 'forum-message',
+          requireInteraction: false,
+          silent: false,
+          ...options
+        });
+
+        // Auto-fermeture après 5 secondes
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+
+        // Clic sur la notification pour revenir au forum
+        notification.onclick = function() {
+          window.focus();
+          notification.close();
+        };
+      }
+    }
+
+    function showToastNotification(title, message) {
+      const toast = document.createElement('div');
+      toast.className = 'notification-toast';
+      toast.innerHTML = `
+        <div class="notification-title">${escapeHtml(title)}</div>
+        <div class="notification-message">${escapeHtml(message)}</div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Animation d'entrée
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 100);
+      
+      // Suppression automatique
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 4000);
+    }
+
+    // Détection de la visibilité de la page
+    document.addEventListener('visibilitychange', function() {
+      isPageVisible = !document.hidden;
+    });
+
+    // Génération du nom d'utilisateur (tous les utilisateurs s'appellent "user's")
+    function generateUsername() {
+      return "user's";
+    }
+
+    function getUniqueAvatar() {
+      return 'image/wze.jpg';
+    }
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function showSignup() {
+      signupDiv.style.display = 'flex';
+      forumDiv.style.display = 'none';
+    }
+
+    function showForum() {
+      signupDiv.style.display = 'none';
+      forumDiv.style.display = 'flex';
+    }
+
+    // Gestion de l'inscription unique avec cookies (alternative à localStorage)
+    function setCookie(name, value, days) {
+      const expires = new Date();
+      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+      document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+    }
+
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
+
+    function checkRegistration() {
+      const storedPhone = getCookie('forum_phone');
+      const storedUsername = getCookie('forum_username');
+
+      if (storedPhone && storedUsername) {
+        userPhone = storedPhone;
+        username = storedUsername;
+        showForum();
+        loadMessages();
+        return true;
+      }
+      return false;
+    }
+
+    function saveRegistration() {
+      // Sauvegarder pour 30 jours
+      setCookie('forum_phone', userPhone, 30);
+      setCookie('forum_username', username, 30);
+    }
+
+    // Gestion des stickers
+    function toggleStickerPanel() {
+      stickerPanelOpen = !stickerPanelOpen;
+      stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
+      stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
+    }
+
+    function sendSticker(stickerEmoji) {
+      const msg = {
+        username,
+        text: stickerEmoji,
+        timestamp: Date.now(),
+        isSticker: true
+      };
+      db.ref('messages').push(msg);
+      toggleStickerPanel();
+    }
+
+    // Chargement et affichage des messages
+    function loadMessages() {
+      messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
+
+      db.ref('messages').limitToLast(100).on('value', function(snapshot) {
+        messagesDiv.innerHTML = '';
+        const msgs = snapshot.val();
+
+        if (!msgs) {
+          messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos avec votre message !</div>';
+          return;
+        }
+        
+        Object.values(msgs).forEach(m => {
+          const div = document.createElement('div');
+          div.className = m.isSticker ? 'message sticker' : 'message';
+          const userAvatar = getUniqueAvatar();
+          
+          if (m.isSticker) {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${m.text}</div>
+            `;
+          } else {
+            div.innerHTML = `
+              <span class="user">
+                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                ${escapeHtml(m.username)}
+              </span>
+              <div class="content">${escapeHtml(m.text)}</div>
+            `;
+          }
+          messagesDiv.appendChild(div);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    // Event Listeners
+    window.onload = function() {
+      createCosmicParticles();
+      if (!checkRegistration()) {
+        showSignup();
+      }
+    };
+
+    registerForm.onsubmit = function(e) {
+      e.preventDefault();
+      const phone = phoneInput.value.replace(/\D/g, '');
+      if (phone.length < 7) {
+        alert('🌟 Numéro de téléphone non valide pour entrer dans le cosmos !');
+        return;
+      }
+      userPhone = phone;
+      username = generateUsername();
+      saveRegistration();
+      showForum();
+      loadMessages();
+    };
+
+    messageForm.onsubmit = function(e) {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text) return;
+      
+      const msg = {
+        username,
+        text,
+        timestamp: Date.now(),
+        isSticker: false
+      };
+      db.ref('messages').push(msg).then(() => {
+        messageInput.value = '';
+      });
+    };
+
+    stickerToggle.onclick = toggleStickerPanel;
+    
+    // Gestion des clics sur les stickers
+    document.querySelectorAll('.sticker').forEach(sticker => {
+      sticker.onclick = function() {
+        const emoji = this.getAttribute('data-sticker');
+        sendSticker(emoji);
+      };
+    });
+
+    // Fermer le panneau de stickers si on clique ailleurs
+    document.addEventListener('click', function(e) {
+      if (stickerPanelOpen && !stickerPanel.contains(e.target) && e.target !== stickerToggle) {
+        toggleStickerPanel();
+      }
+    });
+
+    // Amélioration de l'expérience mobile
+    messageInput.addEventListener('focus', function() {
+      setTimeout(() => {
+        this.scrollIntoView({block: "center", behavior: "smooth"});
+      }, 300);
+    });
+
+    // Effet de parallaxe sur les particules
+    window.addEventListener('scroll', function() {
+      const particles = document.querySelectorAll('.particle');
+      const scrolled = window.pageYOffset;
+      particles.forEach((particle, index) => {
+        const speed = (index % 3 + 1) * 0.5;
+        particle.style.transform = `translateY(${scrolled * speed}px)`;
+      });
+    });
+
+    // Animation d'entrée pour les messages
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -10px 0px'
+    };
+
+    const messageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateX(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observer les nouveaux messages
+    const observeNewMessages = () => {
+      const messages = document.querySelectorAll('.message');
+      messages.forEach(message => {
+        if (!message.dataset.observed) {
+          messageObserver.observe(message);
+          message.dataset.observed = 'true';
+        }
+      });
+    };
+
+    // Appeler l'observateur après le chargement des messages
+    const originalLoadMessages = loadMessages;
+    loadMessages = function() {
+      originalLoadMessages();
+      setTimeout(observeNewMessages, 100);
+    };
+
+    // Effet de typing indicator
+    let typingTimeout;
+    messageInput.addEventListener('input', function() {
+      clearTimeout(typingTimeout);
+      // Ici on pourrait ajouter un indicateur de frappe
+      typingTimeout = setTimeout(() => {
+        // L'utilisateur a arrêté de taper
+      }, 1000);
+    });
+
+    // Gestion des raccourcis clavier
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && stickerPanelOpen) {
+        toggleStickerPanel();
+      }
+      if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
+        messageForm.dispatchEvent(new Event('submit'));
+      }
+    });
+
+    // Animation des boutons au survol
+    document.querySelectorAll('.sticker-btn, .send-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.1)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+      });
+    });
+
+    // Effet de vibration sur mobile (si supporté)
+    function vibrateOnAction() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }
+
+    // Ajouter la vibration aux actions importantes
+    document.querySelectorAll('.send-btn, .signup-btn').forEach(btn => {
+      btn.addEventListener('click', vibrateOnAction);
+    });
+
+    // Auto-resize du champ de texte
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Gestion du mode sombre/clair automatique
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    function updateTheme() {
+      if (prefersDark.matches) {
+        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.05)');
+        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.1)');
+      } else {
+        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.1)');
+        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.2)');
+      }
+    }
+
+    prefersDark.addEventListener('change', updateTheme);
+    updateTheme();
+
+    // Notification de nouveau message (si la page n'est pas visible)
+    let pageVisible = true;
+    document.addEventListener('visibilitychange', function() {
+      pageVisible = !document.hidden;
+    });
+
+    // Animation de pulsation pour les nouveaux messages hors écran
+    function highlightNewMessage(messageElement) {
+      if (!pageVisible) {
+        messageElement.style.animation = 'pulse 2s ease-in-out 3';
+      }
+    }
+
+    console.log('🌌 Forum Cosmique initialisé avec succès!');
+  </script>
+</body>
+</html>
