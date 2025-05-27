@@ -8,21 +8,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    :root {
-      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      --dark-gradient: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
-      --glass-bg: rgba(255, 255, 255, 0.1);
-      --glass-border: rgba(255, 255, 255, 0.2);
-      --text-light: rgba(255, 255, 255, 0.9);
-      --text-muted: rgba(255, 255, 255, 0.6);
-      --shadow-neon: 0 0 20px rgba(102, 126, 234, 0.3);
-      --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-
     * {
       margin: 0;
       padding: 0;
@@ -30,96 +17,86 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    :root {
+      --primary-color: #6366f1;
+      --primary-hover: #5b21b6;
+      --secondary-color: #3b82f6;
+      --accent-color: #06b6d4;
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border-color: #475569;
+      --success-color: #10b981;
+      --danger-color: #ef4444;
+      --warning-color: #f59e0b;
+      --glass-bg: rgba(30, 41, 59, 0.8);
+      --glass-border: rgba(203, 213, 225, 0.1);
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
     html, body {
-      width: 100vw;
+      width: 100%;
       min-height: 100vh;
       overflow-x: hidden;
       font-size: 16px;
+      line-height: 1.5;
     }
 
     body {
-      font-family: 'Poppins', sans-serif;
-      background: 
-        radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.2) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(120, 200, 255, 0.1) 0%, transparent 50%),
-        linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%),
-        url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-      background-size: cover, cover, cover, cover, cover;
-      background-position: center;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
       background-attachment: fixed;
       min-height: 100vh;
-      color: var(--text-light);
-      touch-action: manipulation;
-      overflow-x: hidden;
-    }
-
-    .cosmic-particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .particle {
-      position: absolute;
-      width: 3px;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
-      50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .container {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      backdrop-filter: blur(20px);
-      position: relative;
-      z-index: 10;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px;
     }
 
     .header {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
-      border-radius: 0 0 30px 30px;
-      padding: 20px 20px 15px;
+      border-radius: 16px;
+      padding: 20px;
       text-align: center;
-      box-shadow: var(--shadow-glass), var(--shadow-neon);
+      box-shadow: var(--shadow-lg);
+      margin: 16px 0;
       position: sticky;
-      top: 0;
+      top: 16px;
       z-index: 100;
-      margin: 0 10px;
-      margin-top: 10px;
     }
 
     .header h1 {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #fff 0%, #a8edea 100%);
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-      letter-spacing: 1px;
+      letter-spacing: -0.025em;
     }
 
     .header .subtitle {
       font-size: 14px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       font-weight: 400;
-      line-height: 1.4;
-      opacity: 0.9;
     }
 
     #signup-form {
@@ -127,61 +104,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 20px;
-      animation: fadeInUp 0.8s ease-out;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+      padding: 40px 0;
     }
 
     .signup-card {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
-      border-radius: 25px;
-      padding: 35px 25px;
-      box-shadow: var(--shadow-glass), var(--shadow-neon);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: var(--shadow-xl);
       width: 100%;
       max-width: 400px;
       text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .signup-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: conic-gradient(from 0deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-      animation: rotate 4s linear infinite;
-      z-index: -1;
-    }
-
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
     }
 
     .signup-card h2 {
       font-size: 24px;
       font-weight: 600;
-      margin-bottom: 15px;
-      background: var(--primary-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      margin-bottom: 12px;
+      color: var(--text-primary);
     }
 
     .signup-card p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 15px;
-      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-size: 14px;
     }
 
     #forum {
@@ -189,148 +138,201 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
-      padding: 0 10px;
-      animation: slideIn 0.6s ease-out;
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+      gap: 16px;
+      padding-bottom: 16px;
     }
 
     .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 15px;
+      padding: 20px;
       background: var(--glass-bg);
-      backdrop-filter: blur(15px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
-      border-radius: 25px;
-      margin-bottom: 15px;
-      box-shadow: var(--shadow-glass);
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      max-height: calc(100vh - 200px);
     }
 
     .message {
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 15px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
       margin-bottom: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      animation: messageSlide 0.4s ease-out;
+      transition: all 0.2s ease;
       position: relative;
-      overflow: hidden;
     }
 
-    .message::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--accent-gradient);
-      border-radius: 0 10px 10px 0;
+    .message:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
 
-    @keyframes messageSlide {
-      from { opacity: 0; transform: translateX(-20px); }
-      to { opacity: 1; transform: translateX(0); }
+    .message.reply {
+      margin-left: 20px;
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .reply-to {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-left: 3px solid var(--accent-color);
     }
 
     .message .user {
       font-weight: 600;
-      color: #4facfe;
-      font-size: 13px;
+      color: var(--primary-color);
+      font-size: 14px;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 6px;
-      text-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+      margin-bottom: 8px;
     }
 
     .user-avatar {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #4facfe;
-      box-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
       flex-shrink: 0;
     }
 
     .message .content {
-      color: var(--text-light);
+      color: var(--text-primary);
       font-size: 15px;
       line-height: 1.5;
-      margin-left: 36px;
+      word-wrap: break-word;
     }
 
     .message.sticker {
-      background: var(--glass-bg);
-      backdrop-filter: blur(15px);
       text-align: center;
       padding: 20px;
     }
 
     .message.sticker .content {
-      font-size: 3em;
+      font-size: 48px;
       margin: 0;
-      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .message-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .message:hover .message-actions {
+      opacity: 1;
+    }
+
+    .reply-btn {
+      background: var(--secondary-color);
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .reply-btn:hover {
+      background: var(--primary-hover);
+      transform: scale(1.05);
+    }
+
+    .timestamp {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
     }
 
     .message-input-container {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
-      border-radius: 25px;
-      padding: 15px 20px;
+      border-radius: 16px;
+      padding: 16px;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 12px;
-      box-shadow: var(--shadow-glass), var(--shadow-neon);
-      margin-bottom: 10px;
-      flex-wrap: nowrap;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .reply-preview {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: none;
+      border-left: 3px solid var(--accent-color);
+      position: relative;
+    }
+
+    .reply-preview .close-reply {
+      position: absolute;
+      right: 8px;
+      top: 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
     }
 
     .sticker-btn {
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
       border-radius: 50%;
-      width: 45px;
-      height: 45px;
-      font-size: 22px;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
       flex-shrink: 0;
     }
 
-    .sticker-btn:hover, .sticker-btn:active {
+    .sticker-btn:hover {
+      background: var(--primary-color);
       transform: scale(1.1);
-      box-shadow: var(--shadow-neon);
     }
 
     #message {
       flex: 1;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 12px 18px;
-      font-size: 15px;
-      color: var(--text-light);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text-primary);
       outline: none;
-      transition: all 0.3s ease;
-      font-family: 'Poppins', sans-serif;
-      min-width: 0;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      resize: none;
+      min-height: 40px;
+      max-height: 120px;
     }
 
     #message::placeholder {
@@ -338,96 +340,87 @@
     }
 
     #message:focus {
-      border-color: #4facfe;
-      box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
-      transform: scale(1.02);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
 
     .send-btn {
-      background: var(--accent-gradient);
+      background: var(--primary-color);
       border: none;
       border-radius: 50%;
-      width: 45px;
-      height: 45px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       color: white;
-      transition: all 0.3s ease;
-      box-shadow: var(--shadow-neon);
+      transition: all 0.2s ease;
       flex-shrink: 0;
     }
 
-    .send-btn:hover, .send-btn:active {
-      transform: scale(1.1) rotate(15deg);
-      box-shadow: 0 0 25px rgba(79, 172, 254, 0.5);
+    .send-btn:hover {
+      background: var(--primary-hover);
+      transform: scale(1.1);
     }
 
     #messageForm {
       display: flex;
       flex: 1;
-      align-items: center;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message-form-bottom {
+      display: flex;
+      align-items: flex-end;
       gap: 12px;
-      min-width: 0;
     }
 
     .sticker-panel {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
-      border-radius: 25px 25px 0 0;
-      padding: 20px 15px;
+      border-radius: 16px;
+      padding: 16px;
       display: none;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       justify-content: center;
       max-height: 200px;
       overflow-y: auto;
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: 80px;
-      box-shadow: var(--shadow-glass);
-      animation: slideUp 0.3s ease-out;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 16px;
     }
 
     .sticker {
-      font-size: 32px;
-      padding: 12px;
-      border-radius: 15px;
+      font-size: 28px;
+      padding: 8px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
     }
 
-    .sticker:hover, .sticker:active {
-      transform: scale(1.2) rotate(5deg);
-      box-shadow: var(--shadow-neon);
-      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    .sticker:hover {
+      transform: scale(1.2);
+      background: var(--primary-color);
     }
 
     input[type="tel"] {
       width: 100%;
-      padding: 15px 20px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      border-radius: 15px;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       font-size: 16px;
-      color: var(--text-light);
-      transition: all 0.3s ease;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
       margin-bottom: 20px;
-      font-family: 'Poppins', sans-serif;
+      font-family: inherit;
     }
 
     input[type="tel"]::placeholder {
@@ -436,148 +429,142 @@
 
     input[type="tel"]:focus {
       outline: none;
-      border-color: #4facfe;
-      box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
-      transform: scale(1.02);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
 
     .signup-btn {
-      background: var(--primary-gradient);
+      background: var(--primary-color);
       color: white;
       border: none;
-      padding: 15px 0;
-      border-radius: 15px;
+      padding: 12px 24px;
+      border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       width: 100%;
-      box-shadow: var(--shadow-neon);
-      font-family: 'Poppins', sans-serif;
+      font-family: inherit;
     }
 
-    .signup-btn:hover, .signup-btn:active {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    .signup-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
     }
 
     .loading {
       text-align: center;
-      padding: 30px;
+      padding: 40px;
       color: var(--text-muted);
       font-style: italic;
-      font-size: 16px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
     }
 
     .no-messages {
       text-align: center;
       padding: 40px 20px;
       color: var(--text-muted);
-      font-size: 16px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
     }
 
-    /* Scrollbar personnalisée */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success-color);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* Scrollbar */
     .messages::-webkit-scrollbar {
       width: 6px;
     }
 
     .messages::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
+      background: var(--bg-input);
+      border-radius: 3px;
     }
 
     .messages::-webkit-scrollbar-thumb {
-      background: var(--accent-gradient);
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+      background: var(--primary-color);
+      border-radius: 3px;
     }
 
-    /* Responsive - Version améliorée */
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Media queries pour la responsivité */
     @media (max-width: 768px) {
+      .container {
+        padding: 0 8px;
+      }
+      
       .header {
-        margin: 0 5px;
-        margin-top: 5px;
-        border-radius: 0 0 20px 20px;
-        padding: 15px;
+        margin: 8px 0;
+        padding: 16px;
+        border-radius: 12px;
       }
       
       .header h1 {
-        font-size: 22px;
+        font-size: 20px;
       }
       
       .signup-card {
-        margin: 0 10px;
-        padding: 25px 20px;
-      }
-      
-      #forum {
-        padding: 0 5px;
+        padding: 24px 20px;
+        border-radius: 16px;
       }
       
       .messages {
-        border-radius: 20px;
-        padding: 15px 10px;
+        padding: 16px;
+        border-radius: 16px;
+        max-height: calc(100vh - 180px);
       }
       
       .message {
-        padding: 12px 15px;
-        border-radius: 15px;
+        padding: 12px;
+        border-radius: 12px;
+      }
+      
+      .message.reply {
+        margin-left: 16px;
       }
       
       .message .content {
-        margin-left: 32px;
         font-size: 14px;
       }
       
-      .sticker-panel {
-        left: 5px;
-        right: 5px;
-      }
-      
       .message-input-container {
-        padding: 12px 15px;
-        gap: 8px;
-        flex-wrap: nowrap;
-        align-items: center;
+        padding: 12px;
+        border-radius: 12px;
       }
       
       .sticker-btn, .send-btn {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
         font-size: 16px;
       }
       
       #message {
-        min-width: 0;
-        flex: 1;
-        padding: 10px 15px;
+        padding: 10px 14px;
         font-size: 14px;
-      }
-      
-      #messageForm {
-        display: flex !important;
-        flex: 1;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
       }
     }
 
     @media (max-width: 480px) {
       .header h1 {
-        font-size: 20px;
+        font-size: 18px;
       }
       
       .signup-card h2 {
@@ -589,64 +576,73 @@
       }
       
       .sticker {
-        font-size: 28px;
-        padding: 10px;
+        font-size: 24px;
+        padding: 6px;
       }
       
       .message-input-container {
-        padding: 10px 12px;
-        gap: 6px;
+        padding: 10px;
+        gap: 8px;
       }
       
       .sticker-btn, .send-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         font-size: 14px;
-      }
-      
-      #message {
-        padding: 8px 12px;
-        font-size: 13px;
-      }
-      
-      #messageForm {
-        gap: 6px;
       }
     }
 
-    /* Améliorations supplémentaires pour mobile */
-    @media (max-width: 600px) {
+    /* Support pour les navigateurs plus anciens */
+    @supports not (backdrop-filter: blur(12px)) {
+      .header, .signup-card, .messages, .message-input-container, .sticker-panel {
+        background: var(--bg-card);
+      }
+    }
+
+    /* Mode sombre par défaut pour tous les navigateurs */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-dark: #ffffff;
+        --bg-card: #f8fafc;
+        --bg-input: #f1f5f9;
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --glass-bg: rgba(248, 250, 252, 0.8);
+        --glass-border: rgba(51, 65, 85, 0.1);
+      }
+      
       body {
-        background-attachment: scroll;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
       }
-      
-      .container {
-        overflow-x: hidden;
-      }
-      
-      input, button, textarea {
-        -webkit-appearance: none;
-        border-radius: 15px;
-      }
-      
-      .message-input-container {
-        position: relative;
-        z-index: 50;
-      }
-      
-      #message:focus {
-        transform: none;
-      }
-      
-      .send-btn:active, .sticker-btn:active {
-        transform: scale(0.95);
-      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .message {
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    #forum {
+      animation: slideIn 0.4s ease-out;
+    }
+
+    #signup-form {
+      animation: fadeInUp 0.6s ease-out;
     }
   </style>
 </head>
 <body>
-  <div class="cosmic-particles" id="particles"></div>
-  
   <div class="container">
     <div class="header">
       <h1>🌌 Forum Cosmique Anonyme</h1>
@@ -693,45 +689,26 @@
       <div class="message-input-container">
         <button type="button" class="sticker-btn" id="stickerToggle" aria-label="Stickers">😊</button>
         <form id="messageForm">
-          <input type="text" id="message" placeholder="✨ Partagez vos pensées cosmiques..." required maxlength="256" autocomplete="off">
-          <button type="submit" class="send-btn" aria-label="Envoyer">🚀</button>
+          <div class="reply-preview" id="replyPreview">
+            <div id="replyContent"></div>
+            <button type="button" class="close-reply" id="closeReply">×</button>
+          </div>
+          <div class="message-form-bottom">
+            <textarea id="message" placeholder="✨ Partagez vos pensées cosmiques..." required maxlength="1000" rows="1"></textarea>
+            <button type="submit" class="send-btn" aria-label="Envoyer">🚀</button>
+          </div>
         </form>
       </div>
     </div>
   </div>
 
+  <div id="notification" class="notification"></div>
+
   <script>
-    // Création des particules cosmiques
-    function createCosmicParticles() {
-      const particlesContainer = document.getElementById('particles');
-      const particleCount = 50;
-      
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 6 + 's';
-        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-        particlesContainer.appendChild(particle);
-      }
-    }
-
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
-      authDomain: "data-fae4a.firebaseapp.com",
-      databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
-      projectId: "data-fae4a",
-      storageBucket: "data-fae4a.firebasestorage.app",
-      messagingSenderId: "1077301559347",
-      appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
-      measurementId: "G-C631QW9NDN"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
+    // Variables globales pour simulation (sans Firebase)
+    let messages = {};
+    let messageCounter = 1;
+    
     // Variables globales
     const signupDiv = document.getElementById('signup-form');
     const forumDiv = document.getElementById('forum');
@@ -742,18 +719,65 @@
     const messagesDiv = document.getElementById('messages');
     const stickerPanel = document.getElementById('stickerPanel');
     const stickerToggle = document.getElementById('stickerToggle');
+    const replyPreview = document.getElementById('replyPreview');
+    const replyContent = document.getElementById('replyContent');
+    const closeReply = document.getElementById('closeReply');
+    const notification = document.getElementById('notification');
 
-    let username = "";
+    let username = "Utilisateur";
     let userPhone = "";
     let stickerPanelOpen = false;
+    let replyingTo = null;
+    let lastMessageTime = 0;
+    let isPageVisible = true;
 
-    // Génération du nom d'utilisateur (tous les utilisateurs s'appellent "user's")
-    function generateUsername() {
-      return "user's";
+    // Gestion des notifications
+    async function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
     }
 
-    function getUniqueAvatar() {
-      return 'image/wze.jpg';
+    function showNotification(message) {
+      if (!isPageVisible && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Nouveau message - Forum Cosmique', {
+          body: message.text.substring(0, 100) + '...',
+          icon: '🌌',
+          tag: 'forum-message'
+        });
+      }
+      
+      // Notification in-app
+      notification.textContent = 'Nouveau message reçu !';
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    // Gestion de la visibilité de la page
+    document.addEventListener('visibilitychange', function() {
+      isPageVisible = !document.hidden;
+    });
+
+    // Auto-resize du textarea
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    messageInput.addEventListener('input', function() {
+      autoResize(this);
+    });
+
+    // Génération d'avatar
+    function getUniqueAvatar(userId) {
+      const colors = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+      const hash = userId.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return colors[Math.abs(hash) % colors.length];
     }
 
     function escapeHtml(text) {
@@ -767,6 +791,17 @@
       return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now - date;
+      
+      if (diff < 60000) return 'À l\'instant';
+      if (diff < 3600000) return Math.floor(diff / 60000) + ' min';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + ' h';
+      return date.toLocaleDateString('fr-FR');
+    }
+
     function showSignup() {
       signupDiv.style.display = 'flex';
       forumDiv.style.display = 'none';
@@ -775,33 +810,25 @@
     function showForum() {
       signupDiv.style.display = 'none';
       forumDiv.style.display = 'flex';
+      requestNotificationPermission();
     }
 
-    // Gestion de l'inscription unique avec cookies (alternative à localStorage)
+    // Simulation de cookies avec variables locales
+    let cookieStorage = {};
+
     function setCookie(name, value, days) {
-      const expires = new Date();
-      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-      document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+      cookieStorage[name] = value;
     }
 
     function getCookie(name) {
-      const nameEQ = name + "=";
-      const ca = document.cookie.split(';');
-      for(let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-      }
-      return null;
+      return cookieStorage[name] || null;
     }
 
     function checkRegistration() {
       const storedPhone = getCookie('forum_phone');
-      const storedUsername = getCookie('forum_username');
-
-      if (storedPhone && storedUsername) {
+      if (storedPhone) {
         userPhone = storedPhone;
-        username = storedUsername;
+        username = "Utilisateur";
         showForum();
         loadMessages();
         return true;
@@ -810,253 +837,389 @@
     }
 
     function saveRegistration() {
-      // Sauvegarder pour 30 jours
       setCookie('forum_phone', userPhone, 30);
-      setCookie('forum_username', username, 30);
+    }
+
+    // Gestion des réponses
+    function replyToMessage(messageId, originalText) {
+      replyingTo = messageId;
+      replyContent.textContent = `Répondre à: ${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}`;
+      replyPreview.style.display = 'block';
+      messageInput.focus();
+    }
+
+    function clearReply() {
+      replyingTo = null;
+      replyPreview.style.display = 'none';
     }
 
     // Gestion des stickers
     function toggleStickerPanel() {
       stickerPanelOpen = !stickerPanelOpen;
       stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
-      stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
+      stickerToggle.textContent = stickerPanelOpen ? '❌' : '😊';
     }
 
     function sendSticker(stickerEmoji) {
-      const msg = {
-        username,
+      const messageData = {
         text: stickerEmoji,
+        userId: userPhone,
         timestamp: Date.now(),
-        isSticker: true
+        isSticker: true,
+        replyTo: replyingTo
       };
-      db.ref('messages').push(msg);
+      
+      addMessage(messageData);
       toggleStickerPanel();
+      clearReply();
     }
 
-    // Chargement et affichage des messages
+    // Chargement des messages
     function loadMessages() {
-      messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
+      messagesDiv.innerHTML = '<div class="loading">🌌 Chargement des messages cosmiques...</div>';
+      
+      setTimeout(() => {
+        displayMessages();
+      }, 1000);
+    }
 
-      db.ref('messages').limitToLast(100).on('value', function(snapshot) {
-        messagesDiv.innerHTML = '';
-        const msgs = snapshot.val();
+    function displayMessages() {
+      messagesDiv.innerHTML = '';
+      
+      if (Object.keys(messages).length === 0) {
+        messagesDiv.innerHTML = '<div class="no-messages">🌟 Aucun message pour le moment. Soyez le premier à explorer cette galaxie !</div>';
+        return;
+      }
 
-        if (!msgs) {
-          messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos avec votre message !</div>';
-          return;
-        }
-        
-        Object.values(msgs).forEach(m => {
-          const div = document.createElement('div');
-          div.className = m.isSticker ? 'message sticker' : 'message';
-          const userAvatar = getUniqueAvatar();
-          
-          if (m.isSticker) {
-            div.innerHTML = `
-              <span class="user">
-                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
-                ${escapeHtml(m.username)}
-              </span>
-              <div class="content">${m.text}</div>
-            `;
-          } else {
-            div.innerHTML = `
-              <span class="user">
-                <img src="${userAvatar}" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
-                ${escapeHtml(m.username)}
-              </span>
-              <div class="content">${escapeHtml(m.text)}</div>
-            `;
-          }
-          messagesDiv.appendChild(div);
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      const sortedMessages = Object.values(messages).sort((a, b) => a.timestamp - b.timestamp);
+      
+      sortedMessages.forEach(message => {
+        displayMessage(message);
       });
+      
+      scrollToBottom();
+    }
+
+    function displayMessage(message) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${message.isSticker ? 'sticker' : ''} ${message.replyTo ? 'reply' : ''}`;
+      messageDiv.dataset.messageId = message.id;
+      
+      const avatarColor = getUniqueAvatar(message.userId);
+      const userInitial = message.userId.charAt(0).toUpperCase();
+      const isCurrentUser = message.userId === userPhone;
+      
+      let replyToHtml = '';
+      if (message.replyTo && messages[message.replyTo]) {
+        const originalMessage = messages[message.replyTo];
+        const originalText = originalMessage.text.substring(0, 50);
+        replyToHtml = `<div class="reply-to">Réponse à: ${escapeHtml(originalText)}${originalMessage.text.length > 50 ? '...' : ''}</div>`;
+      }
+
+      messageDiv.innerHTML = `
+        ${replyToHtml}
+        <div class="user">
+          <div class="user-avatar" style="background-color: ${avatarColor}">${userInitial}</div>
+          <span>${isCurrentUser ? 'Vous' : 'Voyageur Cosmique'}</span>
+        </div>
+        <div class="content">${message.isSticker ? message.text : escapeHtml(message.text)}</div>
+        <div class="timestamp">${formatTime(message.timestamp)}</div>
+        <div class="message-actions">
+          <button class="reply-btn" onclick="replyToMessage('${message.id}', '${escapeHtml(message.text).replace(/'/g, "\\'")}')">↩️</button>
+        </div>
+      `;
+      
+      messagesDiv.appendChild(messageDiv);
+    }
+
+    function addMessage(messageData) {
+      messageData.id = 'msg_' + messageCounter++;
+      messages[messageData.id] = messageData;
+      displayMessage(messageData);
+      scrollToBottom();
+      
+      // Simuler la réception d'un message d'un autre utilisateur après un délai
+      if (Math.random() > 0.7) {
+        setTimeout(() => {
+          simulateOtherUserMessage();
+        }, Math.random() * 5000 + 2000);
+      }
+    }
+
+    function simulateOtherUserMessage() {
+      const randomMessages = [
+        "Salut les voyageurs cosmiques ! 🌟",
+        "Quelqu'un d'autre admire les étoiles ce soir ? ✨",
+        "Cette communauté est incroyable ! 🚀",
+        "Quelle belle soirée pour philosopher... 🤔",
+        "L'univers est si vaste et mystérieux 🌌",
+        "Merci pour ce partage inspirant ! 💫",
+        "Je me sens moins seul(e) ici 💙",
+        "Vos messages illuminent ma journée ☀️"
+      ];
+      
+      const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+      const otherUserMessage = {
+        text: randomMessage,
+        userId: 'other_user_' + Math.floor(Math.random() * 1000),
+        timestamp: Date.now(),
+        isSticker: false,
+        replyTo: null
+      };
+      
+      addMessage(otherUserMessage);
+      showNotification(otherUserMessage);
+    }
+
+    function scrollToBottom() {
+      setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, 100);
     }
 
     // Event Listeners
-    window.onload = function() {
-      createCosmicParticles();
-      if (!checkRegistration()) {
-        showSignup();
-      }
-    };
-
-    registerForm.onsubmit = function(e) {
+    registerForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      const phone = phoneInput.value.replace(/\D/g, '');
+      const phone = phoneInput.value.trim();
+      
       if (phone.length < 7) {
-        alert('🌟 Numéro de téléphone non valide pour entrer dans le cosmos !');
+        alert('Veuillez entrer un numéro de téléphone valide (au moins 7 chiffres)');
         return;
       }
+      
       userPhone = phone;
-      username = generateUsername();
+      username = "Utilisateur";
       saveRegistration();
       showForum();
       loadMessages();
-    };
+    });
 
-    messageForm.onsubmit = function(e) {
+    messageForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      const text = messageInput.value.trim();
-      if (!text) return;
+      const messageText = messageInput.value.trim();
       
-      const msg = {
-        username,
-        text,
+      if (!messageText) return;
+      
+      const messageData = {
+        text: messageText,
+        userId: userPhone,
         timestamp: Date.now(),
-        isSticker: false
+        isSticker: false,
+        replyTo: replyingTo
       };
-      db.ref('messages').push(msg).then(() => {
-        messageInput.value = '';
-      });
-    };
+      
+      addMessage(messageData);
+      messageInput.value = '';
+      autoResize(messageInput);
+      clearReply();
+    });
 
-    stickerToggle.onclick = toggleStickerPanel;
+    // Gestion des stickers
+    stickerToggle.addEventListener('click', toggleStickerPanel);
     
-    // Gestion des clics sur les stickers
     document.querySelectorAll('.sticker').forEach(sticker => {
-      sticker.onclick = function() {
-        const emoji = this.getAttribute('data-sticker');
-        sendSticker(emoji);
-      };
+      sticker.addEventListener('click', function() {
+        sendSticker(this.dataset.sticker);
+      });
     });
 
-    // Fermer le panneau de stickers si on clique ailleurs
+    // Fermer le panneau de réponse
+    closeReply.addEventListener('click', clearReply);
+
+    // Fermer le panneau de stickers en cliquant ailleurs
     document.addEventListener('click', function(e) {
-      if (stickerPanelOpen && !stickerPanel.contains(e.target) && e.target !== stickerToggle) {
+      if (!stickerPanel.contains(e.target) && !stickerToggle.contains(e.target) && stickerPanelOpen) {
         toggleStickerPanel();
       }
     });
 
-    // Amélioration de l'expérience mobile
-    messageInput.addEventListener('focus', function() {
-      setTimeout(() => {
-        this.scrollIntoView({block: "center", behavior: "smooth"});
-      }, 300);
-    });
-
-    // Effet de parallaxe sur les particules
-    window.addEventListener('scroll', function() {
-      const particles = document.querySelectorAll('.particle');
-      const scrolled = window.pageYOffset;
-      particles.forEach((particle, index) => {
-        const speed = (index % 3 + 1) * 0.5;
-        particle.style.transform = `translateY(${scrolled * speed}px)`;
-      });
-    });
-
-    // Animation d'entrée pour les messages
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -10px 0px'
-    };
-
-    const messageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateX(0)';
-        }
-      });
-    }, observerOptions);
-
-    // Observer les nouveaux messages
-    const observeNewMessages = () => {
-      const messages = document.querySelectorAll('.message');
-      messages.forEach(message => {
-        if (!message.dataset.observed) {
-          messageObserver.observe(message);
-          message.dataset.observed = 'true';
-        }
-      });
-    };
-
-    // Appeler l'observateur après le chargement des messages
-    const originalLoadMessages = loadMessages;
-    loadMessages = function() {
-      originalLoadMessages();
-      setTimeout(observeNewMessages, 100);
-    };
-
-    // Effet de typing indicator
-    let typingTimeout;
-    messageInput.addEventListener('input', function() {
-      clearTimeout(typingTimeout);
-      // Ici on pourrait ajouter un indicateur de frappe
-      typingTimeout = setTimeout(() => {
-        // L'utilisateur a arrêté de taper
-      }, 1000);
-    });
-
-    // Gestion des raccourcis clavier
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && stickerPanelOpen) {
-        toggleStickerPanel();
-      }
-      if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
+    // Gestion du clavier
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         messageForm.dispatchEvent(new Event('submit'));
       }
     });
 
-    // Animation des boutons au survol
-    document.querySelectorAll('.sticker-btn, .send-btn').forEach(btn => {
-      btn.addEventListener('mouseenter', function() {
-        this.style.transform = 'scale(1.1)';
-      });
-      btn.addEventListener('mouseleave', function() {
-        this.style.transform = 'scale(1)';
-      });
+    // Empêcher le zoom sur iOS
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     });
 
-    // Effet de vibration sur mobile (si supporté)
-    function vibrateOnAction() {
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+
+    // Gestion du focus pour mobile
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      messageInput.addEventListener('focus', function() {
+        setTimeout(() => {
+          document.body.scrollTop = document.documentElement.scrollTop = 0;
+        }, 300);
+      });
+    }
+
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!checkRegistration()) {
+        showSignup();
+      }
+      
+      // Ajouter quelques messages d'exemple pour la démo
+      if (Object.keys(messages).length === 0) {
+        setTimeout(() => {
+          const welcomeMessage = {
+            text: "Bienvenue dans le Forum Cosmique ! 🌌 Ici, chaque âme peut s'exprimer librement dans l'anonymat des étoiles.",
+            userId: 'system_welcome',
+            timestamp: Date.now() - 300000,
+            isSticker: false,
+            replyTo: null
+          };
+          addMessage(welcomeMessage);
+          
+          setTimeout(() => {
+            const tipsMessage = {
+              text: "💡 Conseil : Utilisez les stickers pour exprimer vos émotions et répondez aux messages pour créer des conversations stellaires !",
+              userId: 'system_tips',
+              timestamp: Date.now() - 240000,
+              isSticker: false,
+              replyTo: null
+            };
+            addMessage(tipsMessage);
+          }, 2000);
+        }, 1500);
+      }
+    });
+
+    // Gestion des erreurs globales
+    window.addEventListener('error', function(e) {
+      console.log('Erreur capturée:', e.message);
+    });
+
+    // Performance monitoring
+    if ('performance' in window) {
+      window.addEventListener('load', function() {
+        setTimeout(() => {
+          const perfData = performance.getEntriesByType('navigation')[0];
+          if (perfData && perfData.loadEventEnd - perfData.loadEventStart > 3000) {
+            console.log('Chargement lent détecté');
+          }
+        }, 0);
+      });
+    }
+
+    // Service Worker pour le cache (optionnel)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
+          console.log('ServiceWorker enregistré avec succès');
+        }).catch(function(error) {
+          console.log('Échec de l\'enregistrement du ServiceWorker');
+        });
+      });
+    }
+
+    // Détection du mode hors ligne
+    function updateOnlineStatus() {
+      if (navigator.onLine) {
+        notification.textContent = 'Connexion rétablie ! 🌐';
+        notification.style.background = 'var(--success-color)';
+      } else {
+        notification.textContent = 'Mode hors ligne 📡';
+        notification.style.background = 'var(--warning-color)';
+      }
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // Animation des étoiles en arrière-plan
+    function createStars() {
+      const starsContainer = document.createElement('div');
+      starsContainer.className = 'stars-container';
+      starsContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.3;
+      `;
+      
+      for (let i = 0; i < 50; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.cssText = `
+          position: absolute;
+          width: 2px;
+          height: 2px;
+          background: white;
+          border-radius: 50%;
+          animation: twinkle ${Math.random() * 3 + 1}s infinite;
+          top: ${Math.random() * 100}%;
+          left: ${Math.random() * 100}%;
+        `;
+        starsContainer.appendChild(star);
+      }
+      
+      document.body.appendChild(starsContainer);
+    }
+
+    // Ajouter l'animation CSS pour les étoiles
+    const starStyle = document.createElement('style');
+    starStyle.textContent = `
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(starStyle);
+
+    // Créer les étoiles après le chargement
+    setTimeout(createStars, 1000);
+
+    // Fonction de nettoyage pour éviter les fuites mémoire
+    window.addEventListener('beforeunload', function() {
+      // Nettoyer les timers et événements si nécessaire
+      messages = {};
+      cookieStorage = {};
+    });
+
+    // Gestion avancée du scroll pour optimiser les performances
+    let scrollTimeout;
+    messagesDiv.addEventListener('scroll', function() {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // Logique de scroll optimisée ici
+      }, 150);
+    });
+
+    // Feedback haptique pour les appareils mobiles
+    function hapticFeedback() {
       if ('vibrate' in navigator) {
         navigator.vibrate(50);
       }
     }
 
-    // Ajouter la vibration aux actions importantes
-    document.querySelectorAll('.send-btn, .signup-btn').forEach(btn => {
-      btn.addEventListener('click', vibrateOnAction);
+    // Ajouter le feedback haptique aux boutons
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', hapticFeedback);
     });
 
-    // Auto-resize du champ de texte
-    messageInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
-
-    // Gestion du mode sombre/clair automatique
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    function updateTheme() {
-      if (prefersDark.matches) {
-        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.05)');
-        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.1)');
-      } else {
-        document.documentElement.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.1)');
-        document.documentElement.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.2)');
-      }
-    }
-
-    prefersDark.addEventListener('change', updateTheme);
-    updateTheme();
-
-    // Notification de nouveau message (si la page n'est pas visible)
-    let pageVisible = true;
-    document.addEventListener('visibilitychange', function() {
-      pageVisible = !document.hidden;
-    });
-
-    // Animation de pulsation pour les nouveaux messages hors écran
-    function highlightNewMessage(messageElement) {
-      if (!pageVisible) {
-        messageElement.style.animation = 'pulse 2s ease-in-out 3';
-      }
-    }
-
-    console.log('🌌 Forum Cosmique initialisé avec succès!');
+    console.log('🌌 Forum Cosmique Anonyme initialisé avec succès !');
   </script>
 </body>
 </html>
