@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -113,7 +114,13 @@
       50% { opacity: 0.5; }
     }
 
-    .notification-toggle {
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .notification-toggle, .logout-btn {
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -124,7 +131,7 @@
       transition: all 0.2s ease;
     }
 
-    .notification-toggle:hover {
+    .notification-toggle:hover, .logout-btn:hover {
       background: var(--primary);
       color: white;
     }
@@ -132,6 +139,16 @@
     .notification-toggle.enabled {
       background: var(--secondary);
       color: white;
+    }
+
+    .logout-btn {
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+    }
+
+    .logout-btn:hover {
+      background: #dc2626;
     }
 
     /* Page d'inscription moderne */
@@ -647,6 +664,15 @@
         height: 36px;
         font-size: 20px;
       }
+      
+      .header-actions {
+        gap: 4px;
+      }
+      
+      .notification-toggle, .logout-btn {
+        font-size: 10px;
+        padding: 6px 8px;
+      }
     }
   </style>
 </head>
@@ -657,9 +683,14 @@
         <div class="online-indicator"></div>
         <h1>Forum Moderne</h1>
       </div>
-      <button class="notification-toggle" id="notificationToggle">
-        🔔 Notifications
-      </button>
+      <div class="header-actions">
+        <button class="notification-toggle" id="notificationToggle">
+          🔔 Notifications
+        </button>
+        <button class="logout-btn" id="logoutBtn" style="display: none;">
+          ↩ Déconnexion
+        </button>
+      </div>
     </div>
 
     <div id="signup-form">
@@ -719,7 +750,7 @@
   </div>
 
   <script>
-    // Firebase config
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
       authDomain: "data-fae4a.firebaseapp.com",
@@ -731,30 +762,42 @@
       measurementId: "G-C631QW9NDN"
     };
 
+    // Initialisation Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     // Variables globales
-    const signupDiv = document.getElementById('signup-form');
-    const forumDiv = document.getElementById('forum');
-    const registerForm = document.getElementById('registerForm');
-    const messageForm = document.getElementById('messageForm');
-    const phoneInput = document.getElementById('phone');
-    const messageInput = document.getElementById('message');
-    const messagesDiv = document.getElementById('messages');
-    const stickerPanel = document.getElementById('stickerPanel');
-    const stickerToggle = document.getElementById('stickerToggle');
-    const replyIndicator = document.getElementById('replyIndicator');
-    const notificationToggle = document.getElementById('notificationToggle');
-    const sendBtn = document.getElementById('sendBtn');
+    let currentUser = {
+      phone: '',
+      username: '',
+      isLoggedIn: false
+    };
+    
+    let appState = {
+      replyingTo: null,
+      notificationsEnabled: false,
+      lastMessageTime: Date.now(),
+      messagesRef: null
+    };
 
-    let username = "user";
-    let userPhone = "";
-    let replyingTo = null;
-    let notificationsEnabled = false;
-    let lastMessageTime = 0;
+    // Éléments DOM
+    const elements = {
+      signupForm: document.getElementById('signup-form'),
+      forum: document.getElementById('forum'),
+      registerForm: document.getElementById('registerForm'),
+      messageForm: document.getElementById('messageForm'),
+      phoneInput: document.getElementById('phone'),
+      messageInput: document.getElementById('message'),
+      messagesContainer: document.getElementById('messages'),
+      stickerPanel: document.getElementById('stickerPanel'),
+      stickerToggle: document.getElementById('stickerToggle'),
+      replyIndicator: document.getElementById('replyIndicator'),
+      notificationToggle: document.getElementById('notificationToggle'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      sendBtn: document.getElementById('sendBtn')
+    };
 
-    // Avatar unique pour tous les utilisateurs
+    // Avatar unique
     const AVATAR_URL = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=';
 
     // Fonctions utilitaires
@@ -766,7 +809,7 @@
         '"': '&quot;',
         "'": '&#039;'
       };
-      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+      return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     function formatTime(timestamp) {
@@ -780,23 +823,61 @@
       return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     }
 
-    // Génération d'un nom d'utilisateur unique basé sur le numéro
     function generateUsername(phone) {
-      // Retirer tous les caractères non numériques
       const cleanPhone = phone.replace(/\D/g, '');
-      // Prendre les 4 derniers chiffres du numéro
       const lastDigits = cleanPhone.slice(-4);
       return `Utilisateur${lastDigits}`;
     }
 
+    // Gestion de la persistance utilisateur
+    function saveUserData() {
+      try {
+        const userData = JSON.stringify(currentUser);
+        window.localStorage.setItem('forum_user', userData);
+        window.localStorage.setItem('notifications_enabled', appState.notificationsEnabled.toString());
+      } catch (e) {
+        console.warn('Impossible de sauvegarder les données utilisateur');
+      }
+    }
+
+    function loadUserData() {
+      try {
+        const userData = window.localStorage.getItem('forum_user');
+        const notifSetting = window.localStorage.getItem('notifications_enabled');
+        
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.phone && user.username) {
+            currentUser = { ...user, isLoggedIn: true };
+            appState.notificationsEnabled = notifSetting === 'true';
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn('Impossible de charger les données utilisateur');
+      }
+      return false;
+    }
+
+    function clearUserData() {
+      try {
+        window.localStorage.removeItem('forum_user');
+        window.localStorage.removeItem('notifications_enabled');
+      } catch (e) {
+        console.warn('Impossible de supprimer les données utilisateur');
+      }
+    }
+
     // Gestion des réponses
     function replyToMessage(messageId, author, text) {
-      replyingTo = messageId;
-      replyIndicator.classList.add('active');
-      replyIndicator.querySelector('.reply-author').textContent = `Répondre à ${author}`;
-      replyIndicator.querySelector('.reply-text').textContent = text.length > 50 ? text.substring(0, 50) + '...' : text;
-      messageInput.focus();
+      appState.replyingTo = messageId;
+      elements.replyIndicator.classList.add('active');
+      elements.replyIndicator.querySelector('.reply-author').textContent = `Répondre à ${author}`;
+      elements.replyIndicator.querySelector('.reply-text').textContent = 
+        text.length > 50 ? text.substring(0, 50) + '...' : text;
+      elements.messageInput.focus();
     }
+
 
     function cancelReply() {
       replyingTo = null;
