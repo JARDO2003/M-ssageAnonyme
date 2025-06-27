@@ -575,463 +575,502 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Configuration Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
-            authDomain: "data-fae4a.firebaseapp.com",
-            databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
-            projectId: "data-fae4a",
-            storageBucket: "data-fae4a.firebasestorage.app",
-            messagingSenderId: "1077301559347",
-            appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
-            measurementId: "G-C631QW9NDN"
+    // Configuration Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
+    authDomain: "data-fae4a.firebaseapp.com",
+    databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
+    projectId: "data-fae4a",
+    storageBucket: "data-fae4a.firebasestorage.app",
+    messagingSenderId: "1077301559347",
+    appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
+    measurementId: "G-C631QW9NDN"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Elements DOM
+const signupDiv = document.getElementById('signup-form');
+const forumDiv = document.getElementById('forum');
+const registerForm = document.getElementById('registerForm');
+const messageForm = document.getElementById('messageForm');
+const phoneInput = document.getElementById('phone');
+const messageInput = document.getElementById('message');
+const messagesDiv = document.getElementById('messages');
+const stickerPanel = document.getElementById('stickerPanel');
+const stickerToggle = document.getElementById('stickerToggle');
+const userDisplay = document.getElementById('userDisplay');
+
+// Variables globales
+let username = "";
+let userPhone = "";
+let stickerPanelOpen = false;
+let isPageVisible = true;
+let notificationPermission = false;
+let lastMessageTimestamp = 0;
+let unseenMessages = 0;
+let lastNotifiedTimestamp = 0;
+
+// Constantes
+const STORAGE_KEY = 'cosmic_forum_user';
+const PHONE_KEY = 'cosmic_forum_phone';
+
+// ====== GESTION DE L'INSCRIPTION UNIQUE ======
+
+function saveUserData(phone) {
+    try {
+        const userData = {
+            phone: phone,
+            username: "user's",
+            timestamp: Date.now()
         };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+        localStorage.setItem(PHONE_KEY, phone);
+        console.log('✅ Données utilisateur sauvegardées');
+    } catch (error) {
+        console.error('❌ Erreur sauvegarde:', error);
+        setCookie(PHONE_KEY, phone, 365);
+    }
+}
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+function getUserData() {
+    try {
+        const userData = localStorage.getItem(STORAGE_KEY);
+        if (userData) {
+            const parsed = JSON.parse(userData);
+            console.log('✅ Données utilisateur trouvées');
+            return parsed;
+        }
+    } catch (error) {
+        console.error('❌ Erreur lecture:', error);
+        const phone = getCookie(PHONE_KEY);
+        if (phone) {
+            return { phone: phone, username: "user's" };
+        }
+    }
+    return null;
+}
 
-        // Variables globales
-        const signupDiv = document.getElementById('signup-form');
-        const forumDiv = document.getElementById('forum');
-        const registerForm = document.getElementById('registerForm');
-        const messageForm = document.getElementById('messageForm');
-        const phoneInput = document.getElementById('phone');
-        const messageInput = document.getElementById('message');
-        const messagesDiv = document.getElementById('messages');
-        const stickerPanel = document.getElementById('stickerPanel');
-        const stickerToggle = document.getElementById('stickerToggle');
-        const userDisplay = document.getElementById('userDisplay');
+function clearUserData() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(PHONE_KEY);
+        setCookie(PHONE_KEY, '', -1);
+        console.log('🗑️ Données utilisateur supprimées');
+    } catch (error) {
+        console.error('❌ Erreur suppression:', error);
+    }
+}
 
-        let username = "";
-        let userPhone = "";
-        let stickerPanelOpen = false;
-        let isPageVisible = true;
-        let notificationPermission = false;
-        let lastMessageTimestamp = 0;
+// Fonctions cookies (fallback)
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+}
 
-        // ====== GESTION DE L'INSCRIPTION UNIQUE ======
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// ====== GESTION DES NOTIFICATIONS ======
+
+async function initNotifications() {
+    if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        notificationPermission = permission === 'granted';
         
-        // Clé unique pour ce forum dans le localStorage
-        const STORAGE_KEY = 'cosmic_forum_user';
-        const PHONE_KEY = 'cosmic_forum_phone';
+        if (notificationPermission) {
+            console.log('🔔 Notifications activées');
+            showToast('Notifications', 'Vous serez notifié des nouveaux messages !', 'success');
+        } else {
+            console.log('🔕 Notifications refusées');
+            showToast('Notifications', 'Activez les notifications pour ne rien manquer', 'warning');
+        }
+    } else {
+        console.log('❌ Notifications non supportées');
+    }
+}
+
+function showNotification(title, body, options = {}) {
+    if (!notificationPermission || isPageVisible) return;
+
+    const notification = new Notification(title, {
+        body: body,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">💬</text></svg>',
+        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/></svg>',
+        tag: 'forum-message',
+        requireInteraction: false,
+        vibrate: [200, 100, 200],
+        ...options
+    });
+
+    notification.onclick = function() {
+        window.focus();
+        notification.close();
+    };
+
+    setTimeout(() => {
+        notification.close();
+    }, 8000);
+}
+
+function showWebPushNotification(sender, text, sticker = false) {
+    if (!('serviceWorker' in navigator)) return;
+    
+    const notifTitle = sticker
+        ? `💬 Nouveau sticker de ${sender}`
+        : `💬 Nouveau message de ${sender}`;
+    const notifBody = sticker ? text : (text.length > 60 ? text.substring(0, 60) + '...' : text);
+
+    navigator.serviceWorker.ready.then(function(registration) {
+        registration.showNotification(notifTitle, {
+            body: notifBody,
+            icon: '/image/wze.jpg',
+            badge: '/image/wze.jpg',
+            data: { url: window.location.href },
+            tag: 'cosmic-forum-msg',
+            renotify: true,
+            vibrate: [80, 33, 80],
+            requireInteraction: false
+        });
+    });
+}
+
+function showToast(title, message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    
+    let icon = '💬';
+    switch(type) {
+        case 'success': icon = '✅'; break;
+        case 'warning': icon = '⚠️'; break;
+        case 'error': icon = '❌'; break;
+    }
+    
+    toast.innerHTML = `
+        <div class="notification-title">${icon} ${escapeHtml(title)}</div>
+        <div class="notification-message">${escapeHtml(message)}</div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+function flashPageTitle(senderName) {
+    const originalTitle = document.title;
+    let flashCount = 0;
+    const maxFlashes = 6;
+    
+    const flashInterval = setInterval(() => {
+        if (flashCount >= maxFlashes || isPageVisible) {
+            document.title = originalTitle;
+            clearInterval(flashInterval);
+            return;
+        }
         
-        function saveUserData(phone) {
-            try {
-                const userData = {
-                    phone: phone,
-                    username: "user's",
-                    timestamp: Date.now()
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-                localStorage.setItem(PHONE_KEY, phone);
-                console.log('✅ Données utilisateur sauvegardées');
-            } catch (error) {
-                console.error('❌ Erreur sauvegarde:', error);
-                // Fallback avec cookies si localStorage échoue
-                setCookie(PHONE_KEY, phone, 365);
-            }
-        }
-
-        function getUserData() {
-            try {
-                const userData = localStorage.getItem(STORAGE_KEY);
-                if (userData) {
-                    const parsed = JSON.parse(userData);
-                    console.log('✅ Données utilisateur trouvées');
-                    return parsed;
-                }
-            } catch (error) {
-                console.error('❌ Erreur lecture:', error);
-                // Fallback avec cookies
-                const phone = getCookie(PHONE_KEY);
-                if (phone) {
-                    return { phone: phone, username: "user's" };
-                }
-            }
-            return null;
-        }
-
-        function clearUserData() {
-            try {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(PHONE_KEY);
-                // Nettoyer aussi les cookies
-                setCookie(PHONE_KEY, '', -1);
-                console.log('🗑️ Données utilisateur supprimées');
-            } catch (error) {
-                console.error('❌ Erreur suppression:', error);
-            }
-        }
-
-        // Fallback cookies (pour compatibilité)
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        // ====== GESTION DES NOTIFICATIONS ======
+        document.title = flashCount % 2 === 0 
+            ? `💬 ${senderName} vous a écrit !` 
+            : originalTitle;
         
-        async function initNotifications() {
-            if ('Notification' in window) {
-                const permission = await Notification.requestPermission();
-                notificationPermission = permission === 'granted';
-                
-                if (notificationPermission) {
-                    console.log('🔔 Notifications activées');
-                    showToast('Notifications', 'Vous serez notifié des nouveaux messages !', 'success');
-                } else {
-                    console.log('🔕 Notifications refusées');
-                    showToast('Notifications', 'Activez les notifications pour ne rien manquer', 'warning');
-                }
-            } else {
-                console.log('❌ Notifications non supportées');
-            }
+        flashCount++;
+    }, 1000);
+}
+
+// ====== FONCTIONS UTILITAIRES ======
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function showSignup() {
+    signupDiv.style.display = 'flex';
+    forumDiv.style.display = 'none';
+}
+
+function showForum() {
+    signupDiv.style.display = 'none';
+    forumDiv.style.display = 'flex';
+    userDisplay.textContent = username;
+}
+
+function createCosmicParticles() {
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.width = Math.random() * 4 + 2 + 'px';
+        particle.style.height = particle.style.width;
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.opacity = Math.random() * 0.5 + 0.2;
+        document.body.appendChild(particle);
+    }
+}
+
+// ====== GESTION DES STICKERS ======
+
+function toggleStickerPanel() {
+    stickerPanelOpen = !stickerPanelOpen;
+    stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
+    stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
+}
+
+function sendSticker(stickerEmoji) {
+    const msg = {
+        username,
+        text: stickerEmoji,
+        timestamp: Date.now(),
+        isSticker: true
+    };
+    db.ref('messages').push(msg);
+    toggleStickerPanel();
+}
+
+// ====== GESTION DES MESSAGES ======
+
+function loadMessages() {
+    messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
+
+    db.ref('messages').limitToLast(100).on('value', function(snapshot) {
+        messagesDiv.innerHTML = '';
+        const msgs = snapshot.val();
+
+        if (!msgs) {
+            messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos !</div>';
+            return;
         }
-
-        function showNotification(title, body, options = {}) {
-            if (!notificationPermission || isPageVisible) return;
-
-            const notification = new Notification(title, {
-                body: body,
-                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">💬</text></svg>',
-                badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/></svg>',
-                tag: 'forum-message',
-                requireInteraction: false,
-                vibrate: [200, 100, 200],
-                ...options
-            });
-
-            notification.onclick = function() {
-                window.focus();
-                notification.close();
-            };
-
-            setTimeout(() => {
-                notification.close();
-            }, 8000);
-        }
-
-        function showToast(title, message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = 'notification-toast';
+        
+        const messageArray = Object.entries(msgs).map(([key, msg]) => ({...msg, key}));
+        
+        messageArray.forEach(m => {
+            const div = document.createElement('div');
+            div.className = m.isSticker ? 'message sticker' : 'message';
             
-            let icon = '💬';
-            switch(type) {
-                case 'success': icon = '✅'; break;
-                case 'warning': icon = '⚠️'; break;
-                case 'error': icon = '❌'; break;
-            }
-            
-            toast.innerHTML = `
-                <div class="notification-title">${icon} ${escapeHtml(title)}</div>
-                <div class="notification-message">${escapeHtml(message)}</div>
+            div.innerHTML = `
+                <span class="user">
+                    <img src="image/wze.jpg" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
+                    ${escapeHtml(m.username)}
+                </span>
+                <div class="content">${m.isSticker ? m.text : escapeHtml(m.text)}</div>
             `;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 100);
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (document.body.contains(toast)) {
-                        document.body.removeChild(toast);
-                    }
-                }, 300);
-            }, 5000);
-        }
-
-        // Surveillance de la visibilité de la page
-        document.addEventListener('visibilitychange', function() {
-            isPageVisible = !document.hidden;
+            messagesDiv.appendChild(div);
         });
-
-        window.addEventListener('focus', function() {
-            isPageVisible = true;
-        });
-
-        window.addEventListener('blur', function() {
-            isPageVisible = false;
-        });
-
-        // ====== FONCTIONS UTILITAIRES ======
         
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
 
-        function showSignup() {
-            signupDiv.style.display = 'flex';
-            forumDiv.style.display = 'none';
-        }
-
-        function showForum() {
-            signupDiv.style.display = 'none';
-            forumDiv.style.display = 'flex';
-            userDisplay.textContent = username;
-        }
-
-        function createCosmicParticles() {
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.width = Math.random() * 4 + 2 + 'px';
-                particle.style.height = particle.style.width;
-                particle.style.animationDelay = Math.random() * 6 + 's';
-                particle.style.opacity = Math.random() * 0.5 + 0.2;
-                document.body.appendChild(particle);
-            }
-        }
-
-        // ====== GESTION DES STICKERS ======
+    // Écouter les nouveaux messages pour les notifications
+    db.ref('messages').on('child_added', function(snapshot) {
+        const messageData = snapshot.val();
         
-        function toggleStickerPanel() {
-            stickerPanelOpen = !stickerPanelOpen;
-            stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
-            stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
-        }
-
-        function sendSticker(stickerEmoji) {
-            const msg = {
-                username,
-                text: stickerEmoji,
-                timestamp: Date.now(),
-                isSticker: true
-            };
-            db.ref('messages').push(msg);
-            toggleStickerPanel();
-        }
-
-        // ====== GESTION DES MESSAGES ======
-        
-        function loadMessages() {
-            messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
-
-            db.ref('messages').limitToLast(100).on('value', function(snapshot) {
-                messagesDiv.innerHTML = '';
-                const msgs = snapshot.val();
-
-                if (!msgs) {
-                    messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos !</div>';
-                    return;
+        // Ignorer les anciens messages et ses propres messages
+        if (messageData.timestamp > lastMessageTimestamp && 
+            messageData.username !== username && 
+            lastMessageTimestamp > 0) {
+            
+            if (!isPageVisible) {
+                const title = '💬 Nouveau message';
+                let body = '';
+                
+                if (messageData.isSticker) {
+                    body = `${messageData.username} a envoyé ${messageData.text}`;
+                } else {
+                    const shortText = messageData.text.length > 50 
+                        ? messageData.text.substring(0, 50) + '...' 
+                        : messageData.text;
+                    body = `${messageData.username}: ${shortText}`;
                 }
                 
-                const messageArray = Object.entries(msgs).map(([key, msg]) => ({...msg, key}));
+                showNotification(title, body);
+                flashPageTitle(messageData.username);
                 
-                messageArray.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = m.isSticker ? 'message sticker' : 'message';
-                    
-                    div.innerHTML = `
-                        <span class="user">
-                            <img src="image/wze.jpg" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
-                            ${escapeHtml(m.username)}
-                        </span>
-                        <div class="content">${m.isSticker ? m.text : escapeHtml(m.text)}</div>
-                    `;
-                    messagesDiv.appendChild(div);
-                });
-                
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-
-            // Écouter les nouveaux messages pour les notifications
-            db.ref('messages').on('child_added', function(snapshot) {
-                const messageData = snapshot.val();
-                
-                // Ignorer les anciens messages et ses propres messages
-                if (messageData.timestamp > lastMessageTimestamp && 
-                    messageData.username !== username && 
-                    lastMessageTimestamp > 0) {
-                    
-                    if (!isPageVisible) {
-                        const title = '💬 Nouveau message';
-                        let body = '';
-                        
-                        if (messageData.isSticker) {
-                            body = `${messageData.username} a envoyé ${messageData.text}`;
-                        } else {
-                            const shortText = messageData.text.length > 50 
-                                ? messageData.text.substring(0, 50) + '...' 
-                                : messageData.text;
-                            body = `${messageData.username}: ${shortText}`;
-                        }
-                        
-                        showNotification(title, body);
-                        flashPageTitle(messageData.username);
-                    }
-                }
-                
-                // Mettre à jour le timestamp du dernier message
-                if (messageData.timestamp > lastMessageTimestamp) {
-                    lastMessageTimestamp = messageData.timestamp;
-                }
-            });
+                // Notifications Web Push
+                unseenMessages++;
+                lastNotifiedTimestamp = messageData.timestamp;
+                let titleSuffix = unseenMessages > 1 ? `(${unseenMessages}) ` : '';
+                document.title = `${titleSuffix}Forum Cosmique`;
+                showWebPushNotification(messageData.username, messageData.text, !!messageData.isSticker);
+            }
         }
-
-        function flashPageTitle(senderName) {
-            const originalTitle = document.title;
-            let flashCount = 0;
-            const maxFlashes = 6;
-            
-            const flashInterval = setInterval(() => {
-                if (flashCount >= maxFlashes || isPageVisible) {
-                    document.title = originalTitle;
-                    clearInterval(flashInterval);
-                    return;
-                }
-                
-                document.title = flashCount % 2 === 0 
-                    ? `💬 ${senderName} vous a écrit !` 
-                    : originalTitle;
-                
-                flashCount++;
-            }, 1000);
+        
+        // Mettre à jour le timestamp du dernier message
+        if (messageData.timestamp > lastMessageTimestamp) {
+            lastMessageTimestamp = messageData.timestamp;
         }
+    });
+}
 
-        // ====== VÉRIFICATION DE L'INSCRIPTION ======
-        
-        function checkExistingUser() {
-            const userData = getUserData();
-            
-            if (userData && userData.phone) {
-                userPhone = userData.phone;
-                username = userData.username || "user's";
-                console.log('🔄 Utilisateur existant trouvé:', userPhone);
-                showForum();
-                loadMessages();
-                initNotifications();
-                return true;
-            }
-            
-            console.log('👤 Nouvel utilisateur');
-            showSignup();
-            return false;
+// ====== VÉRIFICATION DE L'INSCRIPTION ======
+
+function checkExistingUser() {
+    const userData = getUserData();
+    
+    if (userData && userData.phone) {
+        userPhone = userData.phone;
+        username = userData.username || "user's";
+        console.log('🔄 Utilisateur existant trouvé:', userPhone);
+        showForum();
+        loadMessages();
+        initNotifications();
+        return true;
+    }
+    
+    console.log('👤 Nouvel utilisateur');
+    showSignup();
+    return false;
+}
+
+// ====== FONCTIONS DE DEBUG ======
+
+function resetRegistration() {
+    clearUserData();
+    location.reload();
+}
+
+// ====== GESTIONNAIRES D'ÉVÉNEMENTS ======
+
+// Surveillance de la visibilité de la page
+document.addEventListener('visibilitychange', function() {
+    isPageVisible = !document.hidden;
+    if (!document.hidden) {
+        unseenMessages = 0;
+        document.title = 'Forum Cosmique';
+    }
+});
+
+window.addEventListener('focus', function() {
+    isPageVisible = true;
+});
+
+window.addEventListener('blur', function() {
+    isPageVisible = false;
+});
+
+// Initialisation
+window.onload = function() {
+    createCosmicParticles();
+    checkExistingUser();
+    lastMessageTimestamp = Date.now();
+    
+    // Enregistrement du Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('cosmic-sw.js')
+            .then(reg => console.log('✅ Service Worker enregistré', reg))
+            .catch(err => console.error('❌ Échec SW', err));
+    }
+    
+    // Permission notification
+    if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+    }
+};
+
+// Formulaire d'inscription
+registerForm.onsubmit = function(e) {
+    e.preventDefault();
+    const phone = phoneInput.value.replace(/\D/g, '');
+    
+    if (phone.length < 8) {
+        showToast('Erreur', 'Numéro de téléphone trop court !', 'error');
+        return;
+    }
+    
+    userPhone = phone;
+    username = "user's";
+    
+    saveUserData(userPhone);
+    showToast('Bienvenue', 'Inscription réussie ! Bienvenue dans le TEMPLE DU Péché', 'success');
+    
+    showForum();
+    loadMessages();
+    initNotifications();
+};
+
+// Formulaire de message
+messageForm.onsubmit = function(e) {
+    e.preventDefault();
+    const text = messageInput.value.trim();
+    if (!text) return;
+    
+    const msg = {
+        username,
+        text,
+        timestamp: Date.now(),
+        isSticker: false
+    };
+    
+    db.ref('messages').push(msg).then(() => {
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+    });
+};
+
+// Stickers
+stickerToggle.onclick = toggleStickerPanel;
+
+document.querySelectorAll('.sticker').forEach(sticker => {
+    sticker.onclick = function() {
+        const emoji = this.getAttribute('data-sticker');
+        sendSticker(emoji);
+    };
+});
+
+// Fermer le panneau de stickers en cliquant ailleurs
+document.addEventListener('click', function(e) {
+    if (stickerPanelOpen && 
+        !stickerPanel.contains(e.target) && 
+        e.target !== stickerToggle) {
+        toggleStickerPanel();
+    }
+});
+
+// Auto-resize du textarea
+messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Raccourcis clavier
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && stickerPanelOpen) {
+        toggleStickerPanel();
+    }
+    if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
+        messageForm.dispatchEvent(new Event('submit'));
+    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        if (confirm('Voulez-vous vraiment réinitialiser votre inscription ?')) {
+            resetRegistration();
         }
+    }
+});
 
-        // ====== GESTIONNAIRES D'ÉVÉNEMENTS ======
-        
-        window.onload = function() {
-            createCosmicParticles();
-            checkExistingUser();
-            
-            // Initialiser le timestamp actuel
-            lastMessageTimestamp = Date.now();
-        };
-
-        registerForm.onsubmit = function(e) {
-            e.preventDefault();
-            const phone = phoneInput.value.replace(/\D/g, '');
-            
-            if (phone.length < 8) {
-                showToast('Erreur', 'Numéro de téléphone trop court !', 'error');
-                return;
-            }
-            
-            userPhone = phone;
-            username = "user's";
-            
-            saveUserData(userPhone);
-            showToast('Bienvenue', 'Inscription réussie ! Bienvenue dans le TEMPLE DU Péché', 'success');
-            
-            showForum();
-            loadMessages();
-            initNotifications();
-        };
-
-        messageForm.onsubmit = function(e) {
-            e.preventDefault();
-            const text = messageInput.value.trim();
-            if (!text) return;
-            
-            const msg = {
-                username,
-                text,
-                timestamp: Date.now(),
-                isSticker: false
-            };
-            
-            db.ref('messages').push(msg).then(() => {
-                messageInput.value = '';
-                messageInput.style.height = 'auto';
-            });
-        };
-
-        stickerToggle.onclick = toggleStickerPanel;
-        
-        // Gestion des clics sur les stickers
-        document.querySelectorAll('.sticker').forEach(sticker => {
-            sticker.onclick = function() {
-                const emoji = this.getAttribute('data-sticker');
-                sendSticker(emoji);
-            };
-        });
-
-        // Fermer le panneau de stickers en cliquant ailleurs
-        document.addEventListener('click', function(e) {
-            if (stickerPanelOpen && 
-                !stickerPanel.contains(e.target) && 
-                e.target !== stickerToggle) {
-                toggleStickerPanel();
-            }
-        });
-
-        // Auto-resize du textarea
-        messageInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
-
-        // Raccourcis clavier
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && stickerPanelOpen) {
-                toggleStickerPanel();
-            }
-            if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
-                messageForm.dispatchEvent(new Event('submit'));
-            }
-        });
-
-        // ====== FONCTIONS DE DEBUG (À SUPPRIMER EN PRODUCTION) ======
-        
-        // Fonction pour réinitialiser l'inscription (debug uniquement)
-        function resetRegistration() {
-            clearUserData();
-            location.reload();
-        }
-
-        // Ajouter un raccourci pour reset (Ctrl+Shift+R)
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-                if (confirm('Voulez-vous vraiment réinitialiser votre inscription ?')) {
-                    resetRegistration();
-                }
-            }
-        });
-
-        console.log('🌌 Forum Cosmique initialisé !');
-        console.log('💡 Debug: Ctrl+Shift+R pour réinitialiser l\'inscription');
-    </script>
-</body>
-</html>
+console.log('🌌 Forum Cosmique initialisé !');
+console.log('💡 Debug: Ctrl+Shift+R pour réinitialiser l\'inscription');
+</script>
