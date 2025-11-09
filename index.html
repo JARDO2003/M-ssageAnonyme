@@ -2,1075 +2,482 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#6366f1">
-    <title>Forum Cosmique</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GROUPE EXPRESS - Notifications Push</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        :root {
-            --primary-color: #6366f1;
-            --secondary-color: #8b5cf6;
-            --accent-color: #06b6d4;
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --safe-area-top: env(safe-area-inset-top);
-            --safe-area-bottom: env(safe-area-inset-bottom);
-            --safe-area-left: env(safe-area-inset-left);
-            --safe-area-right: env(safe-area-inset-right);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            min-height: 100dvh; /* Dynamic viewport height pour mobile */
-            overflow-x: hidden;
-            position: relative;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            /* Support des safe areas */
-            padding-top: var(--safe-area-top);
-            padding-bottom: var(--safe-area-bottom);
-            padding-left: var(--safe-area-left);
-            padding-right: var(--safe-area-right);
-        }
-
-        .cosmic-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at 25% 25%, #ff6b6b 0%, transparent 50%),
-                        radial-gradient(circle at 75% 75%, #4ecdc4 0%, transparent 50%),
-                        radial-gradient(circle at 50% 50%, #45b7d1 0%, transparent 50%);
-            animation: cosmicShift 20s ease-in-out infinite;
-        }
-
-        @keyframes cosmicShift {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(180deg) scale(1.1); }
-        }
-
-        /* Optimisation des particules pour mobile */
-        .particle {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-            will-change: transform; /* Optimisation GPU */
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-        }
-
-        .container {
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
-            padding: 15px;
-            /* Ajustement pour les encoches iPhone */
-            padding-top: max(15px, var(--safe-area-top));
-            padding-bottom: max(15px, var(--safe-area-bottom));
-        }
-
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px); /* Support Safari */
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: var(--shadow-lg);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .forum-container {
-            max-width: 100%;
-            width: 100%;
-            height: calc(100vh - 30px);
-            height: calc(100dvh - 30px);
-            display: flex;
-            flex-direction: column;
-            /* Ajustement pour les safe areas */
-            max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom) - 30px);
-        }
-
-        .forum-header {
-            text-align: center;
-            margin-bottom: 15px;
-            color: white;
-            /* Éviter le reflow */
-            min-height: 60px;
-            display: flex;
-            flex-direction: column;
             justify-content: center;
+            padding: 20px;
+        }
+
+        .notification-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .notification-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bellRing 2s infinite;
+        }
+
+        @keyframes bellRing {
+            0%, 50%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(-15deg); }
+            20%, 40% { transform: rotate(15deg); }
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .notification-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .notification-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .notification-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            display: block;
+        }
+
+        .token-display {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            word-break: break-all;
+            font-size: 0.85rem;
+            color: #495057;
+            display: none;
         }
 
         .messages-container {
-            flex: 1;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 15px;
+            margin-top: 2rem;
+            max-height: 300px;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Défilement fluide iOS */
-            margin-bottom: 15px;
-            /* Hauteur dynamique pour éviter les problèmes de viewport */
-            min-height: 0;
-        }
-
-        .message {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-left: 3px solid var(--primary-color);
-            animation: slideIn 0.3s ease-out;
-            /* Optimisation pour éviter les repaints */
-            transform: translateZ(0);
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-20px) translateZ(0); opacity: 0; }
-            to { transform: translateX(0) translateZ(0); opacity: 1; }
-        }
-
-        .message.sticker {
-            text-align: center;
-            border-left-color: var(--accent-color);
-        }
-
-        .message .user {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-
-        .user-avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            object-fit: cover;
-            flex-shrink: 0;
-        }
-
-        .message .content {
-            color: white;
-            font-size: 15px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .sticker .content {
-            font-size: 28px;
-        }
-
-        .input-container {
-            display: flex;
-            gap: 8px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 12px;
-            /* Positionnement fixe pour éviter les problèmes de clavier */
-            position: relative;
-        }
-
-        input[type="text"], input[type="tel"], textarea {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 12px;
-            color: white;
-            font-size: 16px; /* 16px minimum pour éviter l'auto-zoom sur iOS */
-            resize: none;
-            min-height: 20px;
-            max-height: 100px;
-            /* Style natif pour iOS/Android */
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            /* Optimisation pour le clavier mobile */
-            -webkit-user-select: text;
-            user-select: text;
-        }
-
-        /* Styles spécifiques pour les inputs sur mobile */
-        @supports (-webkit-touch-callout: none) {
-            /* Styles spécifiques iOS */
-            input[type="text"], input[type="tel"], textarea {
-                -webkit-text-size-adjust: 100%;
-            }
-        }
-
-        input::placeholder, textarea::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .btn {
-            background: var(--primary-color);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 16px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 15px;
-            /* Optimisation tactile */
-            touch-action: manipulation;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            /* Taille minimale pour le touch */
-            min-height: 44px;
-            min-width: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn:active {
-            background: var(--secondary-color);
-            transform: scale(0.98);
-        }
-
-        /* Hover seulement sur les appareils non-tactiles */
-        @media (hover: hover) {
-            .btn:hover {
-                background: var(--secondary-color);
-                transform: translateY(-1px);
-            }
-        }
-
-        .sticker-panel {
             display: none;
-            position: absolute;
-            bottom: calc(100% + 10px);
-            right: 0;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
-            width: 280px;
-            max-width: calc(100vw - 30px);
-            z-index: 1000;
-            /* Éviter les débordements */
-            max-height: 200px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
-        .sticker {
-            font-size: 22px;
-            padding: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            background: rgba(255, 255, 255, 0.1);
-            /* Taille tactile optimale */
-            min-width: 44px;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-
-        .sticker:active {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(0.95);
-        }
-
-        @media (hover: hover) {
-            .sticker:hover {
-                background: rgba(255, 255, 255, 0.2);
-                transform: scale(1.1);
-            }
-        }
-
-        .sticker-toggle {
-            position: relative;
-        }
-
-        .notification-toast {
-            position: fixed;
-            top: max(20px, var(--safe-area-top));
-            right: max(15px, var(--safe-area-right));
-            left: max(15px, var(--safe-area-left));
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+        .message-item {
+            background: #f8f9fa;
+            padding: 1rem;
             border-radius: 12px;
-            padding: 14px 16px;
-            color: white;
-            box-shadow: var(--shadow-lg);
-            z-index: 1001;
-            transform: translateY(-100px);
-            transition: all 0.3s ease;
-            /* Responsive sur mobile */
-            max-width: calc(100vw - 30px);
-            font-size: 14px;
+            margin-bottom: 0.5rem;
+            text-align: left;
+            border-left: 4px solid #667eea;
         }
 
-        .notification-toast.show {
-            transform: translateY(0);
-        }
-
-        .notification-title {
+        .message-title {
             font-weight: 600;
-            margin-bottom: 4px;
+            color: #667eea;
+            margin-bottom: 0.5rem;
         }
 
-        .notification-message {
-            font-size: 13px;
-            opacity: 0.9;
-            line-height: 1.3;
+        .message-body {
+            color: #666;
+            font-size: 0.9rem;
         }
 
-        .loading, .no-messages {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            font-size: 15px;
-        }
-
-        .signup-title {
-            color: white;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 22px;
-            font-weight: 600;
-        }
-
-        .signup-subtitle {
-            color: rgba(255, 255, 255, 0.8);
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        /* Styles spécifiques pour les petits écrans */
-        @media (max-width: 480px) {
-            .container { 
-                padding: 10px;
-                padding-top: max(10px, var(--safe-area-top));
-                padding-bottom: max(10px, var(--safe-area-bottom));
-            }
-            
-            .glass-panel { 
-                padding: 20px;
-                border-radius: 15px;
-            }
-            
-            .forum-container { 
-                height: calc(100vh - 20px);
-                height: calc(100dvh - 20px);
-            }
-            
-            .messages-container { 
-                padding: 12px;
-            }
-            
-            .input-container {
-                padding: 10px;
-                gap: 6px;
-            }
-            
-            .btn {
-                padding: 10px 12px;
-                font-size: 14px;
-            }
-            
-            .message {
-                padding: 10px;
-                margin-bottom: 6px;
-            }
-            
-            .message .content {
-                font-size: 14px;
-            }
-            
-            .sticker .content {
-                font-size: 24px;
-            }
-            
-            .signup-title {
-                font-size: 20px;
-            }
-            
-            .sticker-panel {
-                width: calc(100vw - 40px);
-                right: -10px;
-            }
-        }
-
-        /* Styles pour les très petits écrans */
-        @media (max-width: 360px) {
-            .forum-header h1 {
-                font-size: 18px;
-            }
-            
-            .forum-header p {
-                font-size: 12px;
-            }
-            
-            .signup-title {
-                font-size: 18px;
-            }
-            
-            .signup-subtitle {
-                font-size: 13px;
-            }
-        }
-
-        /* Support du mode paysage sur mobile */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .forum-header {
-                margin-bottom: 10px;
-                min-height: 40px;
-            }
-            
-            .forum-header h1 {
-                font-size: 16px;
-                margin-bottom: 2px;
-            }
-            
-            .forum-header p {
-                font-size: 12px;
-            }
-            
-            .messages-container {
-                margin-bottom: 10px;
-            }
-            
-            .input-container {
-                padding: 8px;
-            }
-        }
-
-        /* Amélioration du contraste pour l'accessibilité */
-        @media (prefers-contrast: high) {
-            .glass-panel {
-                background: rgba(255, 255, 255, 0.2);
-                border: 2px solid rgba(255, 255, 255, 0.4);
-            }
-            
-            .message {
-                background: rgba(255, 255, 255, 0.15);
-            }
-        }
-
-        /* Respect des préférences de mouvement réduit */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-            
-            .cosmic-bg {
-                animation: none;
-            }
-            
-            .particle {
-                animation: none;
-            }
-        }
-
-        /* Support du mode sombre système */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --glass-bg: rgba(255, 255, 255, 0.08);
-                --glass-border: rgba(255, 255, 255, 0.15);
-            }
+        .message-time {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <div class="cosmic-bg"></div>
-    
-    <!-- Formulaire d'inscription -->
-    <div id="signup-form" class="container">
-        <div class="glass-panel">
-            <h1 class="signup-title">🌌 Forum Cosmique</h1>
-            <p class="signup-subtitle">Entrez votre numéro pour rejoindre la conversation</p>
-            <form id="registerForm">
-                <input type="tel" id="phone" placeholder="📱 Numéro de téléphone" required>
-                <br><br>
-                <button type="submit" class="btn">🚀 Rejoindre le cosmos</button>
-            </form>
+    <div class="notification-card">
+        <div class="notification-icon">🔔</div>
+        <h1>Notifications Push FCM</h1>
+        <p class="description">
+            Activez les notifications pour recevoir un message de remerciement toutes les 2 secondes 
+            lorsque vous n'êtes pas sur la page.
+        </p>
+        
+        <button id="enable-notifications" class="notification-btn">
+            🔔 Activer les notifications
+        </button>
+        
+        <button id="test-notification" class="notification-btn" style="display: none;">
+            📬 Envoyer une notification test
+        </button>
+        
+        <div id="status" class="status"></div>
+        
+        <div id="token-display" class="token-display"></div>
+        
+        <div id="messages-container" class="messages-container">
+            <h3 style="margin-bottom: 1rem; color: #667eea;">Messages reçus :</h3>
+            <div id="messages-list"></div>
         </div>
     </div>
-
-    <!-- Forum principal -->
-    <div id="forum" class="container" style="display: none;">
-        <div class="forum-container glass-panel">
-            <div class="forum-header">
-                <h1>BIENVENUE DANS LE TEMPLE DU Péché</h1>
-                <p>Connecté en tant que <strong id="userDisplay"></strong></p>
-            </div>
-            
-            <div id="messages" class="messages-container"></div>
-            
-            <form id="messageForm" class="input-container">
-                <textarea id="message" placeholder="✨ Partagez vos pensées cosmiques..." rows="1"></textarea>
-                <div class="sticker-toggle">
-                    <button type="button" id="stickerToggle" class="btn">😊</button>
-                    <div id="stickerPanel" class="sticker-panel">
-                        <div class="sticker" data-sticker="😀">😀</div>
-                        <div class="sticker" data-sticker="😍">😍</div>
-                        <div class="sticker" data-sticker="🤣">🤣</div>
-                        <div class="sticker" data-sticker="😮">😮</div>
-                        <div class="sticker" data-sticker="😢">😢</div>
-                        <div class="sticker" data-sticker="😡">😡</div>
-                        <div class="sticker" data-sticker="👍">👍</div>
-                        <div class="sticker" data-sticker="👎">👎</div>
-                        <div class="sticker" data-sticker="❤️">❤️</div>
-                        <div class="sticker" data-sticker="🔥">🔥</div>
-                        <div class="sticker" data-sticker="⭐">⭐</div>
-                        <div class="sticker" data-sticker="🌟">🌟</div>
-                    </div>
-                </div>
-                <button type="submit" class="btn">🚀</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-    // Configuration Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
-    authDomain: "data-fae4a.firebaseapp.com",
-    databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
-    projectId: "data-fae4a",
-    storageBucket: "data-fae4a.firebasestorage.app",
-    messagingSenderId: "1077301559347",
-    appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346",
-    measurementId: "G-C631QW9NDN"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// Elements DOM
-const signupDiv = document.getElementById('signup-form');
-const forumDiv = document.getElementById('forum');
-const registerForm = document.getElementById('registerForm');
-const messageForm = document.getElementById('messageForm');
-const phoneInput = document.getElementById('phone');
-const messageInput = document.getElementById('message');
-const messagesDiv = document.getElementById('messages');
-const stickerPanel = document.getElementById('stickerPanel');
-const stickerToggle = document.getElementById('stickerToggle');
-const userDisplay = document.getElementById('userDisplay');
-
-// Variables globales
-let username = "";
-let userPhone = "";
-let stickerPanelOpen = false;
-let isPageVisible = true;
-let notificationPermission = false;
-let lastMessageTimestamp = 0;
-let unseenMessages = 0;
-let lastNotifiedTimestamp = 0;
-
-// Constantes
-const STORAGE_KEY = 'cosmic_forum_user';
-const PHONE_KEY = 'cosmic_forum_phone';
-
-// ====== GESTION DE L'INSCRIPTION UNIQUE ======
-
-function saveUserData(phone) {
-    try {
-        const userData = {
-            phone: phone,
-            username: "user's",
-            timestamp: Date.now()
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsGrY-AqYMoI70kT3WMxLgW0HwYA4KyaQ",
+            authDomain: "livraison-c8498.firebaseapp.com",
+            projectId: "livraison-c8498",
+            storageBucket: "livraison-c8498.firebasestorage.app",
+            messagingSenderId: "403240604780",
+            appId: "1:403240604780:web:77d84ad03d68bdaddfb449",
+            measurementId: "G-5YF89BZ5RY"
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-        localStorage.setItem(PHONE_KEY, phone);
-        console.log('✅ Données utilisateur sauvegardées');
-    } catch (error) {
-        console.error('❌ Erreur sauvegarde:', error);
-        setCookie(PHONE_KEY, phone, 365);
-    }
-}
 
-function getUserData() {
-    try {
-        const userData = localStorage.getItem(STORAGE_KEY);
-        if (userData) {
-            const parsed = JSON.parse(userData);
-            console.log('✅ Données utilisateur trouvées');
-            return parsed;
-        }
-    } catch (error) {
-        console.error('❌ Erreur lecture:', error);
-        const phone = getCookie(PHONE_KEY);
-        if (phone) {
-            return { phone: phone, username: "user's" };
-        }
-    }
-    return null;
-}
+        // VAPID Key
+        const vapidKey = 'BGL6IVuJSbQjI69fot6FvfGEBmq1t4_hPP1Dhx_KYiIEFCrOLjtYFWjID_MlteNgJtm7FFbdIfBygdRi_IF-qng';
 
-function clearUserData() {
-    try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(PHONE_KEY);
-        setCookie(PHONE_KEY, '', -1);
-        console.log('🗑️ Données utilisateur supprimées');
-    } catch (error) {
-        console.error('❌ Erreur suppression:', error);
-    }
-}
-
-// Fonctions cookies (fallback)
-function setCookie(name, value, days) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-}
-
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
-// ====== GESTION DES NOTIFICATIONS ======
-
-async function initNotifications() {
-    if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        notificationPermission = permission === 'granted';
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
         
-        if (notificationPermission) {
-            console.log('🔔 Notifications activées');
-            showToast('Notifications', 'Vous serez notifié des nouveaux messages !', 'success');
-        } else {
-            console.log('🔕 Notifications refusées');
-            showToast('Notifications', 'Activez les notifications pour ne rien manquer', 'warning');
+        // Obtenir l'instance Messaging
+        let messaging;
+        try {
+            messaging = firebase.messaging();
+            console.log('Firebase Messaging initialisé avec succès');
+        } catch (error) {
+            console.error('Erreur initialisation Firebase Messaging:', error);
+            showStatus('Erreur: ' + error.message, 'error');
         }
-    } else {
-        console.log('❌ Notifications non supportées');
-    }
-}
 
-function showNotification(title, body, options = {}) {
-    if (!notificationPermission || isPageVisible) return;
+        // Variables globales
+        let notificationInterval = null;
+        let messageCounter = 0;
 
-    const notification = new Notification(title, {
-        body: body,
-        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">💬</text></svg>',
-        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%236366f1"/></svg>',
-        tag: 'forum-message',
-        requireInteraction: false,
-        vibrate: [200, 100, 200],
-        ...options
-    });
+        // Éléments DOM
+        const enableBtn = document.getElementById('enable-notifications');
+        const testBtn = document.getElementById('test-notification');
+        const statusDiv = document.getElementById('status');
+        const tokenDisplay = document.getElementById('token-display');
+        const messagesContainer = document.getElementById('messages-container');
+        const messagesList = document.getElementById('messages-list');
 
-    notification.onclick = function() {
-        window.focus();
-        notification.close();
-    };
-
-    setTimeout(() => {
-        notification.close();
-    }, 8000);
-}
-
-function showWebPushNotification(sender, text, sticker = false) {
-    if (!('serviceWorker' in navigator)) return;
-    
-    const notifTitle = sticker
-        ? `💬 Nouveau sticker de ${sender}`
-        : `💬 Nouveau message de ${sender}`;
-    const notifBody = sticker ? text : (text.length > 60 ? text.substring(0, 60) + '...' : text);
-
-    navigator.serviceWorker.ready.then(function(registration) {
-        registration.showNotification(notifTitle, {
-            body: notifBody,
-            icon: '/image/wze.jpg',
-            badge: '/image/wze.jpg',
-            data: { url: window.location.href },
-            tag: 'cosmic-forum-msg',
-            renotify: true,
-            vibrate: [80, 33, 80],
-            requireInteraction: false
-        });
-    });
-}
-
-function showToast(title, message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    
-    let icon = '💬';
-    switch(type) {
-        case 'success': icon = '✅'; break;
-        case 'warning': icon = '⚠️'; break;
-        case 'error': icon = '❌'; break;
-    }
-    
-    toast.innerHTML = `
-        <div class="notification-title">${icon} ${escapeHtml(title)}</div>
-        <div class="notification-message">${escapeHtml(message)}</div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add('show'), 100);
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
-            }
-        }, 300);
-    }, 5000);
-}
-
-function flashPageTitle(senderName) {
-    const originalTitle = document.title;
-    let flashCount = 0;
-    const maxFlashes = 6;
-    
-    const flashInterval = setInterval(() => {
-        if (flashCount >= maxFlashes || isPageVisible) {
-            document.title = originalTitle;
-            clearInterval(flashInterval);
-            return;
+        // Fonction pour afficher le statut
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
         }
-        
-        document.title = flashCount % 2 === 0 
-            ? `💬 ${senderName} vous a écrit !` 
-            : originalTitle;
-        
-        flashCount++;
-    }, 1000);
-}
 
-// ====== FONCTIONS UTILITAIRES ======
-
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
-function showSignup() {
-    signupDiv.style.display = 'flex';
-    forumDiv.style.display = 'none';
-}
-
-function showForum() {
-    signupDiv.style.display = 'none';
-    forumDiv.style.display = 'flex';
-    userDisplay.textContent = username;
-}
-
-function createCosmicParticles() {
-    for (let i = 0; i < 50; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.width = Math.random() * 4 + 2 + 'px';
-        particle.style.height = particle.style.width;
-        particle.style.animationDelay = Math.random() * 6 + 's';
-        particle.style.opacity = Math.random() * 0.5 + 0.2;
-        document.body.appendChild(particle);
-    }
-}
-
-// ====== GESTION DES STICKERS ======
-
-function toggleStickerPanel() {
-    stickerPanelOpen = !stickerPanelOpen;
-    stickerPanel.style.display = stickerPanelOpen ? 'flex' : 'none';
-    stickerToggle.textContent = stickerPanelOpen ? '⌨️' : '😊';
-}
-
-function sendSticker(stickerEmoji) {
-    const msg = {
-        username,
-        text: stickerEmoji,
-        timestamp: Date.now(),
-        isSticker: true
-    };
-    db.ref('messages').push(msg);
-    toggleStickerPanel();
-}
-
-// ====== GESTION DES MESSAGES ======
-
-function loadMessages() {
-    messagesDiv.innerHTML = '<div class="loading">🌌 Synchronisation avec le cosmos...</div>';
-
-    db.ref('messages').limitToLast(100).on('value', function(snapshot) {
-        messagesDiv.innerHTML = '';
-        const msgs = snapshot.val();
-
-        if (!msgs) {
-            messagesDiv.innerHTML = '<div class="no-messages">🌟 Soyez le premier à illuminer ce cosmos !</div>';
-            return;
-        }
-        
-        const messageArray = Object.entries(msgs).map(([key, msg]) => ({...msg, key}));
-        
-        messageArray.forEach(m => {
-            const div = document.createElement('div');
-            div.className = m.isSticker ? 'message sticker' : 'message';
-            
-            div.innerHTML = `
-                <span class="user">
-                    <img src="image/wze.jpg" alt="Avatar" class="user-avatar" onerror="this.style.display='none'">
-                    ${escapeHtml(m.username)}
-                </span>
-                <div class="content">${m.isSticker ? m.text : escapeHtml(m.text)}</div>
+        // Fonction pour afficher un message reçu
+        function displayMessage(title, body) {
+            messageCounter++;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-item';
+            messageDiv.innerHTML = `
+                <div class="message-title">#${messageCounter} - ${title}</div>
+                <div class="message-body">${body}</div>
+                <div class="message-time">${new Date().toLocaleTimeString()}</div>
             `;
-            messagesDiv.appendChild(div);
-        });
-        
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
+            messagesList.insertBefore(messageDiv, messagesList.firstChild);
+            messagesContainer.style.display = 'block';
+        }
 
-    // Écouter les nouveaux messages pour les notifications
-    db.ref('messages').on('child_added', function(snapshot) {
-        const messageData = snapshot.val();
-        
-        // Ignorer les anciens messages et ses propres messages
-        if (messageData.timestamp > lastMessageTimestamp && 
-            messageData.username !== username && 
-            lastMessageTimestamp > 0) {
-            
-            if (!isPageVisible) {
-                const title = '💬 Nouveau message';
-                let body = '';
+        // Messages de remerciement
+        const thankYouMessages = [
+            {
+                title: "🙏 Merci de votre confiance !",
+                body: "GROUPE EXPRESS vous remercie pour votre fidélité."
+            },
+            {
+                title: "⭐ Vous êtes formidable !",
+                body: "Merci de choisir GROUPE EXPRESS pour vos repas."
+            },
+            {
+                title: "🎉 Merci à vous !",
+                body: "Votre satisfaction est notre priorité chez GROUPE EXPRESS."
+            },
+            {
+                title: "💝 Toute notre gratitude !",
+                body: "GROUPE EXPRESS apprécie votre soutien continu."
+            },
+            {
+                title: "🌟 Merci beaucoup !",
+                body: "Ensemble, nous construisons une meilleure expérience."
+            },
+            {
+                title: "🙌 Un grand merci !",
+                body: "GROUPE EXPRESS est honoré de vous servir."
+            },
+            {
+                title: "💖 Merci infiniment !",
+                body: "Votre présence fait toute la différence."
+            },
+            {
+                title: "✨ Merci pour tout !",
+                body: "GROUPE EXPRESS vous souhaite une excellente journée."
+            }
+        ];
+
+        // Fonction pour obtenir un message aléatoire
+        function getRandomThankYouMessage() {
+            return thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
+        }
+
+        // Fonction pour envoyer une notification locale
+        function sendLocalNotification() {
+            if (!('Notification' in window)) {
+                console.error('Ce navigateur ne supporte pas les notifications');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                const message = getRandomThankYouMessage();
                 
-                if (messageData.isSticker) {
-                    body = `${messageData.username} a envoyé ${messageData.text}`;
+                // Afficher dans l'interface
+                displayMessage(message.title, message.body);
+
+                // Envoyer la notification si l'utilisateur n'est pas sur la page
+                if (document.hidden) {
+                    const notification = new Notification(message.title, {
+                        body: message.body,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🍽️</text></svg>',
+                        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🔔</text></svg>',
+                        tag: 'groupe-express-thanks',
+                        requireInteraction: false,
+                        silent: false
+                    });
+
+                    notification.onclick = function() {
+                        window.focus();
+                        notification.close();
+                    };
+                }
+            }
+        }
+
+        // Fonction pour démarrer l'envoi périodique
+        function startPeriodicNotifications() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+            }
+
+            // Envoyer une notification toutes les 2 secondes
+            notificationInterval = setInterval(() => {
+                sendLocalNotification();
+            }, 2000);
+
+            showStatus('✅ Notifications activées ! Vous recevrez un message toutes les 2 secondes.', 'success');
+            testBtn.style.display = 'block';
+        }
+
+        // Fonction pour arrêter les notifications
+        function stopPeriodicNotifications() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+                notificationInterval = null;
+            }
+        }
+
+        // Demander la permission et obtenir le token
+        async function requestPermission() {
+            try {
+                showStatus('⏳ Demande de permission en cours...', 'info');
+
+                // Demander la permission pour les notifications
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    console.log('Permission accordée');
+                    
+                    // Obtenir le token FCM
+                    try {
+                        const token = await messaging.getToken({ vapidKey: vapidKey });
+                        
+                        if (token) {
+                            console.log('Token FCM obtenu:', token);
+                            tokenDisplay.textContent = `Token FCM: ${token}`;
+                            tokenDisplay.style.display = 'block';
+                            
+                            // Sauvegarder le token
+                            localStorage.setItem('fcm_token', token);
+                            
+                            // Démarrer les notifications périodiques
+                            startPeriodicNotifications();
+                            
+                            // Changer le bouton
+                            enableBtn.textContent = '🔕 Désactiver les notifications';
+                            enableBtn.onclick = disableNotifications;
+                            
+                        } else {
+                            showStatus('❌ Impossible d\'obtenir le token FCM', 'error');
+                        }
+                    } catch (tokenError) {
+                        console.error('Erreur lors de l\'obtention du token:', tokenError);
+                        // Continuer quand même avec les notifications locales
+                        startPeriodicNotifications();
+                        showStatus('⚠️ Notifications locales activées (FCM non disponible)', 'info');
+                    }
+                    
+                } else if (permission === 'denied') {
+                    showStatus('❌ Permission refusée. Veuillez autoriser les notifications dans les paramètres de votre navigateur.', 'error');
                 } else {
-                    const shortText = messageData.text.length > 50 
-                        ? messageData.text.substring(0, 50) + '...' 
-                        : messageData.text;
-                    body = `${messageData.username}: ${shortText}`;
+                    showStatus('⚠️ Permission ignorée', 'info');
                 }
                 
-                showNotification(title, body);
-                flashPageTitle(messageData.username);
-                
-                // Notifications Web Push
-                unseenMessages++;
-                lastNotifiedTimestamp = messageData.timestamp;
-                let titleSuffix = unseenMessages > 1 ? `(${unseenMessages}) ` : '';
-                document.title = `${titleSuffix}Forum Cosmique`;
-                showWebPushNotification(messageData.username, messageData.text, !!messageData.isSticker);
+            } catch (error) {
+                console.error('Erreur:', error);
+                showStatus('❌ Erreur: ' + error.message, 'error');
             }
         }
-        
-        // Mettre à jour le timestamp du dernier message
-        if (messageData.timestamp > lastMessageTimestamp) {
-            lastMessageTimestamp = messageData.timestamp;
+
+        // Fonction pour désactiver les notifications
+        function disableNotifications() {
+            stopPeriodicNotifications();
+            showStatus('🔕 Notifications désactivées', 'info');
+            enableBtn.textContent = '🔔 Activer les notifications';
+            enableBtn.onclick = requestPermission;
+            testBtn.style.display = 'none';
         }
-    });
-}
 
-// ====== VÉRIFICATION DE L'INSCRIPTION ======
-
-function checkExistingUser() {
-    const userData = getUserData();
-    
-    if (userData && userData.phone) {
-        userPhone = userData.phone;
-        username = userData.username || "user's";
-        console.log('🔄 Utilisateur existant trouvé:', userPhone);
-        showForum();
-        loadMessages();
-        initNotifications();
-        return true;
-    }
-    
-    console.log('👤 Nouvel utilisateur');
-    showSignup();
-    return false;
-}
-
-// ====== FONCTIONS DE DEBUG ======
-
-function resetRegistration() {
-    clearUserData();
-    location.reload();
-}
-
-// ====== GESTIONNAIRES D'ÉVÉNEMENTS ======
-
-// Surveillance de la visibilité de la page
-document.addEventListener('visibilitychange', function() {
-    isPageVisible = !document.hidden;
-    if (!document.hidden) {
-        unseenMessages = 0;
-        document.title = 'Forum Cosmique';
-    }
-});
-
-window.addEventListener('focus', function() {
-    isPageVisible = true;
-});
-
-window.addEventListener('blur', function() {
-    isPageVisible = false;
-});
-
-// Initialisation
-window.onload = function() {
-    createCosmicParticles();
-    checkExistingUser();
-    lastMessageTimestamp = Date.now();
-    
-    // Enregistrement du Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('cosmic-sw.js')
-            .then(reg => console.log('✅ Service Worker enregistré', reg))
-            .catch(err => console.error('❌ Échec SW', err));
-    }
-    
-    // Permission notification
-    if ('Notification' in window && Notification.permission !== 'granted') {
-        Notification.requestPermission();
-    }
-};
-
-// Formulaire d'inscription
-registerForm.onsubmit = function(e) {
-    e.preventDefault();
-    const phone = phoneInput.value.replace(/\D/g, '');
-    
-    if (phone.length < 8) {
-        showToast('Erreur', 'Numéro de téléphone trop court !', 'error');
-        return;
-    }
-    
-    userPhone = phone;
-    username = "user's";
-    
-    saveUserData(userPhone);
-    showToast('Bienvenue', 'Inscription réussie ! Bienvenue dans le TEMPLE DU Péché', 'success');
-    
-    showForum();
-    loadMessages();
-    initNotifications();
-};
-
-// Formulaire de message
-messageForm.onsubmit = function(e) {
-    e.preventDefault();
-    const text = messageInput.value.trim();
-    if (!text) return;
-    
-    const msg = {
-        username,
-        text,
-        timestamp: Date.now(),
-        isSticker: false
-    };
-    
-    db.ref('messages').push(msg).then(() => {
-        messageInput.value = '';
-        messageInput.style.height = 'auto';
-    });
-};
-
-// Stickers
-stickerToggle.onclick = toggleStickerPanel;
-
-document.querySelectorAll('.sticker').forEach(sticker => {
-    sticker.onclick = function() {
-        const emoji = this.getAttribute('data-sticker');
-        sendSticker(emoji);
-    };
-});
-
-// Fermer le panneau de stickers en cliquant ailleurs
-document.addEventListener('click', function(e) {
-    if (stickerPanelOpen && 
-        !stickerPanel.contains(e.target) && 
-        e.target !== stickerToggle) {
-        toggleStickerPanel();
-    }
-});
-
-// Auto-resize du textarea
-messageInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-});
-
-// Raccourcis clavier
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && stickerPanelOpen) {
-        toggleStickerPanel();
-    }
-    if (e.key === 'Enter' && e.ctrlKey && messageInput === document.activeElement) {
-        messageForm.dispatchEvent(new Event('submit'));
-    }
-    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        if (confirm('Voulez-vous vraiment réinitialiser votre inscription ?')) {
-            resetRegistration();
+        // Gestionnaire de messages en premier plan
+        if (messaging) {
+            messaging.onMessage((payload) => {
+                console.log('Message reçu en premier plan:', payload);
+                
+                const title = payload.notification?.title || 'GROUPE EXPRESS';
+                const body = payload.notification?.body || 'Nouveau message';
+                
+                displayMessage(title, body);
+                
+                // Afficher une notification même en premier plan
+                if (Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: body,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🍽️</text></svg>',
+                    });
+                }
+            });
         }
-    }
-});
 
-console.log('🌌 Forum Cosmique initialisé !');
-console.log('💡 Debug: Ctrl+Shift+R pour réinitialiser l\'inscription');
-</script>
+        // Bouton pour activer les notifications
+        enableBtn.addEventListener('click', requestPermission);
+
+        // Bouton pour envoyer une notification test
+        testBtn.addEventListener('click', () => {
+            sendLocalNotification();
+            showStatus('✅ Notification test envoyée !', 'success');
+        });
+
+        // Vérifier si les notifications sont déjà autorisées au chargement
+        window.addEventListener('load', () => {
+            if (Notification.permission === 'granted') {
+                const savedToken = localStorage.getItem('fcm_token');
+                if (savedToken) {
+                    tokenDisplay.textContent = `Token FCM sauvegardé: ${savedToken}`;
+                    tokenDisplay.style.display = 'block';
+                }
+                showStatus('ℹ️ Les notifications sont déjà autorisées. Cliquez sur "Activer" pour démarrer.', 'info');
+            }
+        });
+
+        // Gérer la visibilité de la page
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('Page en arrière-plan - Les notifications seront envoyées');
+            } else {
+                console.log('Page active - Les notifications seront affichées dans l\'interface');
+            }
+        });
+
+        // Nettoyer l'intervalle quand la page est fermée
+        window.addEventListener('beforeunload', () => {
+            stopPeriodicNotifications();
+        });
+
+        // Log pour le debugging
+        console.log('Application de notifications initialisée');
+        console.log('VAPID Key:', vapidKey);
+        console.log('Support des notifications:', 'Notification' in window);
+        console.log('Permission actuelle:', Notification.permission);
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // Enregistrer le service worker pour FCM
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('Service Worker enregistré avec succès:', registration.scope);
+                    
+                    // Utiliser ce service worker pour Firebase Messaging
+                    if (messaging) {
+                        messaging.useServiceWorker(registration);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Erreur lors de l\'enregistrement du Service Worker:', error);
+                });
+        }
+    </script>
+</body>
+</html>
