@@ -3,12 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GROUPE EXPRESS - Notifications Push</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-compat.js"></script>
-    
+    <title>Télémédecine - Consultation Patient (Debug Mode)</title>
     <style>
         * {
             margin: 0;
@@ -17,467 +12,991 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
 
-        .notification-card {
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
             background: white;
-            border-radius: 24px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 100%;
+            border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
             text-align: center;
         }
 
-        .notification-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            animation: bellRing 2s infinite;
-        }
-
-        @keyframes bellRing {
-            0%, 50%, 100% { transform: rotate(0deg); }
-            10%, 30% { transform: rotate(-15deg); }
-            20%, 40% { transform: rotate(15deg); }
-        }
-
-        h1 {
-            color: #667eea;
-            margin-bottom: 1rem;
-            font-size: 1.8rem;
-        }
-
-        .description {
-            color: #666;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .notification-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-
-        .notification-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        .notification-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
         }
 
         .status {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            display: none;
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 14px;
+            margin: 5px;
         }
 
-        .status.success {
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], 
+        textarea, 
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, 
+        textarea:focus, 
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .symptom-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .symptom-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .symptom-item:hover {
+            background: #e8e8e8;
+        }
+
+        .symptom-item.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .symptom-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
             background: #d4edda;
             color: #155724;
-            display: block;
+            border: 1px solid #c3e6cb;
         }
 
-        .status.error {
+        .alert-error {
             background: #f8d7da;
             color: #721c24;
-            display: block;
+            border: 1px solid #f5c6cb;
         }
 
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            display: block;
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
-        .token-display {
-            margin-top: 1rem;
-            padding: 1rem;
+        .api-config {
             background: #f8f9fa;
-            border-radius: 12px;
-            word-break: break-all;
-            font-size: 0.85rem;
-            color: #495057;
-            display: none;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
         }
 
-        .messages-container {
-            margin-top: 2rem;
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
+        .api-config.offline {
+            border-color: #dc3545;
+            background: #fff5f5;
         }
 
-        .message-item {
+        .api-config.online {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
             background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 0.5rem;
-            text-align: left;
+            border-radius: 10px;
             border-left: 4px solid #667eea;
         }
 
-        .message-title {
-            font-weight: 600;
+        .results h3 {
             color: #667eea;
-            margin-bottom: 0.5rem;
+            margin-bottom: 15px;
         }
 
-        .message-body {
-            color: #666;
-            font-size: 0.9rem;
+        .result-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
 
-        .message-time {
-            font-size: 0.75rem;
-            color: #999;
-            margin-top: 0.5rem;
+        .emergency-score {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .score-low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .score-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .score-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .debug-panel {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .debug-panel h4 {
+            font-family: 'Segoe UI', sans-serif;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .debug-entry {
+            padding: 5px;
+            margin: 3px 0;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+
+        .debug-error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .debug-success {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .mode-toggle {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 0 10px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
         }
     </style>
 </head>
 <body>
-    <div class="notification-card">
-        <div class="notification-icon">🔔</div>
-        <h1>Notifications Push FCM</h1>
-        <p class="description">
-            Activez les notifications pour recevoir un message de remerciement toutes les 2 secondes 
-            lorsque vous n'êtes pas sur la page.
-        </p>
-        
-        <button id="enable-notifications" class="notification-btn">
-            🔔 Activer les notifications
-        </button>
-        
-        <button id="test-notification" class="notification-btn" style="display: none;">
-            📬 Envoyer une notification test
-        </button>
-        
-        <div id="status" class="status"></div>
-        
-        <div id="token-display" class="token-display"></div>
-        
-        <div id="messages-container" class="messages-container">
-            <h3 style="margin-bottom: 1rem; color: #667eea;">Messages reçus :</h3>
-            <div id="messages-list"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Télémédecine - Consultation Patient</h1>
+            <div>
+                <div class="status" id="connectionStatus">🔴 Vérification...</div>
+                <div class="status" id="modeStatus">📡 Mode: Production</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <span>Mode Production</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="simulationMode">
+                    <span class="slider"></span>
+                </label>
+                <span>Mode Simulation (Test)</span>
+            </div>
+
+            <!-- Configuration API -->
+            <div class="api-config" id="apiConfig">
+                <label for="apiUrl">🔧 URL du Serveur Boni IA Cloud:</label>
+                <input type="text" id="apiUrl" value="http://10.239.174.223:8000" placeholder="http://localhost:8000">
+                <small style="display: block; margin-top: 5px; color: #666;">
+                    Format: Requêtes/Réponses en JSON | Authentification: clé API dans header HTTP
+                </small>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-secondary" onclick="testConnection()">🔍 Tester la connexion</button>
+                    <button class="btn btn-warning" onclick="useLocalhost()">🏠 Utiliser localhost:8000</button>
+                </div>
+            </div>
+
+            <!-- Informations Patient -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="icon">👤</span>
+                    Informations Patient
+                </h2>
+                <div class="input-group">
+                    <label for="patientId">ID Patient:</label>
+                    <input type="text" id="patientId" placeholder="Ex: PAT001" value="PAT001">
+                </div>
+            </div>
+
+            <!-- Sélection des Symptômes -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="icon">🩺</span>
+                    Symptômes
+                </h2>
+                <div class="symptom-selector" id="symptomSelector"></div>
+            </div>
+
+            <!-- Description Audio/Texte -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="icon">💬</span>
+                    Description des Symptômes
+                </h2>
+
+                <div class="input-group">
+                    <label for="transcript">Décrivez vos symptômes:</label>
+                    <textarea id="transcript" placeholder="Ex: J'ai de la fièvre depuis 2 jours, avec une toux sèche et de la fatigue..."></textarea>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="section">
+                <button class="btn btn-primary" onclick="startChat()">
+                    💬 Discussion avec IA
+                </button>
+                <button class="btn btn-secondary" onclick="analyzeTriage()">
+                    🚨 Analyse Urgence (Triage)
+                </button>
+                <button class="btn btn-secondary" onclick="getReport()">
+                    📄 Rapport Médical
+                </button>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Traitement en cours...</p>
+            </div>
+
+            <!-- Résultats -->
+            <div id="results"></div>
+
+            <!-- Debug Panel -->
+            <div class="debug-panel" id="debugPanel">
+                <h4>📊 Console de Debug</h4>
+                <div id="debugLog"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Configuration Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBsGrY-AqYMoI70kT3WMxLgW0HwYA4KyaQ",
-            authDomain: "livraison-c8498.firebaseapp.com",
-            projectId: "livraison-c8498",
-            storageBucket: "livraison-c8498.firebasestorage.app",
-            messagingSenderId: "403240604780",
-            appId: "1:403240604780:web:77d84ad03d68bdaddfb449",
-            measurementId: "G-5YF89BZ5RY"
-        };
+        // Configuration
+        let API_URL = 'http://10.239.174.223:8000';
+        let isSimulationMode = false;
+        let selectedSymptoms = {};
+        let debugLogs = [];
 
-        // VAPID Key
-        const vapidKey = 'BGL6IVuJSbQjI69fot6FvfGEBmq1t4_hPP1Dhx_KYiIEFCrOLjtYFWjID_MlteNgJtm7FFbdIfBygdRi_IF-qng';
-
-        // Initialiser Firebase
-        firebase.initializeApp(firebaseConfig);
-        
-        // Obtenir l'instance Messaging
-        let messaging;
-        try {
-            messaging = firebase.messaging();
-            console.log('Firebase Messaging initialisé avec succès');
-        } catch (error) {
-            console.error('Erreur initialisation Firebase Messaging:', error);
-            showStatus('Erreur: ' + error.message, 'error');
-        }
-
-        // Variables globales
-        let notificationInterval = null;
-        let messageCounter = 0;
-
-        // Éléments DOM
-        const enableBtn = document.getElementById('enable-notifications');
-        const testBtn = document.getElementById('test-notification');
-        const statusDiv = document.getElementById('status');
-        const tokenDisplay = document.getElementById('token-display');
-        const messagesContainer = document.getElementById('messages-container');
-        const messagesList = document.getElementById('messages-list');
-
-        // Fonction pour afficher le statut
-        function showStatus(message, type = 'info') {
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-        }
-
-        // Fonction pour afficher un message reçu
-        function displayMessage(title, body) {
-            messageCounter++;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message-item';
-            messageDiv.innerHTML = `
-                <div class="message-title">#${messageCounter} - ${title}</div>
-                <div class="message-body">${body}</div>
-                <div class="message-time">${new Date().toLocaleTimeString()}</div>
-            `;
-            messagesList.insertBefore(messageDiv, messagesList.firstChild);
-            messagesContainer.style.display = 'block';
-        }
-
-        // Messages de remerciement
-        const thankYouMessages = [
-            {
-                title: "🙏 Merci de votre confiance !",
-                body: "GROUPE EXPRESS vous remercie pour votre fidélité."
-            },
-            {
-                title: "⭐ Vous êtes formidable !",
-                body: "Merci de choisir GROUPE EXPRESS pour vos repas."
-            },
-            {
-                title: "🎉 Merci à vous !",
-                body: "Votre satisfaction est notre priorité chez GROUPE EXPRESS."
-            },
-            {
-                title: "💝 Toute notre gratitude !",
-                body: "GROUPE EXPRESS apprécie votre soutien continu."
-            },
-            {
-                title: "🌟 Merci beaucoup !",
-                body: "Ensemble, nous construisons une meilleure expérience."
-            },
-            {
-                title: "🙌 Un grand merci !",
-                body: "GROUPE EXPRESS est honoré de vous servir."
-            },
-            {
-                title: "💖 Merci infiniment !",
-                body: "Votre présence fait toute la différence."
-            },
-            {
-                title: "✨ Merci pour tout !",
-                body: "GROUPE EXPRESS vous souhaite une excellente journée."
-            }
+        // Symptômes disponibles
+        const availableSymptoms = [
+            'Fièvre', 'Toux', 'Mal de tête', 'Fatigue', 
+            'Douleur abdominale', 'Nausées', 'Vomissements', 
+            'Diarrhée', 'Douleur thoracique', 'Essoufflement',
+            'Vertiges', 'Douleur musculaire', 'Mal de gorge',
+            'Éruption cutanée', 'Perte d\'appétit'
         ];
 
-        // Fonction pour obtenir un message aléatoire
-        function getRandomThankYouMessage() {
-            return thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSymptomSelector();
+            loadApiUrl();
+            checkConnection();
+            
+            document.getElementById('apiUrl').addEventListener('change', saveApiUrl);
+            document.getElementById('simulationMode').addEventListener('change', toggleSimulationMode);
+        });
+
+        function addDebugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = { timestamp, message, type };
+            debugLogs.push(entry);
+            
+            const logDiv = document.getElementById('debugLog');
+            const entryDiv = document.createElement('div');
+            entryDiv.className = `debug-entry debug-${type}`;
+            entryDiv.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entryDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Garder seulement les 50 derniers logs
+            if (debugLogs.length > 50) {
+                debugLogs.shift();
+                logDiv.removeChild(logDiv.firstChild);
+            }
         }
 
-        // Fonction pour envoyer une notification locale
-        function sendLocalNotification() {
-            if (!('Notification' in window)) {
-                console.error('Ce navigateur ne supporte pas les notifications');
-                return;
-            }
-
-            if (Notification.permission === 'granted') {
-                const message = getRandomThankYouMessage();
+        function initializeSymptomSelector() {
+            const container = document.getElementById('symptomSelector');
+            
+            availableSymptoms.forEach(symptom => {
+                const item = document.createElement('div');
+                item.className = 'symptom-item';
+                item.innerHTML = `
+                    <input type="checkbox" id="symptom-${symptom}" value="${symptom}">
+                    <label for="symptom-${symptom}" style="margin: 0; cursor: pointer;">${symptom}</label>
+                `;
                 
-                // Afficher dans l'interface
-                displayMessage(message.title, message.body);
-
-                // Envoyer la notification si l'utilisateur n'est pas sur la page
-                if (document.hidden) {
-                    const notification = new Notification(message.title, {
-                        body: message.body,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🍽️</text></svg>',
-                        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🔔</text></svg>',
-                        tag: 'groupe-express-thanks',
-                        requireInteraction: false,
-                        silent: false
-                    });
-
-                    notification.onclick = function() {
-                        window.focus();
-                        notification.close();
-                    };
-                }
-            }
-        }
-
-        // Fonction pour démarrer l'envoi périodique
-        function startPeriodicNotifications() {
-            if (notificationInterval) {
-                clearInterval(notificationInterval);
-            }
-
-            // Envoyer une notification toutes les 2 secondes
-            notificationInterval = setInterval(() => {
-                sendLocalNotification();
-            }, 2000);
-
-            showStatus('✅ Notifications activées ! Vous recevrez un message toutes les 2 secondes.', 'success');
-            testBtn.style.display = 'block';
-        }
-
-        // Fonction pour arrêter les notifications
-        function stopPeriodicNotifications() {
-            if (notificationInterval) {
-                clearInterval(notificationInterval);
-                notificationInterval = null;
-            }
-        }
-
-        // Demander la permission et obtenir le token
-        async function requestPermission() {
-            try {
-                showStatus('⏳ Demande de permission en cours...', 'info');
-
-                // Demander la permission pour les notifications
-                const permission = await Notification.requestPermission();
-                
-                if (permission === 'granted') {
-                    console.log('Permission accordée');
-                    
-                    // Obtenir le token FCM
-                    try {
-                        const token = await messaging.getToken({ vapidKey: vapidKey });
-                        
-                        if (token) {
-                            console.log('Token FCM obtenu:', token);
-                            tokenDisplay.textContent = `Token FCM: ${token}`;
-                            tokenDisplay.style.display = 'block';
-                            
-                            // Sauvegarder le token
-                            localStorage.setItem('fcm_token', token);
-                            
-                            // Démarrer les notifications périodiques
-                            startPeriodicNotifications();
-                            
-                            // Changer le bouton
-                            enableBtn.textContent = '🔕 Désactiver les notifications';
-                            enableBtn.onclick = disableNotifications;
-                            
-                        } else {
-                            showStatus('❌ Impossible d\'obtenir le token FCM', 'error');
-                        }
-                    } catch (tokenError) {
-                        console.error('Erreur lors de l\'obtention du token:', tokenError);
-                        // Continuer quand même avec les notifications locales
-                        startPeriodicNotifications();
-                        showStatus('⚠️ Notifications locales activées (FCM non disponible)', 'info');
+                item.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = item.querySelector('input');
+                        checkbox.checked = !checkbox.checked;
                     }
                     
-                } else if (permission === 'denied') {
-                    showStatus('❌ Permission refusée. Veuillez autoriser les notifications dans les paramètres de votre navigateur.', 'error');
-                } else {
-                    showStatus('⚠️ Permission ignorée', 'info');
-                }
+                    const checkbox = item.querySelector('input');
+                    if (checkbox.checked) {
+                        item.classList.add('selected');
+                        selectedSymptoms[symptom] = 3;
+                    } else {
+                        item.classList.remove('selected');
+                        delete selectedSymptoms[symptom];
+                    }
+                });
                 
-            } catch (error) {
-                console.error('Erreur:', error);
-                showStatus('❌ Erreur: ' + error.message, 'error');
-            }
-        }
-
-        // Fonction pour désactiver les notifications
-        function disableNotifications() {
-            stopPeriodicNotifications();
-            showStatus('🔕 Notifications désactivées', 'info');
-            enableBtn.textContent = '🔔 Activer les notifications';
-            enableBtn.onclick = requestPermission;
-            testBtn.style.display = 'none';
-        }
-
-        // Gestionnaire de messages en premier plan
-        if (messaging) {
-            messaging.onMessage((payload) => {
-                console.log('Message reçu en premier plan:', payload);
-                
-                const title = payload.notification?.title || 'GROUPE EXPRESS';
-                const body = payload.notification?.body || 'Nouveau message';
-                
-                displayMessage(title, body);
-                
-                // Afficher une notification même en premier plan
-                if (Notification.permission === 'granted') {
-                    new Notification(title, {
-                        body: body,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🍽️</text></svg>',
-                    });
-                }
+                container.appendChild(item);
             });
         }
 
-        // Bouton pour activer les notifications
-        enableBtn.addEventListener('click', requestPermission);
-
-        // Bouton pour envoyer une notification test
-        testBtn.addEventListener('click', () => {
-            sendLocalNotification();
-            showStatus('✅ Notification test envoyée !', 'success');
-        });
-
-        // Vérifier si les notifications sont déjà autorisées au chargement
-        window.addEventListener('load', () => {
-            if (Notification.permission === 'granted') {
-                const savedToken = localStorage.getItem('fcm_token');
-                if (savedToken) {
-                    tokenDisplay.textContent = `Token FCM sauvegardé: ${savedToken}`;
-                    tokenDisplay.style.display = 'block';
-                }
-                showStatus('ℹ️ Les notifications sont déjà autorisées. Cliquez sur "Activer" pour démarrer.', 'info');
+        function loadApiUrl() {
+            const saved = localStorage.getItem('apiUrl');
+            if (saved) {
+                API_URL = saved;
+                document.getElementById('apiUrl').value = saved;
             }
-        });
-
-        // Gérer la visibilité de la page
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                console.log('Page en arrière-plan - Les notifications seront envoyées');
-            } else {
-                console.log('Page active - Les notifications seront affichées dans l\'interface');
-            }
-        });
-
-        // Nettoyer l'intervalle quand la page est fermée
-        window.addEventListener('beforeunload', () => {
-            stopPeriodicNotifications();
-        });
-
-        // Log pour le debugging
-        console.log('Application de notifications initialisée');
-        console.log('VAPID Key:', vapidKey);
-        console.log('Support des notifications:', 'Notification' in window);
-        console.log('Permission actuelle:', Notification.permission);
-    </script>
-
-    <!-- Service Worker Registration -->
-    <script>
-        // Enregistrer le service worker pour FCM
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then((registration) => {
-                    console.log('Service Worker enregistré avec succès:', registration.scope);
-                    
-                    // Utiliser ce service worker pour Firebase Messaging
-                    if (messaging) {
-                        messaging.useServiceWorker(registration);
-                    }
-                })
-                .catch((error) => {
-                    console.error('Erreur lors de l\'enregistrement du Service Worker:', error);
-                });
         }
+
+        function saveApiUrl() {
+            API_URL = document.getElementById('apiUrl').value;
+            localStorage.setItem('apiUrl', API_URL);
+            addDebugLog(`URL API mise à jour: ${API_URL}`, 'info');
+            checkConnection();
+        }
+
+        function useLocalhost() {
+            API_URL = 'http://localhost:8000';
+            document.getElementById('apiUrl').value = API_URL;
+            saveApiUrl();
+        }
+
+        function toggleSimulationMode() {
+            isSimulationMode = document.getElementById('simulationMode').checked;
+            const modeStatus = document.getElementById('modeStatus');
+            
+            if (isSimulationMode) {
+                modeStatus.textContent = '🧪 Mode: Simulation (Test)';
+                modeStatus.style.background = 'rgba(255, 193, 7, 0.3)';
+                addDebugLog('Mode SIMULATION activé - Réponses simulées', 'success');
+                showAlert('⚠️ Mode simulation activé - Les réponses sont simulées', 'warning');
+            } else {
+                modeStatus.textContent = '📡 Mode: Production';
+                modeStatus.style.background = 'rgba(255,255,255,0.2)';
+                addDebugLog('Mode PRODUCTION activé - Connexion réelle au serveur', 'info');
+                checkConnection();
+            }
+        }
+
+        async function testConnection() {
+            addDebugLog('Test de connexion en cours...', 'info');
+            await checkConnection();
+        }
+
+        async function checkConnection() {
+            const status = document.getElementById('connectionStatus');
+            const apiConfig = document.getElementById('apiConfig');
+            
+            if (isSimulationMode) {
+                status.textContent = '🟡 Mode Simulation';
+                status.style.background = 'rgba(255, 193, 7, 0.3)';
+                apiConfig.className = 'api-config';
+                return;
+            }
+
+            status.textContent = '🟡 Test connexion...';
+            addDebugLog(`Tentative de connexion à ${API_URL}/health`, 'info');
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(`${API_URL}/health`, {
+                    signal: controller.signal,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    status.textContent = '🟢 Serveur Connecté';
+                    status.style.background = 'rgba(76, 175, 80, 0.3)';
+                    apiConfig.className = 'api-config online';
+                    addDebugLog('✅ Connexion réussie au serveur', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                status.textContent = '🔴 Serveur Non Accessible';
+                status.style.background = 'rgba(244, 67, 54, 0.3)';
+                apiConfig.className = 'api-config offline';
+                
+                const errorMsg = error.name === 'AbortError' 
+                    ? 'Timeout - Le serveur ne répond pas' 
+                    : error.message;
+                    
+                addDebugLog(`❌ Erreur connexion: ${errorMsg}`, 'error');
+                console.error('Connexion error:', error);
+            }
+        }
+
+        async function startChat() {
+            const transcript = document.getElementById('transcript').value;
+            
+            if (!transcript && Object.keys(selectedSymptoms).length === 0) {
+                showAlert('⚠️ Veuillez décrire vos symptômes ou en sélectionner', 'error');
+                return;
+            }
+
+            showLoading(true);
+            addDebugLog('Démarrage de la discussion avec l\'IA...', 'info');
+
+            try {
+                let messageText = transcript || 'Symptômes: ' + Object.keys(selectedSymptoms).join(', ');
+                
+                if (isSimulationMode) {
+                    // Mode simulation
+                    await simulateDelay(1500);
+                    const mockResponse = generateMockChatResponse(messageText);
+                    displayChatResponse(mockResponse);
+                    addDebugLog('Réponse simulée générée', 'success');
+                    showAlert('✅ Réponse simulée reçue!', 'success');
+                } else {
+                    // Mode production
+                    const payload = { text: messageText, lang: "fr" };
+                    addDebugLog(`Envoi requête: ${JSON.stringify(payload)}`, 'info');
+                    
+                    const response = await fetch(`${API_URL}/api/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        displayChatResponse(data);
+                        addDebugLog('Réponse reçue du serveur', 'success');
+                        showAlert('✅ Réponse reçue de l\'IA!', 'success');
+                    } else {
+                        throw new Error(data.detail || 'Erreur lors de la discussion');
+                    }
+                }
+            } catch (error) {
+                addDebugLog(`Erreur: ${error.message}`, 'error');
+                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function analyzeTriage() {
+            const transcript = document.getElementById('transcript').value;
+
+            if (Object.keys(selectedSymptoms).length === 0 && !transcript) {
+                showAlert('⚠️ Veuillez fournir des symptômes', 'error');
+                return;
+            }
+
+            showLoading(true);
+            addDebugLog('Analyse de triage en cours...', 'info');
+
+            try {
+                const symptomText = transcript || Object.keys(selectedSymptoms).join(', ');
+                
+                if (isSimulationMode) {
+                    await simulateDelay(2000);
+                    const mockResponse = generateMockTriageResponse(symptomText);
+                    displayTriageResults(mockResponse);
+                    addDebugLog('Résultat de triage simulé généré', 'success');
+                    showAlert('✅ Analyse simulée effectuée!', 'success');
+                } else {
+                    const payload = { text: symptomText, lang: "fr" };
+                    addDebugLog(`Envoi requête triage: ${JSON.stringify(payload)}`, 'info');
+                    
+                    const response = await fetch(`${API_URL}/api/triage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        displayTriageResults(data);
+                        addDebugLog('Résultat de triage reçu', 'success');
+                        showAlert('✅ Analyse d\'urgence effectuée!', 'success');
+                    } else {
+                        throw new Error(data.detail || 'Erreur lors de l\'analyse');
+                    }
+                }
+            } catch (error) {
+                addDebugLog(`Erreur triage: ${error.message}`, 'error');
+                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function getReport() {
+            const patientId = document.getElementById('patientId').value;
+
+            if (!patientId) {
+                showAlert('⚠️ Veuillez fournir un ID patient', 'error');
+                return;
+            }
+
+            showLoading(true);
+            addDebugLog(`Récupération du rapport pour ${patientId}...`, 'info');
+
+            try {
+                if (isSimulationMode) {
+                    await simulateDelay(1000);
+                    const mockReport = generateMockReport(patientId);
+                    displayReport(mockReport);
+                    addDebugLog('Rapport simulé généré', 'success');
+                    showAlert('✅ Rapport simulé récupéré!', 'success');
+                } else {
+                    const response = await fetch(`${API_URL}/api/rapport/${patientId}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        displayReport(data);
+                        addDebugLog('Rapport médical reçu', 'success');
+                        showAlert('✅ Rapport médical récupéré!', 'success');
+                    } else {
+                        throw new Error(data.detail || 'Erreur lors de la récupération du rapport');
+                    }
+                }
+            } catch (error) {
+                addDebugLog(`Erreur rapport: ${error.message}`, 'error');
+                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Fonctions de simulation
+        function simulateDelay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function generateMockChatResponse(query) {
+            const responses = [
+                "D'après vos symptômes, je vous recommande de vous hydrater régulièrement et de vous reposer. Si les symptômes persistent plus de 3 jours, consultez un médecin.",
+                "Ces symptômes peuvent indiquer une infection virale. Prenez du paracétamol pour la fièvre et surveillez votre température.",
+                "Je vous conseille de surveiller l'évolution de vos symptômes. Si vous ressentez des difficultés respiratoires, contactez immédiatement les urgences."
+            ];
+            
+            return {
+                response: responses[Math.floor(Math.random() * responses.length)],
+                confidence: 0.85,
+                action: "Surveillance des symptômes recommandée"
+            };
+        }
+
+        function generateMockTriageResponse(symptoms) {
+            const hasHighRisk = symptoms.toLowerCase().includes('thoracique') || 
+                               symptoms.toLowerCase().includes('essoufflement');
+            
+            const score = hasHighRisk ? 75 : symptoms.split(',').length * 15;
+            
+            return {
+                emergency_score: Math.min(score, 95),
+                recommendation: hasHighRisk 
+                    ? "🚨 URGENCE - Consultez immédiatement les urgences"
+                    : score > 40 
+                        ? "⚠️ Consultation médicale recommandée dans les 24h"
+                        : "✅ Surveillance à domicile possible",
+                symptoms_analyzed: symptoms.split(',').length,
+                risk_factors: hasHighRisk ? ["Symptômes cardiaques détectés"] : []
+            };
+        }
+
+        function generateMockReport(patientId) {
+            return {
+                patient_id: patientId,
+                date: new Date().toLocaleDateString('fr-FR'),
+                symptoms: Object.keys(selectedSymptoms).join(', '),
+                evaluation: "Consultation de télémédecine effectuée",
+                recommendations: [
+                    "Repos et hydratation",
+                    "Surveillance de la température",
+                    "Reconsultation si aggravation"
+                ],
+                status: "Évaluation complétée"
+            };
+        }
+
+        function displayChatResponse(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `
+                <div class="results">
+                    <h3>💬 Réponse de Boni IA</h3>
+                    <div class="result-item">
+                        <strong>Message:</strong>
+                        <p>${data.response || data.reply_text || data.message || 'Réponse reçue'}</p>
+                    </div>
+                    ${data.confidence ? `
+                    <div class="result-item">
+                        <strong>Niveau de confiance:</strong>
+                        <span>${(data.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    ` : ''}
+                    ${data.action ? `
+                    <div class="result-item">
+                        <strong>Action suggérée:</strong>
+                        <span>${data.action}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function displayTriageResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const score = data.emergency_score || data.score || 0;
+            
+            let scoreClass = 'score-low';
+            let urgencyText = 'FAIBLE';
+            if (score >= 60) {
+                scoreClass = 'score-high';
+                urgencyText = 'ÉLEVÉE';
+            } else if (score >= 40) {
+                scoreClass = 'score-medium';
+                urgencyText = 'MOYENNE';
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="results">
+                    <h3>🚨 Résultat du Triage</h3>
+                    <div class="result-item">
+                        <strong>Niveau d'Urgence:</strong>
+                        <span class="emergency-score ${scoreClass}">${urgencyText} (${score}/100)</span>
+                    </div>
+                    ${data.recommendation || data.action ? `
+                    <div class="result-item">
+                        <strong>Recommandation:</strong>
+                        <p>${data.recommendation || data.action}</p>
+                    </div>
+                    ` : ''}
+                    ${data.symptoms_analyzed ? `
+                    <div class="result-item">
+                        <strong>Symptômes analysés:</strong>
+                        <span>${data.symptoms_analyzed}</span>
+                    </div>
+                    ` : ''}
+                    ${data.risk_factors && data.risk_factors.length > 0 ? `
+                    <div class="result-item">
+                        <strong>Facteurs de risque:</strong>
+                        <ul style="margin-top: 5px; margin-left: 20px;">
+                            ${data.risk_factors.map(rf => `<li>${rf}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function displayReport(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `
+                <div class="results">
+                    <h3>📄 Rapport Médical</h3>
+                    <div class="result-item">
+                        <strong>Patient ID:</strong>
+                        <span>${data.patient_id || 'N/A'}</span>
+                    </div>
+                    ${data.date ? `
+                    <div class="result-item">
+                        <strong>Date:</strong>
+                        <span>${data.date}</span>
+                    </div>
+                    ` : ''}
+                    ${data.symptoms ? `
+                    <div class="result-item">
+                        <strong>Symptômes rapportés:</strong>
+                        <p>${data.symptoms}</p>
+                    </div>
+                    ` : ''}
+                    ${data.evaluation ? `
+                    <div class="result-item">
+                        <strong>Évaluation:</strong>
+                        <p>${data.evaluation}</p>
+                    </div>
+                    ` : ''}
+                    ${data.recommendations && data.recommendations.length > 0 ? `
+                    <div class="result-item">
+                        <strong>Recommandations:</strong>
+                        <ul style="margin-top: 5px; margin-left: 20px;">
+                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                    ${data.status ? `
+                    <div class="result-item">
+                        <strong>Statut:</strong>
+                        <span>${data.status}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const content = document.querySelector('.content');
+            const firstSection = content.querySelector('.section');
+            content.insertBefore(alertDiv, firstSection);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+
+        // Vérifier la connexion toutes les 30 secondes (seulement en mode production)
+        setInterval(() => {
+            if (!isSimulationMode) {
+                checkConnection();
+            }
+        }, 30000);
+
+        // Message de bienvenue
+        setTimeout(() => {
+            addDebugLog('Interface de télémédecine initialisée', 'success');
+            addDebugLog('💡 Astuce: Utilisez le mode simulation si le serveur n\'est pas accessible', 'info');
+        }, 500);
     </script>
 </body>
 </html>
