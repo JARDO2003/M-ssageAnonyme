@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Télémédecine - Consultation Patient (Debug Mode)</title>
+    <title>Le Temple du Péché</title>
     <style>
         * {
             margin: 0;
@@ -13,990 +13,865 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Intro Video COD Style */
+        .intro-video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .intro-video-container.hidden {
+            display: none;
+        }
+
+        .danger-badge {
+            position: absolute;
+            top: 20px;
+            width: 200px;
+            height: 200px;
+            animation: rotateBadge 10s linear infinite;
+        }
+
+        @keyframes rotateBadge {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .video-text {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff0066;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 0, 102, 0.8);
+            animation: glitch 2s infinite;
+            font-family: 'Impact', sans-serif;
+        }
+
+        @keyframes glitch {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 0, 102, 0.8); }
+            25% { text-shadow: -2px 0 20px rgba(255, 0, 102, 0.8), 2px 0 20px rgba(0, 255, 255, 0.8); }
+            50% { text-shadow: 2px 0 20px rgba(255, 0, 102, 0.8), -2px 0 20px rgba(0, 255, 255, 0.8); }
+            75% { text-shadow: -2px 0 20px rgba(255, 0, 102, 0.8), 2px 0 20px rgba(0, 255, 255, 0.8); }
+        }
+
+        .skip-button {
+            position: absolute;
+            bottom: 40px;
+            padding: 15px 40px;
+            background: rgba(255, 0, 102, 0.2);
+            border: 2px solid #ff0066;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .skip-button:hover {
+            background: rgba(255, 0, 102, 0.5);
+            transform: scale(1.1);
+        }
+
+        /* Écran d'inscription */
+        .registration-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
+        .registration-card {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            border: 2px solid #ff0066;
+            box-shadow: 0 0 50px rgba(255, 0, 102, 0.3);
+            max-width: 400px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .skull-icon {
+            font-size: 60px;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        input[type="tel"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ff0066;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="tel"]:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
+        }
+
+        input[type="tel"]::placeholder {
+            color: #999;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.6);
+        }
+
+        /* Animation de bienvenue */
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: welcomeFadeOut 4s ease forwards;
+        }
+
+        @keyframes welcomeFadeOut {
+            0%, 70% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        .welcome-content {
+            text-align: center;
+            animation: welcomeZoom 2s ease;
+        }
+
+        @keyframes welcomeZoom {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .welcome-title {
+            font-size: 60px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .welcome-subtitle {
+            font-size: 24px;
+            color: #fff;
+            margin-top: 20px;
+        }
+
+        /* Chat principal */
+        .chat-container {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .chat-container.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #ff0066;
             text-align: center;
         }
 
-        .header h1 {
+        .chat-header h2 {
             font-size: 28px;
-            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .status {
-            display: inline-block;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 20px;
-            font-size: 14px;
-            margin: 5px;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .icon {
-            font-size: 24px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-weight: 500;
-            color: #555;
-            margin-bottom: 8px;
-        }
-
-        input[type="text"], 
-        textarea, 
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, 
-        textarea:focus, 
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .symptom-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
+        .warning-text {
+            color: #ffaa00;
+            font-size: 12px;
             margin-top: 10px;
         }
 
-        .symptom-item {
+        .messages-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 0, 102, 0.3);
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #ff0066;
+            border-radius: 10px;
+        }
+
+        .message {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 3px solid #ff0066;
+            animation: messageSlide 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .message:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .message.reply {
+            margin-left: 40px;
+            border-left: 3px solid #00ff88;
+        }
+
+        .reply-to {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #00ff88;
+            border-left: 2px solid #00ff88;
+        }
+
+        .reply-actions {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .message:hover .reply-actions {
+            opacity: 1;
+        }
+
+        .btn-reply {
+            background: rgba(255, 0, 102, 0.3);
+            border: 1px solid #ff0066;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reply:hover {
+            background: rgba(255, 0, 102, 0.6);
+        }
+
+        .unread-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff0066;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            animation: bounce 1s infinite;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.6);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .username {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .timestamp {
+            color: #999;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .message-text {
+            color: #fff;
+            line-height: 1.5;
+        }
+
+        .input-container {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            gap: 10px;
+            border: 2px solid #ff0066;
+            position: relative;
+            flex-wrap: wrap;
+        }
+
+        .replying-to-banner {
+            display: none;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #00ff88;
+            width: 100%;
+        }
+
+        .replying-to-banner.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cancel-reply {
+            background: rgba(255, 0, 102, 0.5);
+            border: none;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .sticker-picker {
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ff0066;
+            border-radius: 15px;
+            padding: 15px;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 10px;
+            max-width: 400px;
+            z-index: 10;
+        }
+
+        .sticker-picker.active {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .sticker-item {
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .sticker-item:hover {
+            transform: scale(1.3);
+        }
+
+        .btn-sticker {
+            padding: 10px 20px;
+            background: rgba(255, 0, 102, 0.3);
+            border: 2px solid #ff0066;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 24px;
+        }
+
+        .btn-sticker:hover {
+            background: rgba(255, 0, 102, 0.6);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid rgba(255, 0, 102, 0.5);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            resize: none;
+            font-family: inherit;
+            min-width: 200px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 15px rgba(255, 0, 102, 0.3);
+        }
+
+        .message-input::placeholder {
+            color: #999;
+        }
+
+        .btn-send {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
-        .symptom-item:hover {
-            background: #e8e8e8;
+        .btn-send:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.6);
         }
 
-        .symptom-item.selected {
-            background: #667eea;
-            color: white;
-        }
-
-        .symptom-item input[type="checkbox"] {
-            cursor: pointer;
-        }
-
-        .btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #000;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .api-config {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #e0e0e0;
-        }
-
-        .api-config.offline {
-            border-color: #dc3545;
-            background: #fff5f5;
-        }
-
-        .api-config.online {
-            border-color: #28a745;
-            background: #f0fff4;
-        }
-
-        .results {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .results h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .result-item {
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .emergency-score {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 18px;
-        }
-
-        .score-low {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .score-medium {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .score-high {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .debug-panel {
-            background: #f8f9fa;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .debug-panel h4 {
-            font-family: 'Segoe UI', sans-serif;
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        .debug-entry {
-            padding: 5px;
-            margin: 3px 0;
-            border-left: 3px solid #667eea;
-            padding-left: 10px;
-        }
-
-        .debug-error {
-            border-left-color: #dc3545;
-            background: #fff5f5;
-        }
-
-        .debug-success {
-            border-left-color: #28a745;
-            background: #f0fff4;
-        }
-
-        .mode-toggle {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-            margin: 0 10px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: #667eea;
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏥 Télémédecine - Consultation Patient</h1>
-            <div>
-                <div class="status" id="connectionStatus">🔴 Vérification...</div>
-                <div class="status" id="modeStatus">📡 Mode: Production</div>
-            </div>
-        </div>
+    <!-- Intro Video COD Style -->
+    <div class="intro-video-container" id="introVideo">
+        <svg class="danger-badge" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="90" fill="#ff0066" stroke="#000" stroke-width="4"/>
+            <path d="M 100 30 L 110 90 L 170 90 L 120 130 L 140 190 L 100 150 L 60 190 L 80 130 L 30 90 L 90 90 Z" fill="#000"/>
+            <text x="100" y="115" font-size="60" font-weight="bold" text-anchor="middle" fill="#ff0066">⚠</text>
+        </svg>
+        <div class="video-text">DANGER ZONE</div>
+        <div class="video-text" style="font-size: 32px; margin-top: 20px;">LE TEMPLE DU PÉCHÉ</div>
+        <div class="video-text" style="font-size: 24px; margin-top: 10px; color: #ffaa00;">⚠ CONTENU ANONYME ⚠</div>
+        <button class="skip-button" id="skipButton">PASSER L'INTRO</button>
+    </div>
 
-        <div class="content">
-            <!-- Mode Toggle -->
-            <div class="mode-toggle">
-                <span>Mode Production</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="simulationMode">
-                    <span class="slider"></span>
-                </label>
-                <span>Mode Simulation (Test)</span>
-            </div>
-
-            <!-- Configuration API -->
-            <div class="api-config" id="apiConfig">
-                <label for="apiUrl">🔧 URL du Serveur Boni IA Cloud:</label>
-                <input type="text" id="apiUrl" value="http://10.239.174.223:8000" placeholder="http://localhost:8000">
-                <small style="display: block; margin-top: 5px; color: #666;">
-                    Format: Requêtes/Réponses en JSON | Authentification: clé API dans header HTTP
-                </small>
-                <div style="margin-top: 10px;">
-                    <button class="btn btn-secondary" onclick="testConnection()">🔍 Tester la connexion</button>
-                    <button class="btn btn-warning" onclick="useLocalhost()">🏠 Utiliser localhost:8000</button>
-                </div>
-            </div>
-
-            <!-- Informations Patient -->
-            <div class="section">
-                <h2 class="section-title">
-                    <span class="icon">👤</span>
-                    Informations Patient
-                </h2>
-                <div class="input-group">
-                    <label for="patientId">ID Patient:</label>
-                    <input type="text" id="patientId" placeholder="Ex: PAT001" value="PAT001">
-                </div>
-            </div>
-
-            <!-- Sélection des Symptômes -->
-            <div class="section">
-                <h2 class="section-title">
-                    <span class="icon">🩺</span>
-                    Symptômes
-                </h2>
-                <div class="symptom-selector" id="symptomSelector"></div>
-            </div>
-
-            <!-- Description Audio/Texte -->
-            <div class="section">
-                <h2 class="section-title">
-                    <span class="icon">💬</span>
-                    Description des Symptômes
-                </h2>
-
-                <div class="input-group">
-                    <label for="transcript">Décrivez vos symptômes:</label>
-                    <textarea id="transcript" placeholder="Ex: J'ai de la fièvre depuis 2 jours, avec une toux sèche et de la fatigue..."></textarea>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="section">
-                <button class="btn btn-primary" onclick="startChat()">
-                    💬 Discussion avec IA
-                </button>
-                <button class="btn btn-secondary" onclick="analyzeTriage()">
-                    🚨 Analyse Urgence (Triage)
-                </button>
-                <button class="btn btn-secondary" onclick="getReport()">
-                    📄 Rapport Médical
-                </button>
-            </div>
-
-            <!-- Loading -->
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px;">Traitement en cours...</p>
-            </div>
-
-            <!-- Résultats -->
-            <div id="results"></div>
-
-            <!-- Debug Panel -->
-            <div class="debug-panel" id="debugPanel">
-                <h4>📊 Console de Debug</h4>
-                <div id="debugLog"></div>
-            </div>
+    <!-- Écran d'inscription -->
+    <div class="registration-screen" id="registrationScreen">
+        <div class="registration-card">
+            <div class="skull-icon">💀</div>
+            <h1>Le Temple du Péché</h1>
+            <p class="subtitle">Entrez dans l'anonymat absolu</p>
+            <form id="registrationForm">
+                <input 
+                    type="tel" 
+                    id="phoneNumber" 
+                    placeholder="Numéro de téléphone"
+                    required
+                >
+                <button type="submit" class="btn-register">Entrer dans le Temple</button>
+            </form>
         </div>
     </div>
 
-    <script>
-        // Configuration
-        let API_URL = 'http://10.239.174.223:8000';
-        let isSimulationMode = false;
-        let selectedSymptoms = {};
-        let debugLogs = [];
+    <!-- Animation de bienvenue -->
+    <div class="welcome-screen hidden" id="welcomeScreen">
+        <div class="welcome-content">
+            <div class="skull-icon">💀</div>
+            <h1 class="welcome-title">Bienvenue au Temple du Péché</h1>
+            <p class="welcome-subtitle">Vous êtes désormais anonyme...</p>
+        </div>
+    </div>
 
-        // Symptômes disponibles
-        const availableSymptoms = [
-            'Fièvre', 'Toux', 'Mal de tête', 'Fatigue', 
-            'Douleur abdominale', 'Nausées', 'Vomissements', 
-            'Diarrhée', 'Douleur thoracique', 'Essoufflement',
-            'Vertiges', 'Douleur musculaire', 'Mal de gorge',
-            'Éruption cutanée', 'Perte d\'appétit'
-        ];
+    <!-- Chat principal -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            <h2>💀 Le Temple du Péché 💀</h2>
+            <p class="warning-text">⚠️ Tous les messages sont anonymes. Personne ne sait qui écrit.</p>
+        </div>
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeSymptomSelector();
-            loadApiUrl();
-            checkConnection();
-            
-            document.getElementById('apiUrl').addEventListener('change', saveApiUrl);
-            document.getElementById('simulationMode').addEventListener('change', toggleSimulationMode);
+        <div class="messages-container" id="messagesContainer">
+            <!-- Les messages apparaîtront ici -->
+        </div>
+
+        <div class="input-container">
+            <div class="replying-to-banner" id="replyingBanner">
+                <span id="replyingText">Réponse à: ...</span>
+                <button class="cancel-reply" id="cancelReply">✕</button>
+            </div>
+            <div class="sticker-picker" id="stickerPicker">
+                <div class="sticker-item" data-sticker="😈">😈</div>
+                <div class="sticker-item" data-sticker="💀">💀</div>
+                <div class="sticker-item" data-sticker="🔥">🔥</div>
+                <div class="sticker-item" data-sticker="👿">👿</div>
+                <div class="sticker-item" data-sticker="😏">😏</div>
+                <div class="sticker-item" data-sticker="🖤">🖤</div>
+                <div class="sticker-item" data-sticker="💣">💣</div>
+                <div class="sticker-item" data-sticker="⚡">⚡</div>
+                <div class="sticker-item" data-sticker="💋">💋</div>
+                <div class="sticker-item" data-sticker="🌙">🌙</div>
+                <div class="sticker-item" data-sticker="⭐">⭐</div>
+                <div class="sticker-item" data-sticker="💎">💎</div>
+                <div class="sticker-item" data-sticker="🎭">🎭</div>
+                <div class="sticker-item" data-sticker="👑">👑</div>
+                <div class="sticker-item" data-sticker="🗡️">🗡️</div>
+            </div>
+            <button class="btn-sticker" id="stickerButton">😈</button>
+            <textarea 
+                class="message-input" 
+                id="messageInput" 
+                placeholder="Écrivez votre confession anonyme..."
+                rows="2"
+            ></textarea>
+            <button class="btn-send" id="sendButton">
+                <span>Envoyer</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCL0VrMAt9XNGgX1e0_HIEVC03teeOvqtY",
+            authDomain: "marciojardel-ce0d5.firebaseapp.com",
+            databaseURL: "https://marciojardel-ce0d5-default-rtdb.firebaseio.com",
+            projectId: "marciojardel-ce0d5",
+            storageBucket: "marciojardel-ce0d5.appspot.com",
+            messagingSenderId: "313912737797",
+            appId: "1:313912737797:web:72fee65438c79c86715c6c",
+            measurementId: "G-YN957W0TE0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const introVideo = document.getElementById('introVideo');
+        const skipButton = document.getElementById('skipButton');
+        const registrationScreen = document.getElementById('registrationScreen');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const chatContainer = document.getElementById('chatContainer');
+        const registrationForm = document.getElementById('registrationForm');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const stickerButton = document.getElementById('stickerButton');
+        const stickerPicker = document.getElementById('stickerPicker');
+        const replyingBanner = document.getElementById('replyingBanner');
+        const replyingText = document.getElementById('replyingText');
+        const cancelReply = document.getElementById('cancelReply');
+
+        let replyingToMessage = null;
+        let lastMessageCount = 0;
+
+        // Afficher l'intro vidéo à chaque visite
+        setTimeout(() => {
+            introVideo.classList.add('hidden');
+            checkRegistration();
+        }, 5000);
+
+        skipButton.addEventListener('click', () => {
+            introVideo.classList.add('hidden');
+            checkRegistration();
         });
 
-        function addDebugLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = { timestamp, message, type };
-            debugLogs.push(entry);
-            
-            const logDiv = document.getElementById('debugLog');
-            const entryDiv = document.createElement('div');
-            entryDiv.className = `debug-entry debug-${type}`;
-            entryDiv.textContent = `[${timestamp}] ${message}`;
-            logDiv.appendChild(entryDiv);
-            logDiv.scrollTop = logDiv.scrollHeight;
-            
-            // Garder seulement les 50 derniers logs
-            if (debugLogs.length > 50) {
-                debugLogs.shift();
-                logDiv.removeChild(logDiv.firstChild);
+        function checkRegistration() {
+            if (localStorage.getItem('templePecheRegistered')) {
+                showChat();
             }
         }
 
-        function initializeSymptomSelector() {
-            const container = document.getElementById('symptomSelector');
+        // Gestion de l'inscription
+        registrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phoneNumber = document.getElementById('phoneNumber').value;
+
+            if (phoneNumber) {
+                try {
+                    await addDoc(collection(db, 'users'), {
+                        phone: phoneNumber,
+                        joinedAt: serverTimestamp()
+                    });
+
+                    localStorage.setItem('templePecheRegistered', 'true');
+                    showWelcomeAnimation();
+                } catch (error) {
+                    console.error('Erreur lors de l\'inscription:', error);
+                    alert('Erreur lors de l\'inscription. Veuillez réessayer.');
+                }
+            }
+        });
+
+        function showWelcomeAnimation() {
+            registrationScreen.classList.add('hidden');
+            welcomeScreen.classList.remove('hidden');
+
+            setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                showChat();
+            }, 4000);
+        }
+
+        function showChat() {
+            registrationScreen.classList.add('hidden');
+            welcomeScreen.classList.add('hidden');
+            chatContainer.classList.add('active');
+            loadMessages();
+        }
+
+        // Gestion des stickers
+        stickerButton.addEventListener('click', () => {
+            stickerPicker.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.sticker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                messageInput.value += item.dataset.sticker;
+                stickerPicker.classList.remove('active');
+                messageInput.focus();
+            });
+        });
+
+        // Gestion des réponses
+        cancelReply.addEventListener('click', () => {
+            replyingToMessage = null;
+            replyingBanner.classList.remove('active');
+        });
+
+        // Charger les messages depuis Firestore
+        function loadMessages() {
+            const q = query(collection(db, 'messages'), orderBy('timestamp', 'asc'));
             
-            availableSymptoms.forEach(symptom => {
-                const item = document.createElement('div');
-                item.className = 'symptom-item';
-                item.innerHTML = `
-                    <input type="checkbox" id="symptom-${symptom}" value="${symptom}">
-                    <label for="symptom-${symptom}" style="margin: 0; cursor: pointer;">${symptom}</label>
-                `;
+            onSnapshot(q, (snapshot) => {
+                const newCount = snapshot.size;
+                const unreadCount = newCount - lastMessageCount;
                 
-                item.addEventListener('click', (e) => {
-                    if (e.target.tagName !== 'INPUT') {
-                        const checkbox = item.querySelector('input');
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    
-                    const checkbox = item.querySelector('input');
-                    if (checkbox.checked) {
-                        item.classList.add('selected');
-                        selectedSymptoms[symptom] = 3;
-                    } else {
-                        item.classList.remove('selected');
-                        delete selectedSymptoms[symptom];
-                    }
+                if (lastMessageCount > 0 && unreadCount > 0 && document.hidden) {
+                    showUnreadBadge(unreadCount);
+                }
+                
+                lastMessageCount = newCount;
+                messagesContainer.innerHTML = '';
+                
+                snapshot.forEach((doc) => {
+                    const message = doc.data();
+                    message.id = doc.id;
+                    displayMessage(message);
                 });
                 
-                container.appendChild(item);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
         }
 
-        function loadApiUrl() {
-            const saved = localStorage.getItem('apiUrl');
-            if (saved) {
-                API_URL = saved;
-                document.getElementById('apiUrl').value = saved;
+        function showUnreadBadge(count) {
+            const badge = document.createElement('div');
+            badge.className = 'unread-badge';
+            badge.textContent = `${count} nouveau${count > 1 ? 'x' : ''} message${count > 1 ? 's' : ''}`;
+            document.body.appendChild(badge);
+
+            setTimeout(() => badge.remove(), 5000);
+        }
+
+        function displayMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            if (message.replyTo) {
+                messageDiv.classList.add('reply');
             }
-        }
-
-        function saveApiUrl() {
-            API_URL = document.getElementById('apiUrl').value;
-            localStorage.setItem('apiUrl', API_URL);
-            addDebugLog(`URL API mise à jour: ${API_URL}`, 'info');
-            checkConnection();
-        }
-
-        function useLocalhost() {
-            API_URL = 'http://localhost:8000';
-            document.getElementById('apiUrl').value = API_URL;
-            saveApiUrl();
-        }
-
-        function toggleSimulationMode() {
-            isSimulationMode = document.getElementById('simulationMode').checked;
-            const modeStatus = document.getElementById('modeStatus');
             
-            if (isSimulationMode) {
-                modeStatus.textContent = '🧪 Mode: Simulation (Test)';
-                modeStatus.style.background = 'rgba(255, 193, 7, 0.3)';
-                addDebugLog('Mode SIMULATION activé - Réponses simulées', 'success');
-                showAlert('⚠️ Mode simulation activé - Les réponses sont simulées', 'warning');
-            } else {
-                modeStatus.textContent = '📡 Mode: Production';
-                modeStatus.style.background = 'rgba(255,255,255,0.2)';
-                addDebugLog('Mode PRODUCTION activé - Connexion réelle au serveur', 'info');
-                checkConnection();
-            }
-        }
+            const time = message.timestamp ? new Date(message.timestamp.toDate()).toLocaleTimeString('fr-FR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            }) : 'Maintenant';
 
-        async function testConnection() {
-            addDebugLog('Test de connexion en cours...', 'info');
-            await checkConnection();
-        }
-
-        async function checkConnection() {
-            const status = document.getElementById('connectionStatus');
-            const apiConfig = document.getElementById('apiConfig');
-            
-            if (isSimulationMode) {
-                status.textContent = '🟡 Mode Simulation';
-                status.style.background = 'rgba(255, 193, 7, 0.3)';
-                apiConfig.className = 'api-config';
-                return;
+            let replyHtml = '';
+            if (message.replyTo) {
+                replyHtml = `<div class="reply-to">↪ Réponse: ${escapeHtml(message.replyTo.substring(0, 50))}...</div>`;
             }
 
-            status.textContent = '🟡 Test connexion...';
-            addDebugLog(`Tentative de connexion à ${API_URL}/health`, 'info');
-            
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
-                const response = await fetch(`${API_URL}/health`, {
-                    signal: controller.signal,
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    status.textContent = '🟢 Serveur Connecté';
-                    status.style.background = 'rgba(76, 175, 80, 0.3)';
-                    apiConfig.className = 'api-config online';
-                    addDebugLog('✅ Connexion réussie au serveur', 'success');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                status.textContent = '🔴 Serveur Non Accessible';
-                status.style.background = 'rgba(244, 67, 54, 0.3)';
-                apiConfig.className = 'api-config offline';
-                
-                const errorMsg = error.name === 'AbortError' 
-                    ? 'Timeout - Le serveur ne répond pas' 
-                    : error.message;
-                    
-                addDebugLog(`❌ Erreur connexion: ${errorMsg}`, 'error');
-                console.error('Connexion error:', error);
-            }
-        }
-
-        async function startChat() {
-            const transcript = document.getElementById('transcript').value;
-            
-            if (!transcript && Object.keys(selectedSymptoms).length === 0) {
-                showAlert('⚠️ Veuillez décrire vos symptômes ou en sélectionner', 'error');
-                return;
-            }
-
-            showLoading(true);
-            addDebugLog('Démarrage de la discussion avec l\'IA...', 'info');
-
-            try {
-                let messageText = transcript || 'Symptômes: ' + Object.keys(selectedSymptoms).join(', ');
-                
-                if (isSimulationMode) {
-                    // Mode simulation
-                    await simulateDelay(1500);
-                    const mockResponse = generateMockChatResponse(messageText);
-                    displayChatResponse(mockResponse);
-                    addDebugLog('Réponse simulée générée', 'success');
-                    showAlert('✅ Réponse simulée reçue!', 'success');
-                } else {
-                    // Mode production
-                    const payload = { text: messageText, lang: "fr" };
-                    addDebugLog(`Envoi requête: ${JSON.stringify(payload)}`, 'info');
-                    
-                    const response = await fetch(`${API_URL}/api/chat`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        displayChatResponse(data);
-                        addDebugLog('Réponse reçue du serveur', 'success');
-                        showAlert('✅ Réponse reçue de l\'IA!', 'success');
-                    } else {
-                        throw new Error(data.detail || 'Erreur lors de la discussion');
-                    }
-                }
-            } catch (error) {
-                addDebugLog(`Erreur: ${error.message}`, 'error');
-                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function analyzeTriage() {
-            const transcript = document.getElementById('transcript').value;
-
-            if (Object.keys(selectedSymptoms).length === 0 && !transcript) {
-                showAlert('⚠️ Veuillez fournir des symptômes', 'error');
-                return;
-            }
-
-            showLoading(true);
-            addDebugLog('Analyse de triage en cours...', 'info');
-
-            try {
-                const symptomText = transcript || Object.keys(selectedSymptoms).join(', ');
-                
-                if (isSimulationMode) {
-                    await simulateDelay(2000);
-                    const mockResponse = generateMockTriageResponse(symptomText);
-                    displayTriageResults(mockResponse);
-                    addDebugLog('Résultat de triage simulé généré', 'success');
-                    showAlert('✅ Analyse simulée effectuée!', 'success');
-                } else {
-                    const payload = { text: symptomText, lang: "fr" };
-                    addDebugLog(`Envoi requête triage: ${JSON.stringify(payload)}`, 'info');
-                    
-                    const response = await fetch(`${API_URL}/api/triage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        displayTriageResults(data);
-                        addDebugLog('Résultat de triage reçu', 'success');
-                        showAlert('✅ Analyse d\'urgence effectuée!', 'success');
-                    } else {
-                        throw new Error(data.detail || 'Erreur lors de l\'analyse');
-                    }
-                }
-            } catch (error) {
-                addDebugLog(`Erreur triage: ${error.message}`, 'error');
-                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function getReport() {
-            const patientId = document.getElementById('patientId').value;
-
-            if (!patientId) {
-                showAlert('⚠️ Veuillez fournir un ID patient', 'error');
-                return;
-            }
-
-            showLoading(true);
-            addDebugLog(`Récupération du rapport pour ${patientId}...`, 'info');
-
-            try {
-                if (isSimulationMode) {
-                    await simulateDelay(1000);
-                    const mockReport = generateMockReport(patientId);
-                    displayReport(mockReport);
-                    addDebugLog('Rapport simulé généré', 'success');
-                    showAlert('✅ Rapport simulé récupéré!', 'success');
-                } else {
-                    const response = await fetch(`${API_URL}/api/rapport/${patientId}`, {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        displayReport(data);
-                        addDebugLog('Rapport médical reçu', 'success');
-                        showAlert('✅ Rapport médical récupéré!', 'success');
-                    } else {
-                        throw new Error(data.detail || 'Erreur lors de la récupération du rapport');
-                    }
-                }
-            } catch (error) {
-                addDebugLog(`Erreur rapport: ${error.message}`, 'error');
-                showAlert('❌ ' + error.message + ' - Essayez le mode simulation', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Fonctions de simulation
-        function simulateDelay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        function generateMockChatResponse(query) {
-            const responses = [
-                "D'après vos symptômes, je vous recommande de vous hydrater régulièrement et de vous reposer. Si les symptômes persistent plus de 3 jours, consultez un médecin.",
-                "Ces symptômes peuvent indiquer une infection virale. Prenez du paracétamol pour la fièvre et surveillez votre température.",
-                "Je vous conseille de surveiller l'évolution de vos symptômes. Si vous ressentez des difficultés respiratoires, contactez immédiatement les urgences."
-            ];
-            
-            return {
-                response: responses[Math.floor(Math.random() * responses.length)],
-                confidence: 0.85,
-                action: "Surveillance des symptômes recommandée"
-            };
-        }
-
-        function generateMockTriageResponse(symptoms) {
-            const hasHighRisk = symptoms.toLowerCase().includes('thoracique') || 
-                               symptoms.toLowerCase().includes('essoufflement');
-            
-            const score = hasHighRisk ? 75 : symptoms.split(',').length * 15;
-            
-            return {
-                emergency_score: Math.min(score, 95),
-                recommendation: hasHighRisk 
-                    ? "🚨 URGENCE - Consultez immédiatement les urgences"
-                    : score > 40 
-                        ? "⚠️ Consultation médicale recommandée dans les 24h"
-                        : "✅ Surveillance à domicile possible",
-                symptoms_analyzed: symptoms.split(',').length,
-                risk_factors: hasHighRisk ? ["Symptômes cardiaques détectés"] : []
-            };
-        }
-
-        function generateMockReport(patientId) {
-            return {
-                patient_id: patientId,
-                date: new Date().toLocaleDateString('fr-FR'),
-                symptoms: Object.keys(selectedSymptoms).join(', '),
-                evaluation: "Consultation de télémédecine effectuée",
-                recommendations: [
-                    "Repos et hydratation",
-                    "Surveillance de la température",
-                    "Reconsultation si aggravation"
-                ],
-                status: "Évaluation complétée"
-            };
-        }
-
-        function displayChatResponse(data) {
-            const resultsDiv = document.getElementById('results');
-            
-            resultsDiv.innerHTML = `
-                <div class="results">
-                    <h3>💬 Réponse de Boni IA</h3>
-                    <div class="result-item">
-                        <strong>Message:</strong>
-                        <p>${data.response || data.reply_text || data.message || 'Réponse reçue'}</p>
-                    </div>
-                    ${data.confidence ? `
-                    <div class="result-item">
-                        <strong>Niveau de confiance:</strong>
-                        <span>${(data.confidence * 100).toFixed(1)}%</span>
-                    </div>
-                    ` : ''}
-                    ${data.action ? `
-                    <div class="result-item">
-                        <strong>Action suggérée:</strong>
-                        <span>${data.action}</span>
-                    </div>
-                    ` : ''}
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="avatar">👤</div>
+                    <span class="username">Anonyme</span>
+                    <span class="timestamp">${time}</span>
+                </div>
+                ${replyHtml}
+                <div class="message-text">${escapeHtml(message.text)}</div>
+                <div class="reply-actions">
+                    <button class="btn-reply" data-message="${escapeHtml(message.text)}" data-id="${message.id}">↪ Répondre</button>
                 </div>
             `;
+
+            const replyBtn = messageDiv.querySelector('.btn-reply');
+            replyBtn.addEventListener('click', () => {
+                replyingToMessage = {
+                    id: message.id,
+                    text: message.text
+                };
+                replyingText.textContent = `Réponse à: ${message.text.substring(0, 50)}...`;
+                replyingBanner.classList.add('active');
+                messageInput.focus();
+            });
+
+            messagesContainer.appendChild(messageDiv);
         }
 
-        function displayTriageResults(data) {
-            const resultsDiv = document.getElementById('results');
-            const score = data.emergency_score || data.score || 0;
-            
-            let scoreClass = 'score-low';
-            let urgencyText = 'FAIBLE';
-            if (score >= 60) {
-                scoreClass = 'score-high';
-                urgencyText = 'ÉLEVÉE';
-            } else if (score >= 40) {
-                scoreClass = 'score-medium';
-                urgencyText = 'MOYENNE';
-            }
-
-            resultsDiv.innerHTML = `
-                <div class="results">
-                    <h3>🚨 Résultat du Triage</h3>
-                    <div class="result-item">
-                        <strong>Niveau d'Urgence:</strong>
-                        <span class="emergency-score ${scoreClass}">${urgencyText} (${score}/100)</span>
-                    </div>
-                    ${data.recommendation || data.action ? `
-                    <div class="result-item">
-                        <strong>Recommandation:</strong>
-                        <p>${data.recommendation || data.action}</p>
-                    </div>
-                    ` : ''}
-                    ${data.symptoms_analyzed ? `
-                    <div class="result-item">
-                        <strong>Symptômes analysés:</strong>
-                        <span>${data.symptoms_analyzed}</span>
-                    </div>
-                    ` : ''}
-                    ${data.risk_factors && data.risk_factors.length > 0 ? `
-                    <div class="result-item">
-                        <strong>Facteurs de risque:</strong>
-                        <ul style="margin-top: 5px; margin-left: 20px;">
-                            ${data.risk_factors.map(rf => `<li>${rf}</li>`).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function displayReport(data) {
-            const resultsDiv = document.getElementById('results');
+        // Envoyer un message
+        async function sendMessage() {
+            const text = messageInput.value.trim();
             
-            resultsDiv.innerHTML = `
-                <div class="results">
-                    <h3>📄 Rapport Médical</h3>
-                    <div class="result-item">
-                        <strong>Patient ID:</strong>
-                        <span>${data.patient_id || 'N/A'}</span>
-                    </div>
-                    ${data.date ? `
-                    <div class="result-item">
-                        <strong>Date:</strong>
-                        <span>${data.date}</span>
-                    </div>
-                    ` : ''}
-                    ${data.symptoms ? `
-                    <div class="result-item">
-                        <strong>Symptômes rapportés:</strong>
-                        <p>${data.symptoms}</p>
-                    </div>
-                    ` : ''}
-                    ${data.evaluation ? `
-                    <div class="result-item">
-                        <strong>Évaluation:</strong>
-                        <p>${data.evaluation}</p>
-                    </div>
-                    ` : ''}
-                    ${data.recommendations && data.recommendations.length > 0 ? `
-                    <div class="result-item">
-                        <strong>Recommandations:</strong>
-                        <ul style="margin-top: 5px; margin-left: 20px;">
-                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                    ${data.status ? `
-                    <div class="result-item">
-                        <strong>Statut:</strong>
-                        <span>${data.status}</span>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
+            if (text) {
+                try {
+                    const messageData = {
+                        text: text,
+                        timestamp: serverTimestamp()
+                    };
 
-        function showAlert(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            
-            const content = document.querySelector('.content');
-            const firstSection = content.querySelector('.section');
-            content.insertBefore(alertDiv, firstSection);
-            
-            setTimeout(() => {
-                alertDiv.style.opacity = '0';
-                setTimeout(() => alertDiv.remove(), 300);
-            }, 5000);
-        }
+                    if (replyingToMessage) {
+                        messageData.replyTo = replyingToMessage.text;
+                        messageData.replyToId = replyingToMessage.id;
+                    }
 
-        function showLoading(show) {
-            const loading = document.getElementById('loading');
-            if (show) {
-                loading.classList.add('active');
-            } else {
-                loading.classList.remove('active');
+                    await addDoc(collection(db, 'messages'), messageData);
+
+                    messageInput.value = '';
+                    replyingToMessage = null;
+                    replyingBanner.classList.remove('active');
+                } catch (error) {
+                    console.error('Erreur lors de l\'envoi du message:', error);
+                    alert('Erreur lors de l\'envoi du message. Veuillez réessayer.');
+                }
             }
         }
 
-        // Vérifier la connexion toutes les 30 secondes (seulement en mode production)
-        setInterval(() => {
-            if (!isSimulationMode) {
-                checkConnection();
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
-        }, 30000);
+        });
 
-        // Message de bienvenue
-        setTimeout(() => {
-            addDebugLog('Interface de télémédecine initialisée', 'success');
-            addDebugLog('💡 Astuce: Utilisez le mode simulation si le serveur n\'est pas accessible', 'info');
-        }, 500);
+        // Détecter quand l'utilisateur revient sur la page
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                lastMessageCount = messagesContainer.children.length;
+            }
+        });
     </script>
 </body>
 </html>
