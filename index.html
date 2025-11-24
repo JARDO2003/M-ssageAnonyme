@@ -31,6 +31,26 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            overflow: hidden;
+        }
+
+        .intro-video-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 102, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(0, 255, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 102, 0.2) 0%, transparent 70%);
+            animation: bgPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
         }
 
         .intro-video-container.hidden {
@@ -39,10 +59,12 @@
 
         .danger-badge {
             position: absolute;
-            top: 20px;
-            width: 200px;
-            height: 200px;
-            animation: rotateBadge 10s linear infinite;
+            top: 50px;
+            width: 250px;
+            height: 250px;
+            animation: rotateBadge 8s linear infinite, scalePulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(255, 0, 102, 0.8));
+            z-index: 1;
         }
 
         @keyframes rotateBadge {
@@ -50,22 +72,154 @@
             to { transform: rotate(360deg); }
         }
 
+        @keyframes scalePulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+        }
+
+        .intro-content {
+            z-index: 2;
+            text-align: center;
+            animation: contentAppear 2s ease-out;
+        }
+
+        @keyframes contentAppear {
+            0% { opacity: 0; transform: translateY(50px) scale(0.8); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         .video-text {
-            font-size: 48px;
+            font-size: 64px;
             font-weight: bold;
             color: #ff0066;
             text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: 0 0 20px rgba(255, 0, 102, 0.8);
-            animation: glitch 2s infinite;
+            letter-spacing: 8px;
+            text-shadow: 
+                0 0 10px rgba(255, 0, 102, 1),
+                0 0 20px rgba(255, 0, 102, 0.8),
+                0 0 30px rgba(255, 0, 102, 0.6),
+                0 0 40px rgba(255, 0, 102, 0.4),
+                0 0 70px rgba(255, 0, 102, 0.2);
+            animation: glitch 2s infinite, textGlow 1.5s ease-in-out infinite;
             font-family: 'Impact', sans-serif;
+            position: relative;
+        }
+
+        .video-text::before,
+        .video-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .video-text::before {
+            animation: glitchTop 1s infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+            text-shadow: 2px 0 #00ffff;
+        }
+
+        .video-text::after {
+            animation: glitchBottom 1.5s infinite;
+            clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+            text-shadow: -2px 0 #ff00ff;
         }
 
         @keyframes glitch {
-            0%, 100% { text-shadow: 0 0 20px rgba(255, 0, 102, 0.8); }
-            25% { text-shadow: -2px 0 20px rgba(255, 0, 102, 0.8), 2px 0 20px rgba(0, 255, 255, 0.8); }
-            50% { text-shadow: 2px 0 20px rgba(255, 0, 102, 0.8), -2px 0 20px rgba(0, 255, 255, 0.8); }
-            75% { text-shadow: -2px 0 20px rgba(255, 0, 102, 0.8), 2px 0 20px rgba(0, 255, 255, 0.8); }
+            0%, 100% { 
+                text-shadow: 
+                    0 0 10px rgba(255, 0, 102, 1),
+                    0 0 20px rgba(255, 0, 102, 0.8),
+                    0 0 30px rgba(255, 0, 102, 0.6);
+            }
+            25% { 
+                text-shadow: 
+                    -2px 0 20px rgba(255, 0, 102, 0.8), 
+                    2px 0 20px rgba(0, 255, 255, 0.8),
+                    0 0 40px rgba(255, 0, 102, 0.4);
+            }
+            50% { 
+                text-shadow: 
+                    2px 0 20px rgba(255, 0, 102, 0.8), 
+                    -2px 0 20px rgba(0, 255, 255, 0.8),
+                    0 0 50px rgba(255, 0, 102, 0.3);
+            }
+            75% { 
+                text-shadow: 
+                    -2px 0 20px rgba(255, 0, 102, 0.8), 
+                    2px 0 20px rgba(0, 255, 255, 0.8),
+                    0 0 40px rgba(255, 0, 102, 0.4);
+            }
+        }
+
+        @keyframes glitchTop {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-2px, 2px); }
+            66% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitchBottom {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(2px, -2px); }
+            66% { transform: translate(-2px, 2px); }
+        }
+
+        @keyframes textGlow {
+            0%, 100% { 
+                filter: brightness(1) contrast(1);
+            }
+            50% { 
+                filter: brightness(1.3) contrast(1.2);
+            }
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(0, 255, 255, 0.8), 
+                transparent);
+            animation: scan 2s linear infinite;
+            z-index: 3;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: #ff0066;
+            border-radius: 50%;
+            animation: float-particle 5s infinite;
+        }
+
+        @keyframes float-particle {
+            0% { 
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% { 
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
         }
 
         .skip-button {
@@ -79,11 +233,50 @@
             cursor: pointer;
             border-radius: 5px;
             transition: all 0.3s ease;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.3);
         }
 
         .skip-button:hover {
             background: rgba(255, 0, 102, 0.5);
             transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(255, 0, 102, 0.6);
+        }
+
+        .hologram-text {
+            font-size: 28px;
+            color: #00ffff;
+            text-shadow: 
+                0 0 5px rgba(0, 255, 255, 1),
+                0 0 10px rgba(0, 255, 255, 0.8),
+                0 0 15px rgba(0, 255, 255, 0.6);
+            animation: hologramFlicker 3s infinite;
+            margin-top: 30px;
+        }
+
+        @keyframes hologramFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            75% { opacity: 0.9; }
+        }
+
+        .warning-badge {
+            font-size: 32px;
+            color: #ffaa00;
+            text-shadow: 
+                0 0 10px rgba(255, 170, 0, 1),
+                0 0 20px rgba(255, 170, 0, 0.6);
+            animation: warningBlink 1s infinite;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        @keyframes warningBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.3; }
         }
 
         /* Écran d'inscription */
@@ -548,15 +741,32 @@
 <body>
     <!-- Intro Video COD Style -->
     <div class="intro-video-container" id="introVideo">
+        <div class="particles" id="particles"></div>
+        <div class="scan-line"></div>
+        
         <svg class="danger-badge" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="90" fill="#ff0066" stroke="#000" stroke-width="4"/>
+            <defs>
+                <linearGradient id="badgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff0066;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#ff0066;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <circle cx="100" cy="100" r="90" fill="url(#badgeGradient)" stroke="#000" stroke-width="4"/>
+            <circle cx="100" cy="100" r="85" fill="none" stroke="#ff0066" stroke-width="2" opacity="0.5"/>
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#ff0066" stroke-width="1" opacity="0.3"/>
             <path d="M 100 30 L 110 90 L 170 90 L 120 130 L 140 190 L 100 150 L 60 190 L 80 130 L 30 90 L 90 90 Z" fill="#000"/>
-            <text x="100" y="115" font-size="60" font-weight="bold" text-anchor="middle" fill="#ff0066">⚠</text>
+            <text x="100" y="120" font-size="70" font-weight="bold" text-anchor="middle" fill="#ff0066">⚠</text>
         </svg>
-        <div class="video-text">DANGER ZONE</div>
-        <div class="video-text" style="font-size: 32px; margin-top: 20px;">LE TEMPLE DU PÉCHÉ</div>
-        <div class="video-text" style="font-size: 24px; margin-top: 10px; color: #ffaa00;">⚠ CONTENU ANONYME ⚠</div>
-        <button class="skip-button" id="skipButton">PASSER L'INTRO</button>
+        
+        <div class="intro-content">
+            <div class="video-text" data-text="DANGER ZONE">DANGER ZONE</div>
+            <div class="video-text" data-text="LE TEMPLE DU PÉCHÉ" style="font-size: 38px; margin-top: 30px;">LE TEMPLE DU PÉCHÉ</div>
+            <div class="hologram-text">[ SYSTÈME D'ANONYMAT ACTIVÉ ]</div>
+            <div class="warning-badge">⚠ CONTENU ANONYME CRYPTÉ ⚠</div>
+        </div>
+        
+        <button class="skip-button" id="skipButton">[ SKIP INTRO ]</button>
     </div>
 
     <!-- Écran d'inscription -->
@@ -672,11 +882,28 @@
         let replyingToMessage = null;
         let lastMessageCount = 0;
 
-        // Afficher l'intro vidéo à chaque visite
+        // Créer les particules animées
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 4 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                particle.style.animationDuration = Math.random() * 3 + 3 + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        // Toujours afficher l'intro vidéo au chargement de la page
         setTimeout(() => {
             introVideo.classList.add('hidden');
             checkRegistration();
-        }, 5000);
+        }, 6000);
 
         skipButton.addEventListener('click', () => {
             introVideo.classList.add('hidden');
