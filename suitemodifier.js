@@ -1,4 +1,5 @@
- import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -134,14 +135,125 @@
         loadMessages();
     }
 
+    // Fonction pour vérifier et préparer la vidéo pour l'upload
+    async function prepareVideoForUpload(file) {
+        // Vérifier la taille du fichier (limiter à 100MB)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        
+        if (file.size > maxSize) {
+            throw new Error(`La vidéo est trop volumineuse (${(file.size / 1024 / 1024).toFixed(2)}MB). Limite: 100MB`);
+        }
+        
+        // Formats acceptés
+        const acceptedFormats = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/3gpp', 'video/3gpp2'];
+        
+        if (!acceptedFormats.includes(file.type) && !file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i)) {
+            throw new Error(`Format non supporté. Utilisez MP4, MOV, AVI, WebM ou 3GP.`);
+        }
+        
+        return file;
+    }
+
+    // Upload vers Cloudinary avec gestion d'erreur améliorée
+    async function uploadToCloudinary(file) {
+        try {
+            let fileToUpload = file;
+            const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+            
+            // Préparation spéciale pour les vidéos
+            if (resourceType === 'video') {
+                fileToUpload = await prepareVideoForUpload(file);
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileToUpload);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            
+            // Paramètres supplémentaires pour les vidéos
+            if (resourceType === 'video') {
+                formData.append('resource_type', 'video');
+                formData.append('chunk_size', '6000000'); // 6MB chunks
+                formData.append('quality', 'auto:good');
+                formData.append('fetch_format', 'auto');
+            }
+            
+            const url = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${resourceType}/upload`;
+
+            // Timeout plus long pour les vidéos
+            const controller = new AbortController();
+            const timeoutDuration = resourceType === 'video' ? 300000 : 60000; // 5min pour vidéo, 1min pour image
+            const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || `Erreur HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return {
+                url: data.secure_url,
+                type: resourceType,
+                publicId: data.public_id,
+                format: data.format,
+                duration: data.duration || null
+            };
+        } catch (error) {
+            console.error('Erreur upload Cloudinary:', error);
+            
+            // Messages d'erreur plus clairs
+            if (error.name === 'AbortError') {
+                throw new Error('⏱️ Timeout: La vidéo est trop longue à uploader. Essayez une vidéo plus courte ou compressée.');
+            } else if (error.message.includes('trop volumineuse')) {
+                throw error;
+            } else if (error.message.includes('Format non supporté')) {
+                throw error;
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                throw new Error('❌ Erreur de connexion. Vérifiez votre internet et réessayez.');
+            } else if (error.message.includes('413')) {
+                throw new Error('❌ Fichier trop volumineux pour le serveur. Réduisez la taille de votre vidéo.');
+            } else {
+                throw new Error(`❌ Erreur d'upload: ${error.message}`);
+            }
+        }
+    }
+
     // Gestion des fichiers
     fileButton.addEventListener('click', () => {
         fileInput.click();
     });
 
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Vérifier la taille avant de continuer
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            
+            if (file.size > maxSize) {
+                alert(`⚠️ Fichier trop volumineux: ${(file.size / 1024 / 1024).toFixed(2)}MB\nTaille maximale: 100MB`);
+                fileInput.value = '';
+                return;
+            }
+            
+            // Vérifier le format pour les vidéos
+            if (file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i)) {
+                const acceptedFormats = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/3gpp', 'video/3gpp2'];
+                const hasValidExtension = file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
+                
+                if (!acceptedFormats.includes(file.type) && !hasValidExtension) {
+                    alert(`⚠️ Format vidéo non supporté\n\nFormats acceptés:\n- MP4 (.mp4)\n- MOV (.mov)\n- AVI (.avi)\n- WebM (.webm)\n- 3GP (.3gp)`);
+                    fileInput.value = '';
+                    return;
+                }
+            }
+            
             selectedFile = file;
             showFilePreview(file);
         }
@@ -151,17 +263,36 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             previewContent.innerHTML = '';
-            if (file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                previewContent.appendChild(img);
-            } else if (file.type.startsWith('video/')) {
+            const isVideo = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
+            
+            if (isVideo) {
                 const video = document.createElement('video');
                 video.src = e.target.result;
                 video.controls = true;
+                video.muted = true;
+                video.style.maxWidth = '200px';
+                video.style.maxHeight = '150px';
                 previewContent.appendChild(video);
+                
+                // Obtenir la durée de la vidéo
+                video.onloadedmetadata = function() {
+                    const duration = Math.floor(video.duration);
+                    const minutes = Math.floor(duration / 60);
+                    const seconds = duration % 60;
+                    fileInfo.innerHTML = `📹 ${file.name}<br>Taille: ${(file.size / 1024 / 1024).toFixed(2)} MB | Durée: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                };
+                
+                video.onerror = function() {
+                    fileInfo.innerHTML = `📹 ${file.name}<br>Taille: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                };
+            } else {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '150px';
+                previewContent.appendChild(img);
+                fileInfo.innerHTML = `📎 ${file.name}<br>Taille: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
             }
-            fileInfo.textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
             filePreview.classList.add('active');
         };
         reader.readAsDataURL(file);
@@ -174,36 +305,6 @@
         previewContent.innerHTML = '';
         fileInfo.textContent = '';
     });
-
-    async function uploadToCloudinary(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-
-        const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
-        const url = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${resourceType}/upload`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Upload failed');
-            }
-
-            const data = await response.json();
-            return {
-                url: data.secure_url,
-                type: resourceType,
-                publicId: data.public_id
-            };
-        } catch (error) {
-            console.error('Erreur upload Cloudinary:', error);
-            throw error;
-        }
-    }
 
     // Gestion des stickers
     stickerButton.addEventListener('click', () => {
@@ -287,6 +388,7 @@
                     </div>
                 `;
             } else {
+                const mediaIcon = message.media.type === 'video' ? '📹' : '🖼️';
                 mediaHtml = `
                     <div class="message-media">
                         <div class="media-container" data-media-url="${message.media.url}" data-media-type="${message.media.type}" data-message-id="${message.id}">
@@ -296,7 +398,7 @@
                                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                     <polyline points="21 15 16 10 5 21"></polyline>
                                 </svg>
-                                <span>👁️ Cliquez pour voir (vue unique)</span>
+                                <span>${mediaIcon} Cliquez pour voir (vue unique)</span>
                             </div>
                         </div>
                     </div>
@@ -366,6 +468,8 @@
             video.src = url;
             video.controls = true;
             video.autoplay = true;
+            video.style.maxWidth = '100%';
+            video.style.maxHeight = '90vh';
             mediaModalContent.appendChild(video);
         }
 
@@ -374,12 +478,20 @@
 
     closeModal.addEventListener('click', () => {
         mediaModal.classList.remove('active');
+        const video = mediaModalContent.querySelector('video');
+        if (video) {
+            video.pause();
+        }
         mediaModalContent.innerHTML = '';
     });
 
     mediaModal.addEventListener('click', (e) => {
         if (e.target === mediaModal) {
             mediaModal.classList.remove('active');
+            const video = mediaModalContent.querySelector('video');
+            if (video) {
+                video.pause();
+            }
             mediaModalContent.innerHTML = '';
         }
     });
@@ -397,6 +509,7 @@
             try {
                 uploadingSpinner.classList.add('active');
                 sendButton.disabled = true;
+                fileButton.disabled = true;
 
                 const messageData = {
                     text: text || '📎 Fichier partagé',
@@ -405,8 +518,24 @@
                 };
 
                 if (selectedFile) {
-                    const uploadResult = await uploadToCloudinary(selectedFile);
-                    messageData.media = uploadResult;
+                    // Afficher la progression pour les vidéos
+                    const isVideo = selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
+                    if (isVideo) {
+                        uploadingSpinner.textContent = '📹 Upload de la vidéo en cours... Cela peut prendre quelques minutes selon la taille.';
+                    }
+                    
+                    try {
+                        const uploadResult = await uploadToCloudinary(selectedFile);
+                        messageData.media = uploadResult;
+                    } catch (uploadError) {
+                        // Afficher l'erreur à l'utilisateur
+                        uploadingSpinner.classList.remove('active');
+                        uploadingSpinner.textContent = '⏳ Upload en cours...';
+                        sendButton.disabled = false;
+                        fileButton.disabled = false;
+                        alert(uploadError.message);
+                        return; // Arrêter l'envoi
+                    }
                 }
 
                 if (replyingToMessage) {
@@ -416,19 +545,26 @@
 
                 await addDoc(collection(db, 'messages'), messageData);
 
+                // Réinitialiser l'interface
                 messageInput.value = '';
                 selectedFile = null;
                 fileInput.value = '';
                 filePreview.classList.remove('active');
+                previewContent.innerHTML = '';
+                fileInfo.textContent = '';
                 replyingToMessage = null;
                 replyingBanner.classList.remove('active');
                 uploadingSpinner.classList.remove('active');
+                uploadingSpinner.textContent = '⏳ Upload en cours...';
                 sendButton.disabled = false;
+                fileButton.disabled = false;
             } catch (error) {
                 console.error('Erreur lors de l\'envoi:', error);
-                alert('Erreur lors de l\'envoi du message. Veuillez réessayer.');
+                alert('❌ Erreur lors de l\'envoi du message. Veuillez réessayer.');
                 uploadingSpinner.classList.remove('active');
+                uploadingSpinner.textContent = '⏳ Upload en cours...';
                 sendButton.disabled = false;
+                fileButton.disabled = false;
             }
         }
     }
