@@ -135,93 +135,115 @@
         loadMessages();
     }
 
-    // Fonction pour vérifier et préparer la vidéo pour l'upload
-    async function prepareVideoForUpload(file) {
-        // Vérifier la taille du fichier (limiter à 100MB)
-        const maxSize = 100 * 1024 * 1024; // 100MB
-        
-        if (file.size > maxSize) {
-            throw new Error(`La vidéo est trop volumineuse (${(file.size / 1024 / 1024).toFixed(2)}MB). Limite: 100MB`);
-        }
-        
-        // Formats acceptés
-        const acceptedFormats = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/3gpp', 'video/3gpp2'];
-        
-        if (!acceptedFormats.includes(file.type) && !file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i)) {
-            throw new Error(`Format non supporté. Utilisez MP4, MOV, AVI, WebM ou 3GP.`);
-        }
-        
-        return file;
+    // Fonction pour vérifier la durée d'une vidéo
+    function checkVideoDuration(file) {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            
+            video.onloadedmetadata = function() {
+                window.URL.revokeObjectURL(video.src);
+                const duration = video.duration;
+                
+                if (duration > 300) { // 5 minutes = 300 secondes
+                    reject(new Error(`⏱️ Vidéo trop longue: ${Math.floor(duration / 60)}min ${Math.floor(duration % 60)}s\nDurée maximale: 5 minutes`));
+                } else {
+                    resolve(duration);
+                }
+            };
+            
+            video.onerror = function() {
+                // Si on ne peut pas lire la vidéo, on accepte quand même
+                resolve(0);
+            };
+            
+            video.src = URL.createObjectURL(file);
+        });
     }
 
-    // Upload vers Cloudinary avec gestion d'erreur améliorée
-    async function uploadToCloudinary(file) {
+    // Upload vers Cloudinary avec barre de progression
+    async function uploadToCloudinary(file, onProgress) {
         try {
-            let fileToUpload = file;
-            const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+            const resourceType = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv|m4v|3gp|3g2|mpeg|mpg)$/i) ? 'video' : 'image';
             
-            // Préparation spéciale pour les vidéos
+            // Vérifier la durée pour les vidéos
             if (resourceType === 'video') {
-                fileToUpload = await prepareVideoForUpload(file);
+                try {
+                    await checkVideoDuration(file);
+                } catch (error) {
+                    throw error;
+                }
             }
             
             const formData = new FormData();
-            formData.append('file', fileToUpload);
+            formData.append('file', file);
             formData.append('upload_preset', cloudinaryConfig.uploadPreset);
             
-            // Paramètres supplémentaires pour les vidéos
+            // Paramètres pour les vidéos
             if (resourceType === 'video') {
                 formData.append('resource_type', 'video');
-                formData.append('chunk_size', '6000000'); // 6MB chunks
-                formData.append('quality', 'auto:good');
-                formData.append('fetch_format', 'auto');
+                formData.append('chunk_size', '6000000');
+                formData.append('quality', 'auto');
             }
             
             const url = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${resourceType}/upload`;
 
-            // Timeout plus long pour les vidéos
-            const controller = new AbortController();
-            const timeoutDuration = resourceType === 'video' ? 300000 : 60000; // 5min pour vidéo, 1min pour image
-            const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
-
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData,
-                signal: controller.signal
+            // Upload avec XMLHttpRequest pour avoir la progression
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                
+                // Événement de progression
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        if (onProgress) {
+                            onProgress(percentComplete);
+                        }
+                    }
+                });
+                
+                // Événement de succès
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            resolve({
+                                url: data.secure_url,
+                                type: resourceType,
+                                publicId: data.public_id,
+                                format: data.format,
+                                duration: data.duration || null
+                            });
+                        } catch (error) {
+                            reject(new Error('Erreur lors du traitement de la réponse'));
+                        }
+                    } else {
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            reject(new Error(errorData.error?.message || `Erreur HTTP ${xhr.status}`));
+                        } catch (error) {
+                            reject(new Error(`Erreur HTTP ${xhr.status}`));
+                        }
+                    }
+                });
+                
+                // Événement d'erreur
+                xhr.addEventListener('error', () => {
+                    reject(new Error('❌ Erreur réseau. Vérifiez votre connexion internet.'));
+                });
+                
+                // Événement de timeout
+                xhr.addEventListener('timeout', () => {
+                    reject(new Error('⏱️ Timeout: L\'upload a pris trop de temps. Réessayez avec une connexion plus stable.'));
+                });
+                
+                xhr.open('POST', url);
+                xhr.timeout = 600000; // 10 minutes de timeout
+                xhr.send(formData);
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `Erreur HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            return {
-                url: data.secure_url,
-                type: resourceType,
-                publicId: data.public_id,
-                format: data.format,
-                duration: data.duration || null
-            };
         } catch (error) {
             console.error('Erreur upload Cloudinary:', error);
-            
-            // Messages d'erreur plus clairs
-            if (error.name === 'AbortError') {
-                throw new Error('⏱️ Timeout: La vidéo est trop longue à uploader. Essayez une vidéo plus courte ou compressée.');
-            } else if (error.message.includes('trop volumineuse')) {
-                throw error;
-            } else if (error.message.includes('Format non supporté')) {
-                throw error;
-            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                throw new Error('❌ Erreur de connexion. Vérifiez votre internet et réessayez.');
-            } else if (error.message.includes('413')) {
-                throw new Error('❌ Fichier trop volumineux pour le serveur. Réduisez la taille de votre vidéo.');
-            } else {
-                throw new Error(`❌ Erreur d'upload: ${error.message}`);
-            }
+            throw error;
         }
     }
 
@@ -233,29 +255,32 @@
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Vérifier la taille avant de continuer
-            const maxSize = 100 * 1024 * 1024; // 100MB
+            // Limite de taille à 500MB (pour permettre les vidéos de 5min)
+            const maxSize = 500 * 1024 * 1024;
             
             if (file.size > maxSize) {
-                alert(`⚠️ Fichier trop volumineux: ${(file.size / 1024 / 1024).toFixed(2)}MB\nTaille maximale: 100MB`);
+                alert(`⚠️ Fichier trop volumineux: ${(file.size / 1024 / 1024).toFixed(2)}MB\nTaille maximale: 500MB`);
                 fileInput.value = '';
                 return;
             }
             
-            // Vérifier le format pour les vidéos
-            if (file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i)) {
-                const acceptedFormats = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/3gpp', 'video/3gpp2'];
-                const hasValidExtension = file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
-                
-                if (!acceptedFormats.includes(file.type) && !hasValidExtension) {
-                    alert(`⚠️ Format vidéo non supporté\n\nFormats acceptés:\n- MP4 (.mp4)\n- MOV (.mov)\n- AVI (.avi)\n- WebM (.webm)\n- 3GP (.3gp)`);
+            // Vérifier la durée pour les vidéos
+            const isVideo = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv|m4v|3gp|3g2|mpeg|mpg)$/i);
+            
+            if (isVideo) {
+                try {
+                    await checkVideoDuration(file);
+                    selectedFile = file;
+                    showFilePreview(file);
+                } catch (error) {
+                    alert(error.message);
                     fileInput.value = '';
                     return;
                 }
+            } else {
+                selectedFile = file;
+                showFilePreview(file);
             }
-            
-            selectedFile = file;
-            showFilePreview(file);
         }
     });
 
@@ -263,7 +288,7 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             previewContent.innerHTML = '';
-            const isVideo = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
+            const isVideo = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv|m4v|3gp|3g2|mpeg|mpg)$/i);
             
             if (isVideo) {
                 const video = document.createElement('video');
@@ -518,23 +543,42 @@
                 };
 
                 if (selectedFile) {
-                    // Afficher la progression pour les vidéos
-                    const isVideo = selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mov|avi|webm|3gp|3g2)$/i);
+                    const isVideo = selectedFile.type.startsWith('video/') || selectedFile.name.match(/\.(mp4|mov|avi|webm|mkv|flv|wmv|m4v|3gp|3g2|mpeg|mpg)$/i);
+                    
                     if (isVideo) {
-                        uploadingSpinner.textContent = '📹 Upload de la vidéo en cours... Cela peut prendre quelques minutes selon la taille.';
+                        uploadingSpinner.innerHTML = `
+                            <div style="text-align: center;">
+                                <div style="margin-bottom: 10px;">📹 Upload de la vidéo en cours...</div>
+                                <div style="background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; height: 30px; margin-bottom: 5px;">
+                                    <div id="progressBar" style="background: linear-gradient(45deg, #ff0066, #ff6b6b); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;"></div>
+                                </div>
+                                <div id="progressText" style="font-size: 12px; color: #aaa;">0%</div>
+                            </div>
+                        `;
+                    } else {
+                        uploadingSpinner.textContent = '📤 Upload en cours...';
                     }
                     
                     try {
-                        const uploadResult = await uploadToCloudinary(selectedFile);
+                        const progressBar = document.getElementById('progressBar');
+                        const progressText = document.getElementById('progressText');
+                        
+                        const uploadResult = await uploadToCloudinary(selectedFile, (progress) => {
+                            const percent = Math.round(progress);
+                            if (progressBar && progressText) {
+                                progressBar.style.width = percent + '%';
+                                progressBar.textContent = percent + '%';
+                                progressText.textContent = percent + '%';
+                            }
+                        });
                         messageData.media = uploadResult;
                     } catch (uploadError) {
-                        // Afficher l'erreur à l'utilisateur
                         uploadingSpinner.classList.remove('active');
-                        uploadingSpinner.textContent = '⏳ Upload en cours...';
+                        uploadingSpinner.innerHTML = '⏳ Upload en cours...';
                         sendButton.disabled = false;
                         fileButton.disabled = false;
                         alert(uploadError.message);
-                        return; // Arrêter l'envoi
+                        return;
                     }
                 }
 
@@ -555,14 +599,14 @@
                 replyingToMessage = null;
                 replyingBanner.classList.remove('active');
                 uploadingSpinner.classList.remove('active');
-                uploadingSpinner.textContent = '⏳ Upload en cours...';
+                uploadingSpinner.innerHTML = '⏳ Upload en cours...';
                 sendButton.disabled = false;
                 fileButton.disabled = false;
             } catch (error) {
                 console.error('Erreur lors de l\'envoi:', error);
                 alert('❌ Erreur lors de l\'envoi du message. Veuillez réessayer.');
                 uploadingSpinner.classList.remove('active');
-                uploadingSpinner.textContent = '⏳ Upload en cours...';
+                uploadingSpinner.innerHTML = '⏳ Upload en cours...';
                 sendButton.disabled = false;
                 fileButton.disabled = false;
             }
@@ -582,3 +626,4 @@
             lastMessageCount = messagesContainer.children.length;
         }
     });
+ 
