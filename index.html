@@ -920,13 +920,20 @@ async function renderMyPostsGrid(){
   const grid = document.getElementById('myPostsGrid');
   grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Chargement…</div>';
   try{
-    const snap = await db.collection('posts').where('uid','==',currentUser.uid).orderBy('createdAt','desc').get();
+    // Pas de orderBy() combiné au where() ici : ça exigerait un index composite
+    // Firestore qui n'existe pas forcément sur ce projet. On trie côté client à la place.
+    const snap = await db.collection('posts').where('uid','==',currentUser.uid).get();
     document.getElementById('profPostCount').textContent = snap.size + ' publication(s)';
     if(snap.empty){
       grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Tu n\'as encore rien publié.</div>';
       return;
     }
-    grid.innerHTML = snap.docs.map(d=>{
+    const docs = snap.docs.slice().sort((a,b)=>{
+      const ta = tsToMillis(a.data().createdAt) || 0;
+      const tb = tsToMillis(b.data().createdAt) || 0;
+      return tb - ta;
+    });
+    grid.innerHTML = docs.map(d=>{
       const p = d.data();
       const cover = (p.photos && p.photos[0]) || '';
       if(!cover) return '';
@@ -1147,13 +1154,15 @@ async function openUserProfile(uid, codeName, photo){
   grid.innerHTML = '';
   document.getElementById('userProfileModal').classList.add('show');
   try{
-    const snap = await db.collection('posts').where('uid','==',uid).orderBy('createdAt','desc').get();
+    // Pas de orderBy() combiné au where() : évite l'exigence d'un index composite Firestore.
+    const snap = await db.collection('posts').where('uid','==',uid).get();
     document.getElementById('viewedProfPostCount').textContent = snap.size + ' publication(s)';
     if(snap.empty){
       grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Aucune publication.</div>';
       return;
     }
-    grid.innerHTML = snap.docs.map(d=>{
+    const docs = snap.docs.slice().sort((a,b)=> (tsToMillis(b.data().createdAt)||0) - (tsToMillis(a.data().createdAt)||0));
+    grid.innerHTML = docs.map(d=>{
       const p = d.data();
       const cover = (p.photos && p.photos[0]) || '';
       if(!cover) return '';
