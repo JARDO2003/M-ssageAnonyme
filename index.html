@@ -284,6 +284,16 @@ body{
 .avail-icharter-item .dot-online{left:auto;right:0;bottom:0;}
 .avail-icharter-item .nm{font-size:10px;color:var(--sub);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px;}
 
+/* ---------- Photo vue unique (chat) ---------- */
+.view-once-tile{background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.25);border-radius:12px;padding:14px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:var(--text);transition:.15s;}
+.view-once-tile:hover{background:rgba(255,255,255,.1);}
+.view-once-opened{padding:14px 12px;display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12.5px;}
+
+/* ---------- Profil visité (grille de publications) ---------- */
+.viewed-prof-post{aspect-ratio:1/1;overflow:hidden;cursor:pointer;background:var(--panel2);}
+.viewed-prof-post img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar.clickable{cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -490,7 +500,37 @@ body{
           <button id="sendCommentBtn">OK</button>
         </div>
         <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;">📍 Commander cet i-chat</button>
+        <div id="viewerOwnerActions" style="display:none;gap:10px;margin-top:14px;">
+          <button class="obtn primary" id="viewerEditBtn" style="flex:1;">✏️ Modifier</button>
+          <button class="obtn danger" id="viewerDeleteBtn" style="flex:1;">🗑️ Supprimer</button>
+        </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: PROFIL D'UN UTILISATEUR (façon TikTok) ============ -->
+<div class="modal-overlay" id="userProfileModal">
+  <div class="modal-card">
+    <div class="modal-head"><div class="t">Profil</div><button class="modal-close" id="closeUserProfileModal">✕</button></div>
+    <div class="modal-body" style="padding:0;">
+      <div class="profile-head" style="border-bottom:none;padding-bottom:14px;">
+        <div class="avatar" id="viewedProfAvatar" style="width:84px;height:84px;font-size:26px;margin:0 auto 12px;"></div>
+        <div class="cn" id="viewedProfCodeName"></div>
+        <div class="phone" id="viewedProfPostCount">0 publication(s)</div>
+        <button class="btn-main" id="viewedProfMsgBtn" style="max-width:240px;margin:16px auto 0;">💬 Envoyer un message</button>
+      </div>
+      <div id="viewedProfGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: PHOTO À VUE UNIQUE ============ -->
+<div class="modal-overlay" id="viewOnceModal">
+  <div class="modal-card" style="max-width:420px;background:#000;">
+    <div class="modal-head"><div class="t">Photo à vue unique</div><button class="modal-close" id="closeViewOnceModal">✕</button></div>
+    <div class="modal-body" style="padding:0;display:flex;align-items:center;justify-content:center;background:#000;min-height:260px;">
+      <img id="viewOnceImg" src="" style="max-width:100%;max-height:70vh;object-fit:contain;">
     </div>
   </div>
 </div>
@@ -838,11 +878,14 @@ async function runSearch(q){
   if(matches.length===0){ searchResults.innerHTML = '<div class="empty-list">Aucun identifiant trouvé.</div>'; searchResults.style.display='block'; return; }
   searchResults.innerHTML = matches.map(([uid,d])=>`
     <div class="result-row" data-uid="${uid}" data-cn="${d.codeName}" data-photo="${d.photoURL||''}">
-      <div class="avatar">${d.photoURL?`<img src="${d.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(d.codeName)}</div>
+      <div class="avatar clickable" data-avatar-uid="${uid}" data-avatar-cn="${d.codeName}" data-avatar-photo="${d.photoURL||''}">${d.photoURL?`<img src="${d.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(d.codeName)}</div>
       <div class="cn">${d.codeName}</div>
       <div class="add">Discuter</div>
     </div>`).join('');
   searchResults.style.display='block';
+  searchResults.querySelectorAll('.avatar.clickable').forEach(av=>{
+    av.onclick = (e)=>{ e.stopPropagation(); openUserProfile(av.dataset.avatarUid, av.dataset.avatarCn, av.dataset.avatarPhoto); };
+  });
   searchResults.querySelectorAll('.result-row').forEach(row=>{
     row.onclick = ()=>{
       const uid = row.dataset.uid, cn = row.dataset.cn, photo = row.dataset.photo;
@@ -868,11 +911,14 @@ function listenAvailIcharters(){
       row.innerHTML = list.map(u=>`
         <div class="avail-icharter-item" data-uid="${u.uid}" data-cn="${u.codeName}" data-photo="${u.photoURL||''}">
           <div class="avwrap">
-            <div class="avatar">${u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(u.codeName)}</div>
+            <div class="avatar clickable" data-avatar-uid="${u.uid}" data-avatar-cn="${u.codeName}" data-avatar-photo="${u.photoURL||''}">${u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(u.codeName)}</div>
             <div class="dot-online"></div>
           </div>
           <div class="nm">${escapeHtml(u.codeName||'')}</div>
         </div>`).join('');
+      row.querySelectorAll('.avatar.clickable').forEach(av=>{
+        av.onclick = (e)=>{ e.stopPropagation(); openUserProfile(av.dataset.avatarUid, av.dataset.avatarCn, av.dataset.avatarPhoto); };
+      });
       row.querySelectorAll('.avail-icharter-item').forEach(item=>{
         item.onclick = ()=>openChat(item.dataset.uid, item.dataset.cn, item.dataset.photo);
       });
@@ -942,7 +988,7 @@ async function renderChatList(){
   let html = '';
   const rowHtml = (uid, cn, photo, previewText, t)=>`
     <div class="chat-row" data-uid="${uid}" data-cn="${cn}" data-photo="${photo||''}">
-      <div class="avatar">${photo?`<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(cn)}</div>
+      <div class="avatar clickable" data-avatar-uid="${uid}" data-avatar-cn="${cn}" data-avatar-photo="${photo||''}">${photo?`<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(cn)}</div>
       ${onlineSet.has(uid)?'<div class="dot-online"></div>':''}
       <div class="info">
         <div class="top"><span class="cn">${cn}</span><span class="time">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
@@ -964,10 +1010,52 @@ async function renderChatList(){
   }
 
   listEl.innerHTML = html;
+  listEl.querySelectorAll('.avatar.clickable').forEach(av=>{
+    av.onclick = (e)=>{ e.stopPropagation(); openUserProfile(av.dataset.avatarUid, av.dataset.avatarCn, av.dataset.avatarPhoto); };
+  });
   listEl.querySelectorAll('.chat-row').forEach(row=>{
     row.onclick = ()=>openChat(row.dataset.uid, row.dataset.cn, row.dataset.photo);
   });
 }
+
+/* ======================================================================
+   PROFIL D'UN AUTRE UTILISATEUR (façon TikTok) — depuis la messagerie
+====================================================================== */
+async function openUserProfile(uid, codeName, photo){
+  const av = document.getElementById('viewedProfAvatar');
+  av.innerHTML = photo ? `<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(codeName);
+  av.style.background = photo ? 'transparent' : 'linear-gradient(135deg,var(--violet),var(--pink))';
+  av.style.color = '#fff'; av.style.fontWeight = '800';
+  document.getElementById('viewedProfCodeName').textContent = codeName;
+  document.getElementById('viewedProfPostCount').textContent = 'Chargement…';
+  document.getElementById('viewedProfMsgBtn').onclick = ()=>{
+    document.getElementById('closeUserProfileModal').click();
+    openChat(uid, codeName, photo);
+  };
+  const grid = document.getElementById('viewedProfGrid');
+  grid.innerHTML = '';
+  document.getElementById('userProfileModal').classList.add('show');
+  try{
+    const snap = await db.collection('posts').where('uid','==',uid).orderBy('createdAt','desc').get();
+    document.getElementById('viewedProfPostCount').textContent = snap.size + ' publication(s)';
+    if(snap.empty){
+      grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Aucune publication.</div>';
+      return;
+    }
+    grid.innerHTML = snap.docs.map(d=>{
+      const p = d.data();
+      const cover = (p.photos && p.photos[0]) || '';
+      if(!cover) return '';
+      return `<div class="viewed-prof-post" data-postid="${d.id}"><img src="${cover}" loading="lazy"></div>`;
+    }).join('');
+    grid.querySelectorAll('.viewed-prof-post').forEach(el=>{
+      el.onclick = ()=>{ document.getElementById('closeUserProfileModal').click(); openViewer(el.dataset.postid); };
+    });
+  }catch(err){
+    grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Impossible de charger les publications.</div>';
+  }
+}
+document.getElementById('closeUserProfileModal').onclick = ()=>document.getElementById('userProfileModal').classList.remove('show');
 
 /* ======================================================================
    OPEN / RENDER CHAT
@@ -981,6 +1069,8 @@ async function openChat(peerUid, peerCodeName, peerPhoto){
   document.getElementById('peerCodeName').textContent = peerCodeName;
   const pAv = document.getElementById('peerAvatar');
   pAv.innerHTML = peerPhoto ? `<img src="${peerPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(peerCodeName);
+  pAv.classList.add('clickable');
+  pAv.onclick = ()=>openUserProfile(peerUid, peerCodeName, peerPhoto);
 
   if(peerPresenceUnsub) peerPresenceUnsub();
   peerPresenceUnsub = db.collection('presence').doc(peerUid).onSnapshot(s=>{
@@ -1159,25 +1249,57 @@ async function toggleLikeInline(postId, btnEl){
   }
 }
 
-/* ---------- Création d'un i-chat (jusqu'à 3 photos) ---------- */
+/* ---------- Création / modification d'un i-chat (jusqu'à 3 photos) ---------- */
 const postModal = document.getElementById('postModal');
-let postSlots = [null,null,null];
-document.getElementById('fabPost').onclick = ()=>{
+let postSlots = [null,null,null];   // chaque case : {file:File} (nouvelle photo) ou {url:string} (photo existante conservée)
+let editingPostId = null;           // non-null si on est en train de modifier un post existant
+
+function resetPostModalToCreateMode(){
+  editingPostId = null;
   postSlots = [null,null,null];
   document.querySelectorAll('.photo-slot').forEach(s=>{ s.innerHTML='＋'; });
   document.getElementById('postCaption').value='';
   document.getElementById('postPrice').value='';
+  document.querySelector('#postModal .t').textContent = 'Nouveau i-chat';
+  document.getElementById('publishPostBtn').textContent = 'Publier';
+}
+document.getElementById('fabPost').onclick = ()=>{
+  resetPostModalToCreateMode();
   postModal.classList.add('show');
 };
 document.getElementById('closePostModal').onclick = ()=>postModal.classList.remove('show');
+
+function openPostModalForEdit(postId, post){
+  editingPostId = postId;
+  postSlots = [null,null,null];
+  document.querySelectorAll('.photo-slot').forEach((s,i)=>{
+    const url = post.photos && post.photos[i];
+    if(url){ postSlots[i] = {url}; s.innerHTML = `<img src="${url}"><div class="rm">✕</div>`; }
+    else s.innerHTML = '＋';
+  });
+  document.getElementById('postCaption').value = post.caption || '';
+  document.getElementById('postPrice').value = post.price || '';
+  document.querySelector('#postModal .t').textContent = 'Modifier le i-chat';
+  document.getElementById('publishPostBtn').textContent = 'Enregistrer';
+  postModal.classList.add('show');
+}
+
 let activeSlotIndex = null;
 document.querySelectorAll('.photo-slot').forEach(slot=>{
-  slot.onclick = ()=>{ activeSlotIndex = +slot.dataset.slot; document.getElementById('postPhotoInput').click(); };
+  slot.onclick = (e)=>{
+    const idx = +slot.dataset.slot;
+    if(e.target.classList.contains('rm')){
+      postSlots[idx] = null;
+      slot.innerHTML = '＋';
+      return;
+    }
+    activeSlotIndex = idx; document.getElementById('postPhotoInput').click();
+  };
 });
 document.getElementById('postPhotoInput').onchange = (e)=>{
   const file = e.target.files[0];
   if(!file || activeSlotIndex===null) return;
-  postSlots[activeSlotIndex] = file;
+  postSlots[activeSlotIndex] = {file};
   const slotEl = document.querySelector(`.photo-slot[data-slot="${activeSlotIndex}"]`);
   const reader = new FileReader();
   reader.onload = ()=>{ slotEl.innerHTML = `<img src="${reader.result}"><div class="rm">✕</div>`; };
@@ -1185,32 +1307,40 @@ document.getElementById('postPhotoInput').onchange = (e)=>{
   e.target.value='';
 };
 document.getElementById('publishPostBtn').onclick = async ()=>{
-  const files = postSlots.filter(Boolean);
-  if(files.length===0){ alert('Ajoute au moins une photo pour publier ton i-chat.'); return; }
+  const slots = postSlots.filter(Boolean);
+  if(slots.length===0){ alert('Ajoute au moins une photo pour publier ton i-chat.'); return; }
   const btn = document.getElementById('publishPostBtn');
-  btn.disabled = true; btn.textContent = 'Publication…';
+  const isEditing = !!editingPostId;
+  btn.disabled = true; btn.textContent = isEditing ? 'Enregistrement…' : 'Publication…';
   try{
     const photos = [];
-    for(const f of files){
-      const up = await uploadToCloudinary(f);
-      photos.push(up.url);
+    for(const slot of slots){
+      if(slot.url) photos.push(slot.url);
+      else{ const up = await uploadToCloudinary(slot.file); photos.push(up.url); }
     }
-    await db.collection('posts').add({
-      uid: currentUser.uid,
-      codeName: currentUser.codeName,
-      photoURL: currentUser.photoURL || '',
-      photos,
-      caption: document.getElementById('postCaption').value.trim(),
-      price: document.getElementById('postPrice').value.trim(),
-      location: currentUser.location || null,
-      likesCount:0, likesUsers:[], commentsCount:0,
-      createdAt: FieldValue.serverTimestamp()
-    });
+    const caption = document.getElementById('postCaption').value.trim();
+    const price = document.getElementById('postPrice').value.trim();
+    if(isEditing){
+      await db.collection('posts').doc(editingPostId).update({
+        photos, caption, price, updatedAt: FieldValue.serverTimestamp()
+      });
+    } else {
+      await db.collection('posts').add({
+        uid: currentUser.uid,
+        codeName: currentUser.codeName,
+        photoURL: currentUser.photoURL || '',
+        photos, caption, price,
+        location: currentUser.location || null,
+        likesCount:0, likesUsers:[], commentsCount:0,
+        createdAt: FieldValue.serverTimestamp()
+      });
+    }
     postModal.classList.remove('show');
+    resetPostModalToCreateMode();
   }catch(err){
-    alert("Échec de la publication : " + err.message);
+    alert((isEditing ? "Échec de l'enregistrement : " : "Échec de la publication : ") + err.message);
   }finally{
-    btn.disabled=false; btn.textContent='Publier';
+    btn.disabled=false; btn.textContent = isEditing ? 'Enregistrer' : 'Publier';
   }
 };
 
@@ -1237,9 +1367,11 @@ async function openViewer(postId){
   updateLikeUI();
   const isMine = activePost.uid === currentUser.uid;
   const orderBtn = document.getElementById('viewerOrderBtn');
+  const ownerActions = document.getElementById('viewerOwnerActions');
   orderBtn.style.display = isMine ? 'none' : 'block';
   orderBtn.disabled = false;
   orderBtn.textContent = '📍 Commander cet i-chat';
+  ownerActions.style.display = isMine ? 'flex' : 'none';
   viewerModal.classList.add('show');
   listenComments(postId);
 }
@@ -1283,6 +1415,25 @@ document.getElementById('viewerOrderBtn').onclick = ()=>{
   if(!activePost) return;
   document.getElementById('closeViewerModal').click();
   orderFromPost(activePost);
+};
+document.getElementById('viewerEditBtn').onclick = ()=>{
+  if(!activePost || !activePostId) return;
+  document.getElementById('closeViewerModal').click();
+  openPostModalForEdit(activePostId, activePost);
+};
+document.getElementById('viewerDeleteBtn').onclick = async ()=>{
+  if(!activePost || !activePostId) return;
+  if(!confirm('Supprimer définitivement ce i-chat ? Cette action est irréversible.')) return;
+  const btn = document.getElementById('viewerDeleteBtn');
+  btn.disabled = true; btn.textContent = 'Suppression…';
+  try{
+    await db.collection('posts').doc(activePostId).delete();
+    document.getElementById('closeViewerModal').click();
+  }catch(err){
+    alert('Échec de la suppression : ' + err.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '🗑️ Supprimer';
+  }
 };
 
 function listenComments(postId){
