@@ -1525,11 +1525,11 @@ function renderFeed(posts){
       ${photos.length>1 ? `<div class="photo-dots">${photos.map((_,i)=>`<span class="${i===idx?'on':''}"></span>`).join('')}</div>` : ''}
       ${boosted?'<div class="boost-tag">🔥 Populaire</div>':''}
       <div class="feed-side">
-        <div class="avatar" style="width:40px;height:40px;font-size:13px;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
+        <div class="avatar" data-act="author" data-id="${p.id}" style="width:40px;height:40px;font-size:13px;cursor:pointer;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
         <button class="side-act ${liked?'liked':''}" data-act="like" data-id="${p.id}"><div class="circle">♥</div><span class="n">${p.likesCount||0}</span></button>
       </div>
       <div class="content">
-        <div class="author"><span class="cn">@${escapeHtml(p.codeName||'')}</span></div>
+        <div class="author"><span class="cn" data-act="author" data-id="${p.id}" style="cursor:pointer;">@${escapeHtml(p.codeName||'')}</span></div>
         ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
         ${(p.city||p.country||p.location) ? `<div class="loc-tag" data-act="loc" data-id="${p.id}">📍 ${escapeHtml(formatCityCountry({city:p.city,country:p.country}) || 'Voir la localisation')}</div>` : ''}
         ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
@@ -1537,6 +1537,13 @@ function renderFeed(posts){
       </div>
     </div>`;
   }).join('');
+  grid.querySelectorAll('[data-act="author"]').forEach(el=>{
+    el.onclick = (e)=>{
+      e.stopPropagation();
+      const post = posts.find(p=>p.id===el.dataset.id);
+      if(post) openUserProfile(post.uid, post.codeName, post.photoURL);
+    };
+  });
   grid.querySelectorAll('[data-act="like"]').forEach(b=>{ b.onclick = ()=>toggleLikeInline(b.dataset.id, b); });
   grid.querySelectorAll('[data-act="comment"]').forEach(b=>{ b.onclick = ()=>openViewer(b.dataset.id); });
   grid.querySelectorAll('[data-act="fnav-prev"]').forEach(b=>{ b.onclick = ()=>stepFeedPhoto(b.dataset.id, posts, -1); });
