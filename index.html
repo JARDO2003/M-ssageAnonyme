@@ -194,6 +194,9 @@ body{
 .feed-card .photo-dots{position:absolute;top:12px;left:14px;right:70px;display:flex;gap:5px;z-index:2;}
 .feed-card .photo-dots span{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.35);}
 .feed-card .photo-dots span.on{background:#fff;}
+.feed-card .fnav{position:absolute;top:0;bottom:0;width:40%;z-index:1;}
+.feed-card .fnav.left{left:0;}
+.feed-card .fnav.right{right:0;}
 .feed-card .content{position:relative;z-index:2;width:100%;padding:16px 78px 22px 16px;}
 .feed-card .author{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
 .feed-card .author .cn{font-weight:800;font-size:15px;color:#fff;}
@@ -686,6 +689,7 @@ let postsUnsub = null;
 let activePostId = null;
 let activePost = null;
 let commentsUnsub = null;
+let feedPhotoIndex = {}; // index de la photo affichée par publication dans le fil (id -> index)
 let orderMap = null, orderMapMarkers = {};
 let myOrderUnsub = null;         // commande en cours en tant que client
 let myOrderId = null;
@@ -1490,18 +1494,35 @@ function listenFeed(){
       renderFeed(posts);
     }, err=>console.warn('feed error', err));
 }
+function stepFeedPhoto(postId, posts, dir){
+  const post = posts.find(p=>p.id===postId);
+  const photos = post && post.photos || [];
+  if(photos.length<2) return;
+  const current = feedPhotoIndex[postId] || 0;
+  const next = (current + dir + photos.length) % photos.length;
+  feedPhotoIndex[postId] = next;
+  const card = document.querySelector(`.feed-card[data-id="${postId}"]`);
+  if(!card) return;
+  const img = card.querySelector('.bg');
+  if(img) img.src = photos[next];
+  card.querySelectorAll('.photo-dots span').forEach((dot,i)=>dot.classList.toggle('on', i===next));
+}
 function renderFeed(posts){
   const grid = document.getElementById('feedGrid');
   if(posts.length===0){ grid.innerHTML = '<div class="empty-list" style="padding-top:60px;">Aucune publication pour l\'instant.</div>'; return; }
   grid.innerHTML = posts.map(p=>{
-    const cover = (p.photos && p.photos[0]) || '';
+    const photos = (p.photos && p.photos.length) ? p.photos : [''];
+    let idx = feedPhotoIndex[p.id] || 0;
+    if(idx >= photos.length) idx = 0;
+    const cover = photos[idx] || '';
     const boosted = boostScore(p) >= 5;
     const liked = (p.likesUsers||[]).includes(currentUser.uid);
     const isMine = p.uid === currentUser.uid;
     return `<div class="feed-card" data-id="${p.id}">
       <img class="bg" src="${cover}" loading="lazy">
       <div class="shade"></div>
-      ${p.photos && p.photos.length>1 ? `<div class="photo-dots">${p.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>` : ''}
+      ${photos.length>1 ? `<div class="fnav left" data-act="fnav-prev" data-id="${p.id}"></div><div class="fnav right" data-act="fnav-next" data-id="${p.id}"></div>` : ''}
+      ${photos.length>1 ? `<div class="photo-dots">${photos.map((_,i)=>`<span class="${i===idx?'on':''}"></span>`).join('')}</div>` : ''}
       ${boosted?'<div class="boost-tag">🔥 Populaire</div>':''}
       <div class="feed-side">
         <div class="avatar" style="width:40px;height:40px;font-size:13px;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
@@ -1519,6 +1540,8 @@ function renderFeed(posts){
   }).join('');
   grid.querySelectorAll('[data-act="like"]').forEach(b=>{ b.onclick = ()=>toggleLikeInline(b.dataset.id, b); });
   grid.querySelectorAll('[data-act="comment"]').forEach(b=>{ b.onclick = ()=>openViewer(b.dataset.id); });
+  grid.querySelectorAll('[data-act="fnav-prev"]').forEach(b=>{ b.onclick = ()=>stepFeedPhoto(b.dataset.id, posts, -1); });
+  grid.querySelectorAll('[data-act="fnav-next"]').forEach(b=>{ b.onclick = ()=>stepFeedPhoto(b.dataset.id, posts, 1); });
   grid.querySelectorAll('[data-act="order"]').forEach(b=>{
     b.onclick = ()=>{
       const post = posts.find(p=>p.id===b.dataset.id);
