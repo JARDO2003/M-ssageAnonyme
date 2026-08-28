@@ -164,15 +164,29 @@ body{
 .screen-head .title{font-size:18px;font-weight:900;background:linear-gradient(90deg,var(--acid),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .screen-body{flex:1;overflow-y:auto;}
 
-/* ---------- FEED ---------- */
-.feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;}
-.feed-tile{position:relative;aspect-ratio:1/1;background:var(--panel2);cursor:pointer;overflow:hidden;}
-.feed-tile img{width:100%;height:100%;object-fit:cover;display:block;transition:.3s;}
-.feed-tile:hover img{transform:scale(1.05);}
-.feed-tile .boost{position:absolute;top:6px;left:6px;background:linear-gradient(135deg,var(--pink),var(--violet));color:#fff;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:8px;display:flex;align-items:center;gap:3px;box-shadow:0 2px 8px rgba(0,0,0,.4);}
-.feed-tile .stats{position:absolute;bottom:6px;left:6px;right:6px;display:flex;gap:8px;font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8);}
-.feed-tile .price{position:absolute;top:6px;right:6px;background:rgba(8,8,13,.75);backdrop-filter:blur(4px);color:var(--acid);font-size:10px;font-weight:800;padding:3px 7px;border-radius:7px;}
-.fab-post{position:absolute;right:18px;bottom:18px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--acid),#7be032);border:none;color:#08080d;font-size:26px;font-weight:900;cursor:pointer;box-shadow:0 8px 22px rgba(200,255,63,.4);z-index:5;}
+/* ---------- FEED (façon TikTok, plein écran, défilement vertical) ---------- */
+.feed-scroll{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;}
+.feed-scroll::-webkit-scrollbar{display:none;}
+.feed-card{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;display:flex;align-items:flex-end;overflow:hidden;}
+.feed-card .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.feed-card .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.35) 32%,rgba(0,0,0,0) 60%,rgba(0,0,0,.25) 100%);}
+.feed-card .boost-tag{position:absolute;top:14px;left:14px;background:linear-gradient(135deg,var(--pink),var(--violet));color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;z-index:2;}
+.feed-card .photo-dots{position:absolute;top:12px;left:14px;right:70px;display:flex;gap:5px;z-index:2;}
+.feed-card .photo-dots span{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.35);}
+.feed-card .photo-dots span.on{background:#fff;}
+.feed-card .content{position:relative;z-index:2;width:100%;padding:16px 78px 22px 16px;}
+.feed-card .author{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.feed-card .author .cn{font-weight:800;font-size:15px;color:#fff;}
+.feed-card .caption{font-size:13.5px;color:#f0f0f5;line-height:1.4;margin-bottom:8px;}
+.feed-card .price-tag{display:inline-block;background:rgba(200,255,63,.15);border:1px solid var(--acid-dim);color:var(--acid);font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:9px;margin-bottom:12px;}
+.feed-card .order-btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acid),#7be032);color:#08080d;font-weight:900;font-size:13.5px;letter-spacing:.3px;cursor:pointer;}
+.feed-card .order-btn:disabled{opacity:.55;cursor:not-allowed;}
+.feed-side{position:absolute;right:10px;bottom:90px;display:flex;flex-direction:column;align-items:center;gap:18px;z-index:2;}
+.side-act{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:#fff;cursor:pointer;}
+.side-act .circle{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.side-act.liked .circle{background:var(--pink);}
+.side-act .n{font-size:11px;font-weight:700;}
+.fab-post{position:absolute;right:16px;top:14px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--acid),#7be032);border:none;color:#08080d;font-size:22px;font-weight:900;cursor:pointer;box-shadow:0 8px 22px rgba(200,255,63,.4);z-index:6;}
 
 /* ---------- MODAL (générique) ---------- */
 .modal-overlay{position:fixed;inset:0;background:rgba(4,4,8,.78);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:200;padding:16px;}
@@ -317,11 +331,10 @@ body{
 <div class="app with-nav" id="appShell">
 <div class="screens-wrap">
 
-  <!-- ============ ÉCRAN FEED (i-chat) ============ -->
+  <!-- ============ ÉCRAN FEED (i-chat) — façon TikTok ============ -->
   <div class="screen active" id="screenFeed">
-    <div class="screen-head"><div class="title">i-chat</div></div>
-    <div class="screen-body" style="position:relative;">
-      <div class="feed-grid" id="feedGrid"><div class="empty-list" style="grid-column:1/-1;">Aucune publication pour l'instant.</div></div>
+    <div class="screen-body" style="position:relative;padding:0;">
+      <div class="feed-scroll" id="feedGrid"><div class="empty-list" style="padding-top:60px;">Aucune publication pour l'instant.</div></div>
       <button class="fab-post" id="fabPost" title="Publier">+</button>
     </div>
   </div>
@@ -412,7 +425,7 @@ body{
 
 <div class="bottom-nav" id="bottomNav">
   <button class="nav-btn active" data-screen="screenFeed"><span>◈</span><span class="lbl">i-chat</span></button>
-  <button class="nav-btn" data-screen="screenOrder"><span>📍</span><span class="lbl">Commander</span></button>
+  <button class="nav-btn" data-screen="screenOrder"><span>📍</span><span class="lbl">Commander</span><span class="badge" id="navOrderBadge" style="display:none;"></span></button>
   <button class="nav-btn" data-screen="screenChat"><span>💬</span><span class="lbl">Messages</span><span class="badge" id="navChatBadge" style="display:none;"></span></button>
   <button class="nav-btn" data-screen="screenProfile"><span>👤</span><span class="lbl">Profil</span></button>
 </div>
@@ -760,7 +773,7 @@ function switchScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.screen===id));
   if(id==='screenOrder' && !orderMap) initOrderMap();
-  if(id==='screenOrder') orderMap && setTimeout(()=>orderMap.invalidateSize(), 150);
+  if(id==='screenOrder' && orderMap){ setTimeout(()=>orderMap.invalidateSize(), 150); loadNearbyIcharters(); }
 }
 document.querySelectorAll('.nav-btn').forEach(btn=>{
   btn.onclick = ()=>switchScreen(btn.dataset.screen);
@@ -994,20 +1007,52 @@ function listenFeed(){
 }
 function renderFeed(posts){
   const grid = document.getElementById('feedGrid');
-  if(posts.length===0){ grid.innerHTML = '<div class="empty-list" style="grid-column:1/-1;">Aucune publication pour l\'instant.</div>'; return; }
+  if(posts.length===0){ grid.innerHTML = '<div class="empty-list" style="padding-top:60px;">Aucune publication pour l\'instant.</div>'; return; }
   grid.innerHTML = posts.map(p=>{
     const cover = (p.photos && p.photos[0]) || '';
     const boosted = boostScore(p) >= 5;
-    return `<div class="feed-tile" data-id="${p.id}">
-      <img src="${cover}" loading="lazy">
-      ${boosted?'<div class="boost">🔥 Populaire</div>':''}
-      ${p.price?`<div class="price">${escapeHtml(p.price)}</div>`:''}
-      <div class="stats"><span>♥ ${p.likesCount||0}</span><span>💬 ${p.commentsCount||0}</span></div>
+    const liked = (p.likesUsers||[]).includes(currentUser.uid);
+    const isMine = p.uid === currentUser.uid;
+    return `<div class="feed-card" data-id="${p.id}">
+      <img class="bg" src="${cover}" loading="lazy">
+      <div class="shade"></div>
+      ${p.photos && p.photos.length>1 ? `<div class="photo-dots">${p.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>` : ''}
+      ${boosted?'<div class="boost-tag">🔥 Populaire</div>':''}
+      <div class="feed-side">
+        <div class="avatar" style="width:40px;height:40px;font-size:13px;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
+        <button class="side-act ${liked?'liked':''}" data-act="like" data-id="${p.id}"><div class="circle">♥</div><span class="n">${p.likesCount||0}</span></button>
+        <button class="side-act" data-act="comment" data-id="${p.id}"><div class="circle">💬</div><span class="n">${p.commentsCount||0}</span></button>
+      </div>
+      <div class="content">
+        <div class="author"><span class="cn">@${escapeHtml(p.codeName||'')}</span></div>
+        ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
+        ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
+        <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander ce i-chater'}</button>
+      </div>
     </div>`;
   }).join('');
-  grid.querySelectorAll('.feed-tile').forEach(tile=>{
-    tile.onclick = ()=>openViewer(tile.dataset.id);
+  grid.querySelectorAll('[data-act="like"]').forEach(b=>{ b.onclick = ()=>toggleLikeInline(b.dataset.id, b); });
+  grid.querySelectorAll('[data-act="comment"]').forEach(b=>{ b.onclick = ()=>openViewer(b.dataset.id); });
+  grid.querySelectorAll('[data-act="order"]').forEach(b=>{
+    b.onclick = ()=>{
+      const post = posts.find(p=>p.id===b.dataset.id);
+      if(post) orderFromPost(post);
+    };
   });
+}
+
+/* ---------- Like rapide depuis le feed (sans ouvrir la publication) ---------- */
+async function toggleLikeInline(postId, btnEl){
+  const ref = db.collection('posts').doc(postId);
+  const snap = await ref.get();
+  if(!snap.exists) return;
+  const p = snap.data();
+  const liked = (p.likesUsers||[]).includes(currentUser.uid);
+  if(liked){
+    await ref.update({likesUsers: FieldValue.arrayRemove(currentUser.uid), likesCount: FieldValue.increment(-1)});
+  }else{
+    await ref.update({likesUsers: FieldValue.arrayUnion(currentUser.uid), likesCount: FieldValue.increment(1)});
+  }
 }
 
 /* ---------- Création d'un i-chat (jusqu'à 3 photos) ---------- */
@@ -1173,6 +1218,7 @@ function meIcon(){
     iconSize:[16,16], iconAnchor:[8,8]
   });
 }
+let connectedChattersCount = 0;
 function initOrderMap(){
   const center = currentUser.location ? [currentUser.location.lat, currentUser.location.lng] : [6.3703, 2.3912];
   orderMap = L.map('orderMap', {zoomControl:false}).setView(center, 14);
@@ -1181,51 +1227,80 @@ function initOrderMap(){
     orderMapMarkers.me = L.marker(center, {icon:meIcon()}).addTo(orderMap).bindPopup('Toi');
   }
   loadNearbyIcharters();
-  renderOrderPanel();
+  listenAvailableOrders();
 }
 async function loadNearbyIcharters(){
-  if(!currentUser.location) return;
   try{
-    const snap = await db.collection('users').where('icharterAvailable','==',true).get();
-    snap.forEach(doc=>{
-      const u = doc.data();
-      if(u.uid===currentUser.uid || !u.location) return;
-      const dist = haversineKm(currentUser.location, u.location);
-      if(dist===null || dist>15) return; // rayon de 15km
-      const marker = L.marker([u.location.lat,u.location.lng], {icon:icharterIcon(u.photoURL,u.codeName)}).addTo(orderMap)
-        .bindPopup(`<b>${escapeHtml(u.codeName)}</b><br>${dist.toFixed(1)} km`);
-      orderMapMarkers['i_'+u.uid] = marker;
+    Object.keys(orderMapMarkers).forEach(k=>{ if(k.startsWith('i_')){ orderMap.removeLayer(orderMapMarkers[k]); delete orderMapMarkers[k]; } });
+    // Le système affiche TOUS les chatters actuellement connectés (en ligne) sur i-chater,
+    // qu'ils aient activé le mode livreur ou non.
+    const presSnap = await db.collection('presence').get();
+    const onlineUids = [];
+    presSnap.forEach(doc=>{
+      const d = doc.data();
+      if(doc.id!==currentUser.uid && d.state==='online' && (Date.now()-tsToMillis(d.lastSeen) < ONLINE_WINDOW_MS)) onlineUids.push(doc.id);
     });
+    const dirSnap = await db.collection('directory').get();
+    const dirMap = {}; dirSnap.forEach(d=>dirMap[d.id]=d.data());
+    const bounds = [];
+    for(const uid of onlineUids){
+      const uSnap = await db.collection('users').doc(uid).get();
+      if(!uSnap.exists) continue;
+      const u = uSnap.data();
+      if(!u.location) continue;
+      const dist = currentUser.location ? haversineKm(currentUser.location, u.location) : null;
+      const marker = L.marker([u.location.lat,u.location.lng], {icon:icharterIcon(u.photoURL,u.codeName)}).addTo(orderMap)
+        .bindPopup(`<b>${escapeHtml(u.codeName)}</b>${dist!=null?`<br>${dist.toFixed(1)} km`:''}`);
+      orderMapMarkers['i_'+uid] = marker;
+      bounds.push([u.location.lat,u.location.lng]);
+    }
+    if(bounds.length){
+      if(currentUser.location) bounds.push([currentUser.location.lat,currentUser.location.lng]);
+      orderMap.fitBounds(bounds, {padding:[40,40], maxZoom:14});
+    }
+    connectedChattersCount = onlineUids.filter(uid=>orderMapMarkers['i_'+uid]).length;
+    if(!myOrderId) renderAvailableOrders(lastAvailRows);
   }catch(err){ console.warn('nearby icharters error', err); }
 }
 
-/* ---------- Panneau de commande (client) ---------- */
-function renderOrderPanel(){
-  const panel = document.getElementById('orderPanel');
-  if(myOrderId){ return; } // géré par listenMyOrder
-  panel.innerHTML = `
+/* ---------- Panneau de commande (client) : carte de lancement ---------- */
+function launchCardHtml(){
+  return `
     <div class="order-status-card">
-      <div class="lbl">i-chater à proximité</div>
-      <div class="st">${Object.keys(orderMapMarkers).filter(k=>k.startsWith('i_')).length} disponible(s) autour de toi</div>
+      <div class="lbl">Chatters connectés</div>
+      <div class="st">${connectedChattersCount} i-chater${connectedChattersCount>1?'s':''} en ligne autour de toi</div>
       <button class="btn-main" id="launchOrderBtn" style="margin-top:4px;">Lancer une commande</button>
     </div>`;
-  document.getElementById('launchOrderBtn').onclick = launchOrder;
 }
-async function launchOrder(){
+async function launchOrder(targetUid){
   if(!currentUser.location){ alert("Ta localisation est requise pour commander."); return; }
+  if(myOrderId){ switchScreen('screenOrder'); return; }
+  let targetCodeName = null;
+  if(targetUid){
+    const dSnap = await db.collection('directory').doc(targetUid).get();
+    if(dSnap.exists) targetCodeName = dSnap.data().codeName;
+  }
   const ref = await db.collection('orders').add({
     clientUid: currentUser.uid, clientCodeName: currentUser.codeName, clientPhoto: currentUser.photoURL||'',
     clientLocation: currentUser.location,
+    targetIcharterUid: targetUid || null, targetIcharterCodeName: targetCodeName,
     icharterUid:null, icharterCodeName:null, icharterPhoto:null, icharterLocation:null,
     status:'searching', createdAt: FieldValue.serverTimestamp()
   });
   myOrderId = ref.id;
   listenMyOrder();
 }
+/* ---------- Commander directement l'i-chater d'une publication du feed ---------- */
+async function orderFromPost(post){
+  if(!currentUser.location){ alert("Ta localisation est requise pour commander."); return; }
+  if(myOrderId){ switchScreen('screenOrder'); return; }
+  switchScreen('screenOrder');
+  await launchOrder(post.uid);
+}
 function listenMyOrder(){
   if(myOrderUnsub) myOrderUnsub();
   myOrderUnsub = db.collection('orders').doc(myOrderId).onSnapshot(snap=>{
-    if(!snap.exists){ myOrderId=null; renderOrderPanel(); return; }
+    if(!snap.exists){ myOrderId=null; renderAvailableOrders(lastAvailRows); return; }
     renderClientOrder({id:snap.id, ...snap.data()});
   });
 }
@@ -1233,7 +1308,7 @@ function renderClientOrder(order){
   const panel = document.getElementById('orderPanel');
   if(order.status==='cancelled' || order.status==='completed'){
     if(myOrderUnsub){ myOrderUnsub(); myOrderUnsub=null; }
-    myOrderId=null; renderOrderPanel(); return;
+    myOrderId=null; renderAvailableOrders(lastAvailRows); return;
   }
   if(order.icharterLocation && orderMap){
     if(orderMapMarkers.tracking) orderMap.removeLayer(orderMapMarkers.tracking);
@@ -1241,6 +1316,9 @@ function renderClientOrder(order){
     orderMap.setView([order.icharterLocation.lat, order.icharterLocation.lng], orderMap.getZoom());
   }
   const statusLabel = {searching:'Recherche d\'un i-chater…', accepted:'i-chater en route', arrived:'i-chater arrivé', completed:'Terminée'}[order.status] || order.status;
+  const searchingMsg = order.targetIcharterUid && order.status==='searching'
+    ? `<div class="searching-pulse"><div class="ring"></div> En attente de la réponse de @${escapeHtml(order.targetIcharterCodeName||'ce i-chater')}…</div>`
+    : (order.status==='searching' ? '<div class="searching-pulse"><div class="ring"></div> Recherche en cours dans ton secteur…</div>' : '');
   let peerHtml = '';
   if(order.icharterUid){
     peerHtml = `<div class="order-peer">
@@ -1252,7 +1330,7 @@ function renderClientOrder(order){
     <div class="order-status-card">
       <div class="lbl">Statut de la commande</div>
       <div class="st">${statusLabel}</div>
-      ${order.status==='searching'?'<div class="searching-pulse"><div class="ring"></div> Recherche en cours dans ton secteur…</div>':''}
+      ${searchingMsg}
       ${peerHtml}
       <div class="order-btns">
         ${order.status==='arrived' ? '<button class="obtn primary" id="orderReceivedBtn">Commande reçue</button>' : ''}
@@ -1272,15 +1350,9 @@ icharterSwitch.onclick = async ()=>{
   icharterSwitch.classList.toggle('on', icharterMode);
   document.getElementById('modeSub').textContent = icharterMode ? 'Tu es visible par les clients autour de toi' : 'Deviens disponible pour livrer près de toi';
   await db.collection('users').doc(currentUser.uid).update({icharterAvailable:icharterMode, isIcharter:true, location: currentUser.location||null});
-  if(icharterMode){
-    startIcharterMovementSim();
-    listenAvailableOrders();
-  }else{
-    if(icharterMoveInterval) clearInterval(icharterMoveInterval);
-    if(availOrdersUnsub){ availOrdersUnsub(); availOrdersUnsub=null; }
-    document.getElementById('orderPanel').querySelectorAll('.avail-order-row').forEach(r=>r.remove());
-    renderOrderPanel();
-  }
+  if(icharterMode) startIcharterMovementSim();
+  else if(icharterMoveInterval) clearInterval(icharterMoveInterval);
+  renderAvailableOrders(lastAvailRows||[]);
 };
 function startIcharterMovementSim(){
   // Met à jour périodiquement ma position (déplacement réel du téléphone)
@@ -1296,6 +1368,10 @@ function startIcharterMovementSim(){
   }, 8000);
 }
 let myAcceptedOrderId = null;
+let lastAvailRows = [];
+/* Le système écoute en permanence : toute personne connectée peut recevoir une commande
+   directe déclenchée depuis un i-chat (bouton "Commander ce i-chater"). Les courses non
+   ciblées ne s'affichent en plus que si le mode i-chater est activé. */
 function listenAvailableOrders(){
   if(availOrdersUnsub) availOrdersUnsub();
   availOrdersUnsub = db.collection('orders').where('status','==','searching')
@@ -1305,24 +1381,42 @@ function listenAvailableOrders(){
       snap.forEach(doc=>{
         const o = doc.data();
         if(o.clientUid===currentUser.uid) return;
+        const direct = o.targetIcharterUid === currentUser.uid;
+        const open = !o.targetIcharterUid && icharterMode;
+        if(!direct && !open) return;
         const dist = currentUser.location && o.clientLocation ? haversineKm(currentUser.location, o.clientLocation) : null;
-        rows.push({id:doc.id, ...o, dist});
+        rows.push({id:doc.id, ...o, dist, direct});
       });
-      rows.sort((a,b)=>(a.dist??999)-(b.dist??999));
+      rows.sort((a,b)=> (b.direct-a.direct) || ((a.dist??999)-(b.dist??999)));
+      lastAvailRows = rows;
       renderAvailableOrders(rows);
+      const directCount = rows.filter(r=>r.direct).length;
+      const badge = document.getElementById('navOrderBadge');
+      if(directCount>0){ badge.style.display='block'; badge.textContent = directCount; }
+      else badge.style.display='none';
     });
 }
 function renderAvailableOrders(rows){
+  if(myOrderId) return; // je suis en train de commander, pas d'affichage ici
   const panel = document.getElementById('orderPanel');
-  const listHtml = rows.length===0
-    ? '<div class="empty-list">Aucune commande disponible pour le moment.</div>'
-    : rows.map(o=>`
+  const direct = rows.filter(r=>r.direct);
+  const open = rows.filter(r=>!r.direct);
+  const rowHtml = (o)=>`
       <div class="avail-order-row" data-id="${o.id}">
         <div class="avatar">${o.clientPhoto?`<img src="${o.clientPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(o.clientCodeName)}</div>
-        <div class="info"><div class="cn">${escapeHtml(o.clientCodeName||'')}</div><div class="dist">${o.dist!=null?o.dist.toFixed(1)+' km':'distance inconnue'}</div></div>
+        <div class="info"><div class="cn">${escapeHtml(o.clientCodeName||'')}${o.direct?' <span style="color:var(--pink);">· pour toi</span>':''}</div><div class="dist">${o.dist!=null?o.dist.toFixed(1)+' km':'distance inconnue'}</div></div>
         <button class="accept-btn" data-id="${o.id}">Accepter</button>
-      </div>`).join('');
-  panel.innerHTML = `<div class="order-status-card"><div class="lbl">Courses disponibles autour de toi</div></div>` + listHtml;
+      </div>`;
+  let html = launchCardHtml();
+  if(direct.length){
+    html += `<div class="order-status-card" style="margin-top:14px;"><div class="lbl">Demandes directes pour toi</div></div>` + direct.map(rowHtml).join('');
+  }
+  if(icharterMode){
+    html += `<div class="order-status-card" style="margin-top:14px;"><div class="lbl">Courses disponibles autour de toi</div></div>`;
+    html += open.length ? open.map(rowHtml).join('') : '<div class="empty-list">Aucune course disponible pour le moment.</div>';
+  }
+  panel.innerHTML = html;
+  document.getElementById('launchOrderBtn').onclick = ()=>launchOrder(null);
   panel.querySelectorAll('.accept-btn').forEach(btn=>{
     btn.onclick = ()=>acceptOrder(btn.dataset.id);
   });
@@ -1333,7 +1427,7 @@ async function acceptOrder(orderId){
     icharterLocation: currentUser.location||null, status:'accepted'
   });
   myAcceptedOrderId = orderId;
-  if(availOrdersUnsub){ availOrdersUnsub(); availOrdersUnsub=null; }
+  document.getElementById('navOrderBadge').style.display='none';
   listenAcceptedOrder(orderId);
 }
 function listenAcceptedOrder(orderId){
@@ -1345,7 +1439,7 @@ function listenAcceptedOrder(orderId){
     if(o.status==='cancelled' || o.status==='completed'){
       myAcceptedOrderId = null;
       if(acceptedOrderUnsub){ acceptedOrderUnsub(); acceptedOrderUnsub=null; }
-      if(icharterMode) listenAvailableOrders();
+      renderAvailableOrders(lastAvailRows);
       return;
     }
     panel.innerHTML = `
