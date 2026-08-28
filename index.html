@@ -274,6 +274,15 @@ body{
 #screenChat .main.hide{display:none;}
 .back-btn{display:flex;background:none;border:none;color:var(--acid);font-size:20px;cursor:pointer;margin-right:4px;}
 
+/* ---------- I-CHATTERS DISPONIBLES (boite de messagerie) ---------- */
+.avail-icharters-strip{padding:12px 16px;border-bottom:1px solid var(--line);}
+.avail-icharters-strip .lbl{font-size:10.5px;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.avail-icharters-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:2px;}
+.avail-icharter-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;width:56px;}
+.avail-icharter-item .avwrap{position:relative;width:50px;height:50px;}
+.avail-icharter-item .avatar{width:50px;height:50px;font-size:16px;border:2px solid var(--acid);}
+.avail-icharter-item .dot-online{left:auto;right:0;bottom:0;}
+.avail-icharter-item .nm{font-size:10px;color:var(--sub);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px;}
 
 </style>
 </head>
@@ -371,6 +380,10 @@ body{
         <input type="text" id="searchInput" placeholder="Rechercher un identifiant KRYPT…" autocomplete="off">
       </div>
       <div class="search-results" id="searchResults" style="display:none;"></div>
+      <div class="avail-icharters-strip" id="availIchartersStrip" style="display:none;">
+        <div class="lbl">i-chatters disponibles</div>
+        <div class="avail-icharters-row" id="availIchartersRow"></div>
+      </div>
       <div class="chat-list" id="chatList">
         <div class="empty-list">Aucune conversation. Cherche un identifiant KRYPT pour démarrer.</div>
       </div>
@@ -476,6 +489,7 @@ body{
           <input type="text" id="commentInput" placeholder="Ajouter un commentaire…">
           <button id="sendCommentBtn">OK</button>
         </div>
+        <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;">📍 Commander cet i-chat</button>
       </div>
     </div>
   </div>
@@ -532,6 +546,8 @@ let icharterMode = false;
 let availOrdersUnsub = null;     // commandes dispo à accepter (mode i-chater)
 let acceptedOrderUnsub = null;   // commande acceptée en tant que i-chater
 let icharterMoveInterval = null;
+let availIchartersUnsub = null;  // liste de tous les i-chatters disponibles (boite de messagerie)
+let orderNotifyTimeout = null;   // délai avant élargissement de la recherche (notif à tous)
 
 function haversineKm(a,b){
   if(!a||!b) return null;
@@ -760,6 +776,7 @@ function enterApp(){
   window.addEventListener('beforeunload', ()=>setPresence('offline'));
 
   listenChatList();
+  listenAvailIcharters();
   initProfileScreen();
   listenFeed();
   switchScreen('screenFeed');
@@ -833,6 +850,33 @@ async function runSearch(q){
       openChat(uid, cn, photo);
     };
   });
+}
+
+/* ======================================================================
+   i-CHATTERS DISPONIBLES DANS LA BOITE DE MESSAGERIE
+====================================================================== */
+function listenAvailIcharters(){
+  if(availIchartersUnsub) availIchartersUnsub();
+  availIchartersUnsub = db.collection('users').where('icharterAvailable','==',true)
+    .onSnapshot(snap=>{
+      const strip = document.getElementById('availIchartersStrip');
+      const row = document.getElementById('availIchartersRow');
+      const list = [];
+      snap.forEach(doc=>{ if(doc.id!==currentUser.uid) list.push({uid:doc.id, ...doc.data()}); });
+      if(list.length===0){ strip.style.display='none'; row.innerHTML=''; return; }
+      strip.style.display='block';
+      row.innerHTML = list.map(u=>`
+        <div class="avail-icharter-item" data-uid="${u.uid}" data-cn="${u.codeName}" data-photo="${u.photoURL||''}">
+          <div class="avwrap">
+            <div class="avatar">${u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(u.codeName)}</div>
+            <div class="dot-online"></div>
+          </div>
+          <div class="nm">${escapeHtml(u.codeName||'')}</div>
+        </div>`).join('');
+      row.querySelectorAll('.avail-icharter-item').forEach(item=>{
+        item.onclick = ()=>openChat(item.dataset.uid, item.dataset.cn, item.dataset.photo);
+      });
+    }, err=>console.warn('avail icharters error', err));
 }
 
 /* ======================================================================
@@ -1027,7 +1071,7 @@ function renderFeed(posts){
         <div class="author"><span class="cn">@${escapeHtml(p.codeName||'')}</span></div>
         ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
         ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
-        <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander ce i-chater'}</button>
+        <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander cet i-chat'}</button>
       </div>
     </div>`;
   }).join('');
@@ -1131,6 +1175,11 @@ async function openViewer(postId){
   document.getElementById('viewerPrice').textContent = activePost.price||'';
   document.getElementById('viewerCaption').textContent = activePost.caption||'';
   updateLikeUI();
+  const isMine = activePost.uid === currentUser.uid;
+  const orderBtn = document.getElementById('viewerOrderBtn');
+  orderBtn.style.display = isMine ? 'none' : 'block';
+  orderBtn.disabled = false;
+  orderBtn.textContent = '📍 Commander cet i-chat';
   viewerModal.classList.add('show');
   listenComments(postId);
 }
@@ -1169,6 +1218,11 @@ document.getElementById('viewerLikeBtn').onclick = async ()=>{
     await ref.update({likesUsers: FieldValue.arrayUnion(currentUser.uid), likesCount: FieldValue.increment(1)});
   }
   updateLikeUI();
+};
+document.getElementById('viewerOrderBtn').onclick = ()=>{
+  if(!activePost) return;
+  document.getElementById('closeViewerModal').click();
+  orderFromPost(activePost);
 };
 
 function listenComments(postId){
@@ -1285,10 +1339,19 @@ async function launchOrder(targetUid){
     clientLocation: currentUser.location,
     targetIcharterUid: targetUid || null, targetIcharterCodeName: targetCodeName,
     icharterUid:null, icharterCodeName:null, icharterPhoto:null, icharterLocation:null,
+    broadcastAll:false,
     status:'searching', createdAt: FieldValue.serverTimestamp()
   });
   myOrderId = ref.id;
   listenMyOrder();
+  // Si personne à proximité n'accepte rapidement, on élargit la recherche à TOUS
+  // les i-chatters du système (notification envoyée à tout le monde) après 15s.
+  if(orderNotifyTimeout) clearTimeout(orderNotifyTimeout);
+  orderNotifyTimeout = setTimeout(()=>{
+    if(myOrderId===ref.id){
+      db.collection('orders').doc(ref.id).update({broadcastAll:true}).catch(()=>{});
+    }
+  }, 15000);
 }
 /* ---------- Commander directement l'i-chater d'une publication du feed ---------- */
 async function orderFromPost(post){
@@ -1308,6 +1371,7 @@ function renderClientOrder(order){
   const panel = document.getElementById('orderPanel');
   if(order.status==='cancelled' || order.status==='completed'){
     if(myOrderUnsub){ myOrderUnsub(); myOrderUnsub=null; }
+    if(orderNotifyTimeout){ clearTimeout(orderNotifyTimeout); orderNotifyTimeout=null; }
     myOrderId=null; renderAvailableOrders(lastAvailRows); return;
   }
   if(order.icharterLocation && orderMap){
@@ -1316,9 +1380,16 @@ function renderClientOrder(order){
     orderMap.setView([order.icharterLocation.lat, order.icharterLocation.lng], orderMap.getZoom());
   }
   const statusLabel = {searching:'Recherche d\'un i-chater…', accepted:'i-chater en route', arrived:'i-chater arrivé', completed:'Terminée'}[order.status] || order.status;
-  const searchingMsg = order.targetIcharterUid && order.status==='searching'
-    ? `<div class="searching-pulse"><div class="ring"></div> En attente de la réponse de @${escapeHtml(order.targetIcharterCodeName||'ce i-chater')}…</div>`
-    : (order.status==='searching' ? '<div class="searching-pulse"><div class="ring"></div> Recherche en cours dans ton secteur…</div>' : '');
+  let searchingMsg = '';
+  if(order.status==='searching'){
+    if(order.targetIcharterUid){
+      searchingMsg = `<div class="searching-pulse"><div class="ring"></div> En attente de la réponse de @${escapeHtml(order.targetIcharterCodeName||'ce i-chater')}…</div>`;
+    } else if(order.broadcastAll){
+      searchingMsg = `<div class="searching-pulse"><div class="ring"></div> Aucun i-chater à proximité — notification envoyée à tous les i-chatters du système…</div>`;
+    } else {
+      searchingMsg = `<div class="searching-pulse"><div class="ring"></div> Recherche en cours dans ton secteur…</div>`;
+    }
+  }
   let peerHtml = '';
   if(order.icharterUid){
     peerHtml = `<div class="order-peer">
@@ -1370,8 +1441,10 @@ function startIcharterMovementSim(){
 let myAcceptedOrderId = null;
 let lastAvailRows = [];
 /* Le système écoute en permanence : toute personne connectée peut recevoir une commande
-   directe déclenchée depuis un i-chat (bouton "Commander ce i-chater"). Les courses non
-   ciblées ne s'affichent en plus que si le mode i-chater est activé. */
+   directe déclenchée depuis un i-chat (bouton "Commander cet i-chat"). Les courses non
+   ciblées s'affichent si le mode i-chater est activé (proximité), et — si aucun i-chater
+   proche n'a répondu après un délai — la commande est diffusée (broadcastAll) à TOUS les
+   i-chatters disponibles du système, qu'ils soient à proximité ou non. */
 function listenAvailableOrders(){
   if(availOrdersUnsub) availOrdersUnsub();
   availOrdersUnsub = db.collection('orders').where('status','==','searching')
@@ -1382,15 +1455,19 @@ function listenAvailableOrders(){
         const o = doc.data();
         if(o.clientUid===currentUser.uid) return;
         const direct = o.targetIcharterUid === currentUser.uid;
-        const open = !o.targetIcharterUid && icharterMode;
-        if(!direct && !open) return;
+        const nearbyOpen = !o.targetIcharterUid && icharterMode && !o.broadcastAll;
+        // broadcastAll = personne n'a accepté à proximité : tous les i-chatters
+        // actuellement disponibles (mode i-chater activé) reçoivent la notification,
+        // qu'ils soient proches ou non.
+        const broadcast = !o.targetIcharterUid && !!o.broadcastAll && icharterMode;
+        if(!direct && !nearbyOpen && !broadcast) return;
         const dist = currentUser.location && o.clientLocation ? haversineKm(currentUser.location, o.clientLocation) : null;
-        rows.push({id:doc.id, ...o, dist, direct});
+        rows.push({id:doc.id, ...o, dist, direct, broadcast});
       });
       rows.sort((a,b)=> (b.direct-a.direct) || ((a.dist??999)-(b.dist??999)));
       lastAvailRows = rows;
       renderAvailableOrders(rows);
-      const directCount = rows.filter(r=>r.direct).length;
+      const directCount = rows.filter(r=>r.direct || r.broadcast).length;
       const badge = document.getElementById('navOrderBadge');
       if(directCount>0){ badge.style.display='block'; badge.textContent = directCount; }
       else badge.style.display='none';
@@ -1400,7 +1477,8 @@ function renderAvailableOrders(rows){
   if(myOrderId) return; // je suis en train de commander, pas d'affichage ici
   const panel = document.getElementById('orderPanel');
   const direct = rows.filter(r=>r.direct);
-  const open = rows.filter(r=>!r.direct);
+  const broadcast = rows.filter(r=>!r.direct && r.broadcast);
+  const open = rows.filter(r=>!r.direct && !r.broadcast);
   const rowHtml = (o)=>`
       <div class="avail-order-row" data-id="${o.id}">
         <div class="avatar">${o.clientPhoto?`<img src="${o.clientPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(o.clientCodeName)}</div>
@@ -1410,6 +1488,9 @@ function renderAvailableOrders(rows){
   let html = launchCardHtml();
   if(direct.length){
     html += `<div class="order-status-card" style="margin-top:14px;"><div class="lbl">Demandes directes pour toi</div></div>` + direct.map(rowHtml).join('');
+  }
+  if(broadcast.length){
+    html += `<div class="order-status-card" style="margin-top:14px;"><div class="lbl">📢 Aucun i-chater trouvé à proximité — commandes diffusées à tous</div></div>` + broadcast.map(rowHtml).join('');
   }
   if(icharterMode){
     html += `<div class="order-status-card" style="margin-top:14px;"><div class="lbl">Courses disponibles autour de toi</div></div>`;
@@ -1470,9 +1551,11 @@ document.getElementById('logoutBtn').onclick = ()=>{
   if(messagesUnsub) messagesUnsub();
   if(peerPresenceUnsub) peerPresenceUnsub();
   if(chatListUnsub) chatListUnsub();
+  if(availIchartersUnsub){ availIchartersUnsub(); availIchartersUnsub=null; }
   if(postsUnsub){ postsUnsub(); postsUnsub=null; }
   if(commentsUnsub){ commentsUnsub(); commentsUnsub=null; }
   if(myOrderUnsub){ myOrderUnsub(); myOrderUnsub=null; }
+  if(orderNotifyTimeout){ clearTimeout(orderNotifyTimeout); orderNotifyTimeout=null; }
   if(availOrdersUnsub){ availOrdersUnsub(); availOrdersUnsub=null; }
   if(acceptedOrderUnsub){ acceptedOrderUnsub(); acceptedOrderUnsub=null; }
   if(icharterMoveInterval){ clearInterval(icharterMoveInterval); icharterMoveInterval=null; }
