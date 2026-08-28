@@ -199,6 +199,9 @@ body{
 .feed-card .author .cn{font-weight:800;font-size:15px;color:#fff;}
 .feed-card .caption{font-size:13.5px;color:#f0f0f5;line-height:1.4;margin-bottom:8px;}
 .feed-card .price-tag{display:inline-block;background:rgba(200,255,63,.15);border:1px solid var(--acid-dim);color:var(--acid);font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:9px;margin-bottom:12px;}
+.feed-card .loc-tag{display:flex;align-items:center;gap:5px;color:#e2e2ea;font-size:11.5px;margin-bottom:8px;cursor:pointer;width:fit-content;background:rgba(255,255,255,.08);padding:4px 9px 4px 7px;border-radius:9px;transition:.15s;}
+.feed-card .loc-tag:hover{background:rgba(255,255,255,.16);}
+.feed-card .loc-tag .dist{color:var(--acid);font-weight:700;}
 .feed-card .order-btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acid),#7be032);color:#08080d;font-weight:900;font-size:13.5px;letter-spacing:.3px;cursor:pointer;}
 .feed-card .order-btn:disabled{opacity:.55;cursor:not-allowed;}
 .feed-side{position:absolute;right:10px;bottom:90px;display:flex;flex-direction:column;align-items:center;gap:18px;z-index:2;}
@@ -443,7 +446,7 @@ body{
         <button class="icon-btn" id="logoutBtn" title="Déconnexion">⎋</button>
       </div>
       <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Rechercher un identifiant i-chat…" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Rechercher un identifiant ou une ville…" autocomplete="off">
       </div>
       <div class="search-results" id="searchResults" style="display:none;"></div>
       <div class="avail-icharters-strip" id="availIchartersStrip" style="display:none;">
@@ -497,6 +500,7 @@ body{
       <div class="profile-list">
         <div class="profile-item"><div class="ic">📍</div><div id="profLocStatus">Localisation active</div></div>
         <div class="profile-item"><div class="ic">🖼️</div><div id="profPostCount">0 publication(s)</div></div>
+        <div class="profile-item" id="profPrivacyRow"><div class="ic">🔒</div><div>Politique de confidentialité</div></div>
         <div class="profile-item" id="profLogoutRow"><div class="ic">⎋</div><div>Déconnexion</div></div>
       </div>
       <div class="my-posts-section">
@@ -597,6 +601,29 @@ body{
   </div>
 </div>
 
+<!-- ============ MODAL: POLITIQUE DE CONFIDENTIALITÉ ============ -->
+<div class="modal-overlay" id="privacyModal">
+  <div class="modal-card" style="max-width:520px;">
+    <div class="modal-head"><div class="t">Politique de confidentialité</div><button class="modal-close" id="closePrivacyModal">✕</button></div>
+    <div class="modal-body" style="line-height:1.55;font-size:13px;color:var(--text);">
+      <p style="margin-bottom:12px;"><b style="color:var(--acid);">Qu'est-ce qu'un « i-chat » ?</b><br>
+      Sur cette application, un <b>i-chat</b> désigne toute publication créée par un utilisateur (un « i-chatter ») pour proposer un <b>produit</b> ou un <b>service</b> : une annonce, une offre, une prestation, accompagnée d'une description, d'un prix optionnel et de photos. Un i-chat n'est donc pas un simple message : c'est le contenu (produit/service) qu'un i-chatter met à disposition des autres utilisateurs de l'application, consultable dans le fil et localisable sur une carte.</p>
+
+      <p style="margin-bottom:12px;"><b style="color:var(--acid);">Données que nous collectons</b><br>
+      Pour fonctionner, l'application traite : ton numéro de téléphone et ton mot de passe (sous forme chiffrée), ton nom et ton identifiant i-chat (codeName), ta photo de profil, ta localisation (latitude/longitude) ainsi que la ville et le pays qui en sont déduits, le contenu de tes publications (photos, description, prix), tes messages, appels, likes et commentaires.</p>
+
+      <p style="margin-bottom:12px;"><b style="color:var(--acid);">Pourquoi nous utilisons ta localisation</b><br>
+      Ta localisation est utilisée pour : afficher la ville/pays sous chaque i-chat, te permettre de savoir si un i-chat se trouve à une distance qui t'arrange, te suggérer en priorité des i-chats et des i-chatters proches de toi ou situés dans ton pays, et permettre la mise en relation lors d'une commande. Elle n'est jamais vendue à des tiers.</p>
+
+      <p style="margin-bottom:12px;"><b style="color:var(--acid);">Partage des informations</b><br>
+      Ton identifiant i-chat, ta photo, tes publications et ta localisation approximative (ville/pays) sont visibles par les autres utilisateurs de l'application. Ton numéro de téléphone et ton nom complet ne sont jamais affichés publiquement.</p>
+
+      <p style="margin-bottom:0;"><b style="color:var(--acid);">Tes droits</b><br>
+      Tu peux à tout moment modifier ou supprimer tes publications, et supprimer ton compte en nous contactant. Tu peux aussi désactiver la localisation depuis les réglages de ton navigateur ou de ton téléphone, sachant que certaines fonctionnalités (suggestions de proximité, commandes) ne fonctionneront plus correctement sans elle.</p>
+    </div>
+  </div>
+</div>
+
 <!-- ============ OVERLAY: APPEL AUDIO / VIDÉO (WebRTC) ============ -->
 <div class="call-overlay" id="callOverlay">
   <video id="callRemoteVideo" class="call-remote-video" autoplay playsinline></video>
@@ -689,6 +716,32 @@ function haversineKm(a,b){
   const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
   const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return R * 2*Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+/* ---------- Géocodage inverse : retrouve ville / pays à partir de {lat,lng} ---------- */
+const geoNameCache = {};
+async function reverseGeocode(loc){
+  if(!loc || typeof loc.lat!=='number' || typeof loc.lng!=='number') return null;
+  const key = loc.lat.toFixed(2)+','+loc.lng.toFixed(2);
+  if(geoNameCache[key]) return geoNameCache[key];
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${loc.lat}&lon=${loc.lng}&zoom=10&addressdetails=1`);
+    const data = await res.json();
+    const addr = data.address || {};
+    const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+    const country = addr.country || '';
+    const info = {city, country};
+    geoNameCache[key] = info;
+    return info;
+  }catch(err){
+    console.warn('reverseGeocode error', err.message);
+    return null;
+  }
+}
+/* Formate {city,country} en texte affichable, ex: "Douala, Cameroun" */
+function formatCityCountry(g){
+  if(!g) return '';
+  return [g.city, g.country].filter(Boolean).join(', ');
 }
 
 /* ======================================================================
@@ -840,14 +893,17 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
     const codeName = await generateUniqueCodeName();
     const passHash = await sha256(pass + '::krypt::' + phone);
     const location = pendingGeo;
+    const geoInfo = await reverseGeocode(location);
+    const city = geoInfo ? geoInfo.city : '';
+    const country = geoInfo ? geoInfo.country : '';
 
     await db.collection('users').doc(uid).set({
       uid, phone, fullName:name, codeName, photoURL,
-      passHash, location, isIcharter:false, icharterAvailable:false,
+      passHash, location, city, country, isIcharter:false, icharterAvailable:false,
       createdAt: FieldValue.serverTimestamp()
     });
     await db.collection('codeNames').doc(codeName).set({uid});
-    await db.collection('directory').doc(uid).set({codeName, photoURL});
+    await db.collection('directory').doc(uid).set({codeName, photoURL, city, country});
 
     document.getElementById('codenameReveal').style.display='block';
     document.getElementById('codenameValue').textContent = codeName;
@@ -855,7 +911,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
     btn.disabled = false;
     btn.type='button';
     btn.onclick = ()=>{
-      currentUser = {uid, phone, fullName:name, codeName, photoURL, location};
+      currentUser = {uid, phone, fullName:name, codeName, photoURL, location, city, country};
       saveSession(uid);
       enterApp();
     };
@@ -887,6 +943,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
         const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
         currentUser.location = loc;
         db.collection('users').doc(uid).update({location:loc}).catch(()=>{});
+        reverseGeocode(loc).then(g=>{
+          if(!g) return;
+          currentUser.city = g.city; currentUser.country = g.country;
+          db.collection('users').doc(uid).update({city:g.city, country:g.country}).catch(()=>{});
+          db.collection('directory').doc(uid).update({city:g.city, country:g.country}).catch(()=>{});
+        });
       }, ()=>{}, {enableHighAccuracy:true, timeout:8000});
     }
     enterApp();
@@ -948,6 +1010,7 @@ function initProfileScreen(){
   document.getElementById('profPhone').textContent = currentUser.phone || '';
   document.getElementById('profLocStatus').textContent = currentUser.location ? 'Localisation active' : 'Localisation inactive';
   document.getElementById('profLogoutRow').onclick = ()=>document.getElementById('logoutBtn').click();
+  document.getElementById('profPrivacyRow').onclick = ()=>document.getElementById('privacyModal').classList.add('show');
   renderMyPostsGrid();
 }
 async function renderMyPostsGrid(){
@@ -1026,12 +1089,20 @@ async function runSearch(q){
   if(snap.empty){ searchResults.innerHTML = '<div class="empty-list">Aucun résultat.</div>'; searchResults.style.display='block'; return; }
   const all = {};
   snap.forEach(doc=>{ all[doc.id] = doc.data(); });
-  const matches = Object.entries(all).filter(([uid,d])=> d.codeName && d.codeName.toLowerCase().includes(q.toLowerCase()) && uid !== currentUser.uid).slice(0,15);
-  if(matches.length===0){ searchResults.innerHTML = '<div class="empty-list">Aucun identifiant trouvé.</div>'; searchResults.style.display='block'; return; }
+  const qLower = q.toLowerCase();
+  // La recherche matche soit l'identifiant i-chat, soit la ville ou le pays de l'i-chatter.
+  const matches = Object.entries(all).filter(([uid,d])=>
+    d.codeName && uid !== currentUser.uid && (
+      d.codeName.toLowerCase().includes(qLower) ||
+      (d.city && d.city.toLowerCase().includes(qLower)) ||
+      (d.country && d.country.toLowerCase().includes(qLower))
+    )
+  ).slice(0,15);
+  if(matches.length===0){ searchResults.innerHTML = '<div class="empty-list">Aucun identifiant ni ville trouvé.</div>'; searchResults.style.display='block'; return; }
   searchResults.innerHTML = matches.map(([uid,d])=>`
     <div class="result-row" data-uid="${uid}" data-cn="${d.codeName}" data-photo="${d.photoURL||''}">
       <div class="avatar clickable" data-avatar-uid="${uid}" data-avatar-cn="${d.codeName}" data-avatar-photo="${d.photoURL||''}">${d.photoURL?`<img src="${d.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(d.codeName)}</div>
-      <div class="cn">${d.codeName}</div>
+      <div class="cn">${d.codeName}${(d.city||d.country)?` <span style="color:var(--sub);font-weight:400;font-size:11px;">· ${escapeHtml(formatCityCountry({city:d.city,country:d.country}))}</span>`:''}</div>
       <div class="add">Discuter</div>
     </div>`).join('');
   searchResults.style.display='block';
@@ -1059,6 +1130,15 @@ function listenAvailIcharters(){
       const list = [];
       snap.forEach(doc=>{ if(doc.id!==currentUser.uid) list.push({uid:doc.id, ...doc.data()}); });
       if(list.length===0){ strip.style.display='none'; row.innerHTML=''; return; }
+      // Suggère en priorité les i-chatters du même pays que l'utilisateur (ex : le Cameroun).
+      const myCountry = (currentUser.country||'').toLowerCase();
+      if(myCountry){
+        list.sort((a,b)=>{
+          const aSame = (a.country||'').toLowerCase()===myCountry ? 1 : 0;
+          const bSame = (b.country||'').toLowerCase()===myCountry ? 1 : 0;
+          return bSame-aSame;
+        });
+      }
       strip.style.display='block';
       row.innerHTML = list.map(u=>`
         <div class="avail-icharter-item" data-uid="${u.uid}" data-cn="${u.codeName}" data-photo="${u.photoURL||''}">
@@ -1210,6 +1290,7 @@ async function openUserProfile(uid, codeName, photo){
   }
 }
 document.getElementById('closeUserProfileModal').onclick = ()=>document.getElementById('userProfileModal').classList.remove('show');
+document.getElementById('closePrivacyModal').onclick = ()=>document.getElementById('privacyModal').classList.remove('show');
 
 /* ======================================================================
    OPEN / RENDER CHAT
@@ -1348,8 +1429,18 @@ function listenFeed(){
         if(!p.photos || !Array.isArray(p.photos) || p.photos.length===0 || !p.photos[0]) return;
         posts.push(p);
       });
-      // Les publications avec le plus de likes/commentaires sont "boostées" en tête de fil
-      posts.sort((a,b)=> boostScore(b)-boostScore(a) || tsToMillis(b.createdAt)-tsToMillis(a.createdAt));
+      // Priorité 1 : les publications du même pays que l'utilisateur (ex: le Cameroun) sont suggérées en premier.
+      // Priorité 2 : les publications avec le plus de likes/commentaires sont "boostées".
+      // Priorité 3 : les plus récentes.
+      const myCountry = (currentUser.country||'').toLowerCase();
+      posts.sort((a,b)=>{
+        if(myCountry){
+          const aSame = (a.country||'').toLowerCase()===myCountry ? 1 : 0;
+          const bSame = (b.country||'').toLowerCase()===myCountry ? 1 : 0;
+          if(aSame!==bSame) return bSame-aSame;
+        }
+        return boostScore(b)-boostScore(a) || tsToMillis(b.createdAt)-tsToMillis(a.createdAt);
+      });
       renderFeed(posts);
     }, err=>console.warn('feed error', err));
 }
@@ -1374,6 +1465,7 @@ function renderFeed(posts){
       <div class="content">
         <div class="author"><span class="cn">@${escapeHtml(p.codeName||'')}</span></div>
         ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
+        ${(p.city||p.country||p.location) ? `<div class="loc-tag" data-act="loc" data-id="${p.id}">📍 ${escapeHtml(formatCityCountry({city:p.city,country:p.country}) || 'Voir la localisation')}</div>` : ''}
         ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
         <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander cet i-chat'}</button>
       </div>
@@ -1387,6 +1479,28 @@ function renderFeed(posts){
       if(post) orderFromPost(post);
     };
   });
+  grid.querySelectorAll('[data-act="loc"]').forEach(el=>{
+    el.onclick = (e)=>{
+      e.stopPropagation();
+      const post = posts.find(p=>p.id===el.dataset.id);
+      if(post) checkPostLocation(post);
+    };
+  });
+}
+
+/* ---------- Clic sur la localisation d'une publication : indique si elle est à portée ---------- */
+async function checkPostLocation(post){
+  if(!post.location){ alert("Ce i-chat n'a pas partagé de localisation précise."); return; }
+  if(!currentUser.location){ alert("Active ta localisation pour savoir si ce i-chat t'arrange."); return; }
+  const place = formatCityCountry({city:post.city, country:post.country}) || 'Localisation du i-chat';
+  const dist = haversineKm(currentUser.location, post.location);
+  if(dist===null){ alert(place); return; }
+  let verdict;
+  if(dist < 5) verdict = "Tout près de toi, ça devrait bien t'arranger 👍";
+  else if(dist < 20) verdict = "Raisonnablement proche de toi.";
+  else if(dist < 100) verdict = "Un peu loin de toi, à voir selon tes déplacements.";
+  else verdict = "Assez loin de toi.";
+  alert(`📍 ${place}\nÀ environ ${dist.toFixed(1)} km de toi.\n${verdict}`);
 }
 
 /* ---------- Like rapide depuis le feed (sans ouvrir la publication) ---------- */
@@ -1485,6 +1599,7 @@ document.getElementById('publishPostBtn').onclick = async ()=>{
         photoURL: currentUser.photoURL || '',
         photos, caption, price,
         location: currentUser.location || null,
+        city: currentUser.city || '', country: currentUser.country || '',
         likesCount:0, likesUsers:[], commentsCount:0,
         createdAt: FieldValue.serverTimestamp()
       });
@@ -2205,6 +2320,12 @@ async function tryAutoLogin(){
         const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
         currentUser.location = loc;
         db.collection('users').doc(savedUid).update({location:loc}).catch(()=>{});
+        reverseGeocode(loc).then(g=>{
+          if(!g) return;
+          currentUser.city = g.city; currentUser.country = g.country;
+          db.collection('users').doc(savedUid).update({city:g.city, country:g.country}).catch(()=>{});
+          db.collection('directory').doc(savedUid).update({city:g.city, country:g.country}).catch(()=>{});
+        });
       }, ()=>{}, {enableHighAccuracy:true, timeout:8000});
     }
     enterApp();
