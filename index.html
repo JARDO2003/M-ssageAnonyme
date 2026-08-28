@@ -35,13 +35,11 @@ body{
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:10px;}
 
-/* ---------- LOADER ---------- */
 #loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px;}
 #loader .logo{font-size:38px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--acid),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;animation:pulse 1.6s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:.6;transform:scale(.98)}50%{opacity:1;transform:scale(1.02)}}
 #loader .sub{color:var(--sub);font-size:12px;letter-spacing:3px;text-transform:uppercase;}
 
-/* ---------- AUTH ---------- */
 .auth-wrap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;z-index:50;}
 .auth-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:34px 28px;position:relative;overflow:hidden;}
 .auth-card::before{content:"";position:absolute;top:-60%;left:-20%;width:160%;height:160%;background:conic-gradient(from 0deg,var(--violet),var(--pink),var(--acid),var(--violet));opacity:.06;animation:spin 12s linear infinite;}
@@ -69,7 +67,6 @@ body{
 .codename-reveal .cn{font-size:22px;font-weight:900;color:var(--acid);letter-spacing:1px;margin-top:4px;}
 .codename-reveal .lbl{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:1px;}
 
-/* ---------- APP SHELL ---------- */
 .app{position:fixed;inset:0;display:none;}
 .shell{display:flex;height:100%;}
 .sidebar{width:380px;min-width:300px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);}
@@ -147,7 +144,6 @@ body{
 
 <div id="loader"><div class="logo">KRYPT</div><div class="sub">Chiffrement en cours…</div></div>
 
-<!-- ===================== AUTH ===================== -->
 <div class="auth-wrap" id="authWrap">
   <div class="auth-card">
     <div class="brand">KRYPT</div>
@@ -160,14 +156,12 @@ body{
 
     <div class="auth-error" id="authError"></div>
 
-    <!-- LOGIN -->
     <form id="loginForm">
       <div class="field"><label>Numéro de téléphone</label><input type="tel" id="loginPhone" placeholder="+229 00 00 00 00" required></div>
       <div class="field"><label>Mot de passe</label><input type="password" id="loginPass" placeholder="••••••••" required></div>
       <button class="btn-main" type="submit" id="loginBtn">Se connecter</button>
     </form>
 
-    <!-- REGISTER -->
     <form id="registerForm" style="display:none;">
       <div class="photo-pick">
         <div class="photo-circle" id="photoCircle">📷</div>
@@ -188,7 +182,6 @@ body{
   </div>
 </div>
 
-<!-- ===================== APP ===================== -->
 <div class="app" id="appShell">
   <div class="shell">
     <div class="sidebar" id="sidebar">
@@ -237,9 +230,8 @@ body{
   </div>
 </div>
 
-<!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
 <script>
 /* ======================================================================
@@ -248,29 +240,29 @@ body{
 const firebaseConfig = {
   apiKey: "AIzaSyDHRxGdHpM2RFtvGMhXOu3slrT2JlmyNLM",
   authDomain: "data-fae4a.firebaseapp.com",
-  databaseURL: "https://data-fae4a-default-rtdb.firebaseio.com",
   projectId: "data-fae4a",
   storageBucket: "data-fae4a.firebasestorage.app",
   messagingSenderId: "1077301559347",
   appId: "1:1077301559347:web:3405ab3bc8e1010d9e6346"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.firestore();
+const FieldValue = firebase.firestore.FieldValue;
 
-// --- CLOUDINARY : remplace UPLOAD_PRESET par un "unsigned upload preset"
-// créé dans Cloudinary > Settings > Upload > Upload presets (Signing Mode: Unsigned)
 const CLOUDINARY_CLOUD_NAME = "tdlhsxsp";
-const CLOUDINARY_UPLOAD_PRESET = "krypt_unsigned"; // ⚠️ à créer dans ton dashboard Cloudinary
+const CLOUDINARY_UPLOAD_PRESET = "krypt_unsigned"; // ⚠️ à créer dans ton dashboard Cloudinary (Unsigned)
 
 /* ======================================================================
    STATE (en mémoire uniquement — jamais de localStorage)
 ====================================================================== */
-let currentUser = null;   // {uid, phone, fullName, codeName, photoURL}
+let currentUser = null;
 let activeChatId = null;
 let activePeer = null;
-let messagesRef = null;
-let messagesHandler = null;
-let typingTimeout = null;
+let messagesUnsub = null;
+let peerPresenceUnsub = null;
+let chatListUnsub = null;
+let heartbeatInterval = null;
+const ONLINE_WINDOW_MS = 30000; // considéré "en ligne" si lastSeen < 30s
 
 /* ======================================================================
    UTILS
@@ -288,6 +280,12 @@ function showError(msg){
   setTimeout(()=>el.style.display='none', 4500);
 }
 function chatIdFor(a,b){ return [a,b].sort().join('__'); }
+function tsToMillis(ts){
+  if(!ts) return 0;
+  if(typeof ts.toMillis === 'function') return ts.toMillis();
+  if(ts.seconds) return ts.seconds*1000;
+  return 0;
+}
 
 /* ---------- Générateur de code name "dingue" ---------- */
 const ADJ = ["Furtif","Cyclone","Neon","Cobra","Xeno","Vortex","Kaido","Fantome","Turbo","Nova","Cryptik","Zeta","Sombra","Onyx","Volt","Rebel","Kraken","Glitch","Umbra","Falcon"];
@@ -302,8 +300,8 @@ function generateCodeCandidate(){
 async function generateUniqueCodeName(){
   for(let i=0;i<25;i++){
     const candidate = generateCodeCandidate();
-    const snap = await db.ref('codeNames/'+candidate).get();
-    if(!snap.exists()) return candidate;
+    const snap = await db.collection('codeNames').doc(candidate).get();
+    if(!snap.exists) return candidate;
   }
   return generateCodeCandidate() + Date.now().toString().slice(-4);
 }
@@ -340,7 +338,6 @@ const registerForm = document.getElementById('registerForm');
 tabLogin.onclick = ()=>{ tabLogin.classList.add('active'); tabRegister.classList.remove('active'); loginForm.style.display='block'; registerForm.style.display='none'; };
 tabRegister.onclick = ()=>{ tabRegister.classList.add('active'); tabLogin.classList.remove('active'); registerForm.style.display='block'; loginForm.style.display='none'; };
 
-/* ---------- Photo picker (registration) ---------- */
 let pendingPhotoFile = null;
 document.getElementById('photoCircle').onclick = ()=>document.getElementById('photoInput').click();
 document.getElementById('pickPhotoBtn').onclick = ()=>document.getElementById('photoInput').click();
@@ -365,8 +362,8 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
   btn.disabled = true; btn.textContent = "Création…";
   try{
     const uid = uidFromPhone(phone);
-    const existing = await db.ref('users/'+uid).get();
-    if(existing.exists()){ showError("Un compte existe déjà avec ce numéro."); btn.disabled=false; btn.textContent="Créer mon identité"; return; }
+    const existing = await db.collection('users').doc(uid).get();
+    if(existing.exists){ showError("Un compte existe déjà avec ce numéro."); btn.disabled=false; btn.textContent="Créer mon identité"; return; }
 
     let photoURL = "";
     if(pendingPhotoFile){
@@ -379,18 +376,17 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
     const codeName = await generateUniqueCodeName();
     const passHash = await sha256(pass + '::krypt::' + phone);
 
-    await db.ref('users/'+uid).set({
+    await db.collection('users').doc(uid).set({
       uid, phone, fullName:name, codeName, photoURL,
-      passHash, createdAt: firebase.database.ServerValue.TIMESTAMP
+      passHash, createdAt: FieldValue.serverTimestamp()
     });
-    await db.ref('codeNames/'+codeName).set(uid);
-    await db.ref('directory/'+uid).set({codeName, photoURL});
+    await db.collection('codeNames').doc(codeName).set({uid});
+    await db.collection('directory').doc(uid).set({codeName, photoURL});
 
     document.getElementById('codenameReveal').style.display='block';
     document.getElementById('codenameValue').textContent = codeName;
     btn.textContent = "Entrer dans KRYPT →";
     btn.disabled = false;
-    btn.onclick = null;
     btn.type='button';
     btn.onclick = ()=>{
       currentUser = {uid, phone, fullName:name, codeName, photoURL};
@@ -412,9 +408,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   btn.disabled = true; btn.textContent = "Connexion…";
   try{
     const uid = uidFromPhone(phone);
-    const snap = await db.ref('users/'+uid).get();
-    if(!snap.exists()){ showError("Aucun compte pour ce numéro."); btn.disabled=false; btn.textContent="Se connecter"; return; }
-    const user = snap.val();
+    const snap = await db.collection('users').doc(uid).get();
+    if(!snap.exists){ showError("Aucun compte pour ce numéro."); btn.disabled=false; btn.textContent="Se connecter"; return; }
+    const user = snap.data();
     const passHash = await sha256(pass + '::krypt::' + phone);
     if(passHash !== user.passHash){ showError("Mot de passe incorrect."); btn.disabled=false; btn.textContent="Se connecter"; return; }
     currentUser = user;
@@ -437,12 +433,16 @@ function enterApp(){
   if(currentUser.photoURL) myAv.innerHTML = `<img src="${currentUser.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
   else myAv.textContent = initials(currentUser.fullName);
 
-  // Presence
-  const presenceRef = db.ref('presence/'+currentUser.uid);
-  presenceRef.set({state:'online', lastSeen: firebase.database.ServerValue.TIMESTAMP});
-  presenceRef.onDisconnect().set({state:'offline', lastSeen: firebase.database.ServerValue.TIMESTAMP});
+  setPresence('online');
+  heartbeatInterval = setInterval(()=>setPresence('online'), 20000);
+  window.addEventListener('pagehide', ()=>setPresence('offline'));
+  window.addEventListener('beforeunload', ()=>setPresence('offline'));
 
   listenChatList();
+}
+function setPresence(state){
+  if(!currentUser) return;
+  db.collection('presence').doc(currentUser.uid).set({state, lastSeen: FieldValue.serverTimestamp()}).catch(()=>{});
 }
 
 /* ======================================================================
@@ -458,13 +458,14 @@ searchInput.addEventListener('input', ()=>{
   searchTimer = setTimeout(()=>runSearch(q), 250);
 });
 async function runSearch(q){
-  const snap = await db.ref('directory').get();
-  if(!snap.exists()){ searchResults.innerHTML = '<div class="empty-list">Aucun résultat.</div>'; searchResults.style.display='block'; return; }
-  const all = snap.val();
+  const snap = await db.collection('directory').get();
+  if(snap.empty){ searchResults.innerHTML = '<div class="empty-list">Aucun résultat.</div>'; searchResults.style.display='block'; return; }
+  const all = {};
+  snap.forEach(doc=>{ all[doc.id] = doc.data(); });
   const matches = Object.entries(all).filter(([uid,d])=> d.codeName && d.codeName.toLowerCase().includes(q.toLowerCase()) && uid !== currentUser.uid).slice(0,15);
   if(matches.length===0){ searchResults.innerHTML = '<div class="empty-list">Aucun identifiant trouvé.</div>'; searchResults.style.display='block'; return; }
   searchResults.innerHTML = matches.map(([uid,d])=>`
-    <div class="result-row" data-uid="${uid}" data-cn="${d.codeName}">
+    <div class="result-row" data-uid="${uid}" data-cn="${d.codeName}" data-photo="${d.photoURL||''}">
       <div class="avatar">${d.photoURL?`<img src="${d.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(d.codeName)}</div>
       <div class="cn">${d.codeName}</div>
       <div class="add">Discuter</div>
@@ -472,9 +473,9 @@ async function runSearch(q){
   searchResults.style.display='block';
   searchResults.querySelectorAll('.result-row').forEach(row=>{
     row.onclick = ()=>{
-      const uid = row.dataset.uid, cn = row.dataset.cn;
+      const uid = row.dataset.uid, cn = row.dataset.cn, photo = row.dataset.photo;
       searchInput.value=''; searchResults.style.display='none'; searchResults.innerHTML='';
-      openChat(uid, cn, all[uid].photoURL);
+      openChat(uid, cn, photo);
     };
   });
 }
@@ -483,31 +484,35 @@ async function runSearch(q){
    CHAT LIST
 ====================================================================== */
 function listenChatList(){
-  db.ref('userChats/'+currentUser.uid).on('value', async (snap)=>{
-    const listEl = document.getElementById('chatList');
-    if(!snap.exists()){ listEl.innerHTML = '<div class="empty-list">Aucune conversation. Cherche un identifiant KRYPT pour démarrer.</div>'; return; }
-    const chats = snap.val();
-    const entries = Object.entries(chats).sort((a,b)=> (b[1].lastTimestamp||0)-(a[1].lastTimestamp||0));
-    let html = '';
-    for(const [otherUid, meta] of entries){
-      const dirSnap = await db.ref('directory/'+otherUid).get();
-      const dir = dirSnap.val() || {codeName:'???'};
-      const presenceSnap = await db.ref('presence/'+otherUid).get();
-      const online = presenceSnap.exists() && presenceSnap.val().state==='online';
-      html += `<div class="chat-row" data-uid="${otherUid}" data-cn="${dir.codeName}" data-photo="${dir.photoURL||''}">
-        <div class="avatar">${dir.photoURL?`<img src="${dir.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(dir.codeName)}</div>
-        ${online?'<div class="dot-online"></div>':''}
-        <div class="info">
-          <div class="top"><span class="cn">${dir.codeName}</span><span class="time">${meta.lastTimestamp?new Date(meta.lastTimestamp).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
-          <div class="preview">${meta.lastMessage||''}</div>
-        </div>
-      </div>`;
-    }
-    listEl.innerHTML = html;
-    listEl.querySelectorAll('.chat-row').forEach(row=>{
-      row.onclick = ()=>openChat(row.dataset.uid, row.dataset.cn, row.dataset.photo);
+  if(chatListUnsub) chatListUnsub();
+  chatListUnsub = db.collection('userChats')
+    .where('owner','==',currentUser.uid)
+    .onSnapshot(async (snap)=>{
+      const listEl = document.getElementById('chatList');
+      if(snap.empty){ listEl.innerHTML = '<div class="empty-list">Aucune conversation. Cherche un identifiant KRYPT pour démarrer.</div>'; return; }
+      const rows = snap.docs.map(d=>d.data()).sort((a,b)=> tsToMillis(b.lastTimestamp)-tsToMillis(a.lastTimestamp));
+      let html = '';
+      for(const meta of rows){
+        const otherUid = meta.otherUid;
+        const dirSnap = await db.collection('directory').doc(otherUid).get();
+        const dir = dirSnap.exists ? dirSnap.data() : {codeName:'???'};
+        const presSnap = await db.collection('presence').doc(otherUid).get();
+        const online = presSnap.exists && presSnap.data().state==='online' && (Date.now()-tsToMillis(presSnap.data().lastSeen) < ONLINE_WINDOW_MS);
+        const t = tsToMillis(meta.lastTimestamp);
+        html += `<div class="chat-row" data-uid="${otherUid}" data-cn="${dir.codeName}" data-photo="${dir.photoURL||''}">
+          <div class="avatar">${dir.photoURL?`<img src="${dir.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(dir.codeName)}</div>
+          ${online?'<div class="dot-online"></div>':''}
+          <div class="info">
+            <div class="top"><span class="cn">${dir.codeName}</span><span class="time">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+            <div class="preview">${meta.lastMessage||''}</div>
+          </div>
+        </div>`;
+      }
+      listEl.innerHTML = html;
+      listEl.querySelectorAll('.chat-row').forEach(row=>{
+        row.onclick = ()=>openChat(row.dataset.uid, row.dataset.cn, row.dataset.photo);
+      });
     });
-  });
 }
 
 /* ======================================================================
@@ -523,30 +528,30 @@ async function openChat(peerUid, peerCodeName, peerPhoto){
   const pAv = document.getElementById('peerAvatar');
   pAv.innerHTML = peerPhoto ? `<img src="${peerPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(peerCodeName);
 
-  db.ref('presence/'+peerUid).on('value', s=>{
+  if(peerPresenceUnsub) peerPresenceUnsub();
+  peerPresenceUnsub = db.collection('presence').doc(peerUid).onSnapshot(s=>{
     const st = document.getElementById('peerStatus');
-    if(s.exists() && s.val().state==='online') st.textContent = 'En ligne';
-    else if(s.exists()) st.textContent = 'Vu récemment';
-    else st.textContent = '—';
+    if(s.exists){
+      const d = s.data();
+      const online = d.state==='online' && (Date.now()-tsToMillis(d.lastSeen) < ONLINE_WINDOW_MS);
+      st.textContent = online ? 'En ligne' : 'Vu récemment';
+    } else st.textContent = '—';
   });
 
-  db.ref('userChats/'+currentUser.uid+'/'+peerUid).update({
-    otherUid: peerUid, lastMessage: (await db.ref('userChats/'+currentUser.uid+'/'+peerUid+'/lastMessage').get()).val() || '',
-    lastTimestamp: (await db.ref('userChats/'+currentUser.uid+'/'+peerUid+'/lastTimestamp').get()).val() || firebase.database.ServerValue.TIMESTAMP
-  });
+  const myChatDocId = currentUser.uid+'__'+peerUid;
+  const peerChatDocId = peerUid+'__'+currentUser.uid;
+  await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:peerUid}, {merge:true});
+  await db.collection('userChats').doc(peerChatDocId).set({owner:peerUid, otherUid:currentUser.uid}, {merge:true});
 
-  // ensure directory entries exist for both sides (search convenience)
-  db.ref('userChats/'+peerUid+'/'+currentUser.uid).update({
-    otherUid: currentUser.uid
-  });
+  if(messagesUnsub) messagesUnsub();
+  messagesUnsub = db.collection('chats').doc(activeChatId).collection('messages')
+    .orderBy('timestamp','asc')
+    .onSnapshot(snap=>{
+      const msgs = [];
+      snap.forEach(doc=> msgs.push({id:doc.id, ...doc.data()}));
+      renderMessages(msgs);
+    });
 
-  if(messagesRef && messagesHandler) messagesRef.off('value', messagesHandler);
-  messagesRef = db.ref('chats/'+activeChatId+'/messages');
-  messagesHandler = messagesRef.on('value', (snap)=>{
-    renderMessages(snap.val() || {});
-  });
-
-  // mobile view
   if(window.innerWidth <= 760){
     document.getElementById('sidebar').classList.add('hide');
     document.getElementById('mainPanel').classList.remove('hide');
@@ -557,24 +562,23 @@ document.getElementById('backBtn').onclick = ()=>{
   document.getElementById('mainPanel').classList.add('hide');
 };
 
-function renderMessages(msgs){
+function renderMessages(entries){
   const el = document.getElementById('messages');
-  const entries = Object.entries(msgs).sort((a,b)=>a[1].timestamp-b[1].timestamp);
-  el.innerHTML = entries.map(([id,m])=>{
+  el.innerHTML = entries.map(m=>{
     const mine = m.senderId === currentUser.uid;
     let body = '';
     if(m.type==='image') body = `<img src="${m.mediaURL}">`;
     else if(m.type==='video') body = `<video src="${m.mediaURL}" controls></video>`;
     if(m.text) body += `<div>${escapeHtml(m.text)}</div>`;
-    const ticks = mine ? (m.status==='read' ? '✓✓' : m.status==='delivered' ? '✓✓' : '✓') : '';
-    return `<div class="msg-row ${mine?'me':'them'}"><div class="bubble">${body}<div class="meta">${new Date(m.timestamp).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} ${ticks}</div></div></div>`;
+    const ticks = mine ? (m.status==='read' ? '✓✓' : '✓') : '';
+    const t = tsToMillis(m.timestamp);
+    return `<div class="msg-row ${mine?'me':'them'}"><div class="bubble">${body}<div class="meta">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''} ${ticks}</div></div></div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
 
-  // mark incoming as read
-  entries.forEach(([id,m])=>{
+  entries.forEach(m=>{
     if(m.senderId !== currentUser.uid && m.status !== 'read'){
-      db.ref('chats/'+activeChatId+'/messages/'+id+'/status').set('read');
+      db.collection('chats').doc(activeChatId).collection('messages').doc(m.id).update({status:'read'}).catch(()=>{});
     }
   });
 }
@@ -590,16 +594,16 @@ async function sendMessage({text, mediaURL, type}){
     text: text || '',
     type: type || 'text',
     mediaURL: mediaURL || null,
-    timestamp: firebase.database.ServerValue.TIMESTAMP,
+    timestamp: FieldValue.serverTimestamp(),
     status: 'sent'
   };
-  const newRef = db.ref('chats/'+activeChatId+'/messages').push();
-  await newRef.set(msg);
+  await db.collection('chats').doc(activeChatId).collection('messages').add(msg);
 
   const preview = type==='text' ? text : (type==='image' ? '📷 Photo' : '🎥 Vidéo');
-  const ts = Date.now();
-  db.ref('userChats/'+currentUser.uid+'/'+activePeer.uid).update({lastMessage:preview, lastTimestamp:ts, otherUid:activePeer.uid});
-  db.ref('userChats/'+activePeer.uid+'/'+currentUser.uid).update({lastMessage:preview, lastTimestamp:ts, otherUid:currentUser.uid});
+  const myChatDocId = currentUser.uid+'__'+activePeer.uid;
+  const peerChatDocId = activePeer.uid+'__'+currentUser.uid;
+  await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:activePeer.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp()}, {merge:true});
+  await db.collection('userChats').doc(peerChatDocId).set({owner:activePeer.uid, otherUid:currentUser.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp()}, {merge:true});
 }
 
 document.getElementById('sendBtn').onclick = doSendText;
@@ -636,10 +640,11 @@ document.getElementById('fileInput').addEventListener('change', async (e)=>{
    LOGOUT
 ====================================================================== */
 document.getElementById('logoutBtn').onclick = ()=>{
-  if(currentUser){
-    db.ref('presence/'+currentUser.uid).set({state:'offline', lastSeen: firebase.database.ServerValue.TIMESTAMP});
-  }
-  if(messagesRef && messagesHandler) messagesRef.off('value', messagesHandler);
+  setPresence('offline');
+  if(heartbeatInterval) clearInterval(heartbeatInterval);
+  if(messagesUnsub) messagesUnsub();
+  if(peerPresenceUnsub) peerPresenceUnsub();
+  if(chatListUnsub) chatListUnsub();
   currentUser = null; activeChatId = null; activePeer = null;
   document.getElementById('appShell').style.display='none';
   document.getElementById('authWrap').style.display='flex';
