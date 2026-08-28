@@ -502,6 +502,7 @@ body{
         <div class="profile-item"><div class="ic">🖼️</div><div id="profPostCount">0 publication(s)</div></div>
         <div class="profile-item" id="profPrivacyRow"><div class="ic">🔒</div><div>Politique de confidentialité</div></div>
         <div class="profile-item" id="profLogoutRow"><div class="ic">⎋</div><div>Déconnexion</div></div>
+        <div class="profile-item" id="profDeleteAccountRow" style="color:var(--danger);"><div class="ic">🗑️</div><div>Supprimer mon compte</div></div>
       </div>
       <div class="my-posts-section">
         <div class="lbl">Mes publications</div>
@@ -1011,7 +1012,52 @@ function initProfileScreen(){
   document.getElementById('profLocStatus').textContent = currentUser.location ? 'Localisation active' : 'Localisation inactive';
   document.getElementById('profLogoutRow').onclick = ()=>document.getElementById('logoutBtn').click();
   document.getElementById('profPrivacyRow').onclick = ()=>document.getElementById('privacyModal').classList.add('show');
+  document.getElementById('profDeleteAccountRow').onclick = deleteMyAccount;
   renderMyPostsGrid();
+}
+
+async function deleteMyAccount(){
+  if(!currentUser) return;
+  const sure = confirm("Supprimer définitivement ton compte i-chat ?\n\nTon profil, tes publications et ton identifiant seront supprimés. Cette action est irréversible.");
+  if(!sure) return;
+  const confirmAgain = confirm("Dernière confirmation : veux-tu vraiment supprimer ton compte ?");
+  if(!confirmAgain) return;
+
+  const row = document.getElementById('profDeleteAccountRow');
+  row.style.pointerEvents = 'none';
+  row.style.opacity = '.6';
+  const label = row.querySelector('div:last-child');
+  const originalLabel = label.textContent;
+  label.textContent = 'Suppression en cours…';
+
+  try{
+    const uid = currentUser.uid;
+    const codeName = currentUser.codeName;
+
+    // Supprime les publications de l'utilisateur
+    try{
+      const myPosts = await db.collection('posts').where('uid','==',uid).get();
+      for(const doc of myPosts.docs){
+        await doc.ref.delete().catch(()=>{});
+      }
+    }catch(err){ console.warn('Suppression des publications échouée:', err.message); }
+
+    // Supprime les entrées annexes (annuaire, identifiant réservé)
+    await db.collection('directory').doc(uid).delete().catch(()=>{});
+    if(codeName) await db.collection('codeNames').doc(codeName).delete().catch(()=>{});
+
+    // Supprime le compte lui-même
+    await db.collection('users').doc(uid).delete();
+
+    alert("Ton compte a bien été supprimé.");
+    document.getElementById('logoutBtn').click();
+  }catch(err){
+    console.error('Suppression du compte échouée:', err);
+    alert("Impossible de supprimer le compte : " + err.message);
+    row.style.pointerEvents = '';
+    row.style.opacity = '';
+    label.textContent = originalLabel;
+  }
 }
 async function renderMyPostsGrid(){
   const grid = document.getElementById('myPostsGrid');
@@ -1655,8 +1701,18 @@ function renderViewerPhotos(){
   });
   document.getElementById('viewerDots').innerHTML = photos.map((_,i)=>`<span class="${i===viewerIndex?'on':''}"></span>`).join('');
 }
-document.getElementById('viewerPrev').onclick = ()=>{ if(!activePost) return; const n=activePost.photos.length; viewerIndex=(viewerIndex-1+n)%n; renderViewerPhotos(); };
-document.getElementById('viewerNext').onclick = ()=>{ if(!activePost) return; const n=activePost.photos.length; viewerIndex=(viewerIndex+1)%n; renderViewerPhotos(); };
+document.getElementById('viewerPrev').onclick = ()=>{
+  if(!activePost) return;
+  const n = (activePost.photos||[]).length;
+  if(n<2) return;
+  viewerIndex=(viewerIndex-1+n)%n; renderViewerPhotos();
+};
+document.getElementById('viewerNext').onclick = ()=>{
+  if(!activePost) return;
+  const n = (activePost.photos||[]).length;
+  if(n<2) return;
+  viewerIndex=(viewerIndex+1)%n; renderViewerPhotos();
+};
 
 function updateLikeUI(){
   const liked = (activePost.likesUsers||[]).includes(currentUser.uid);
@@ -1722,15 +1778,28 @@ document.getElementById('sendCommentBtn').onclick = sendComment;
 document.getElementById('commentInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendComment(); });
 async function sendComment(){
   const input = document.getElementById('commentInput');
+  const btn = document.getElementById('sendCommentBtn');
   const text = input.value.trim();
-  if(!text || !activePostId) return;
-  input.value='';
-  await db.collection('posts').doc(activePostId).collection('comments').add({
-    uid: currentUser.uid, codeName: currentUser.codeName, text, createdAt: FieldValue.serverTimestamp()
-  });
-  await db.collection('posts').doc(activePostId).update({commentsCount: FieldValue.increment(1)});
-  activePost.commentsCount = (activePost.commentsCount||0)+1;
-  document.getElementById('viewerCommentCount').textContent = activePost.commentsCount;
+  if(!text || !activePostId || !currentUser) return;
+  input.disabled = true; btn.disabled = true;
+  try{
+    await db.collection('posts').doc(activePostId).collection('comments').add({
+      uid: currentUser.uid, codeName: currentUser.codeName, text, createdAt: FieldValue.serverTimestamp()
+    });
+    input.value='';
+    try{
+      await db.collection('posts').doc(activePostId).update({commentsCount: FieldValue.increment(1)});
+      if(activePost){
+        activePost.commentsCount = (activePost.commentsCount||0)+1;
+        document.getElementById('viewerCommentCount').textContent = activePost.commentsCount;
+      }
+    }catch(err){ console.warn('Mise à jour du compteur de commentaires échouée:', err.message); }
+  }catch(err){
+    console.error('Envoi du commentaire échoué:', err);
+    alert("Impossible d'envoyer le commentaire : " + err.message);
+  }finally{
+    input.disabled = false; btn.disabled = false; input.focus();
+  }
 }
 
 /* ======================================================================
