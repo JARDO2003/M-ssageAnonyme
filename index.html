@@ -2,7 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#08080d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>KRYPT — Messagerie</title>
 <style>
 :root{
@@ -21,19 +25,26 @@
   --bubble-them:#181826;
   --radius:18px;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{
   background:var(--bg);
   color:var(--text);
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
   height:100vh;
+  height:100dvh;
   overflow:hidden;
+  overscroll-behavior:none;
   background-image:
     radial-gradient(circle at 15% 10%, rgba(123,92,255,0.12), transparent 40%),
     radial-gradient(circle at 85% 90%, rgba(255,63,174,0.10), transparent 40%);
 }
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:10px;}
+
+/* ---------- Adaptation téléphone (Android & autres écrans étroits) ---------- */
+@media (max-width:600px){
+  .screens-wrap,.bottom-nav{border-left:none;border-right:none;}
+}
 
 #loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px;}
 #loader .logo{font-size:38px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--acid),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;animation:pulse 1.6s ease-in-out infinite;}
@@ -69,7 +80,7 @@ body{
 
 .app{position:fixed;inset:0;display:none;}
 .shell{display:flex;height:100%;}
-.sidebar{width:380px;min-width:300px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);}
+.sidebar{width:100%;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);}
 .side-head{padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);}
 .avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--violet),var(--pink));flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;}
 .side-head .who{flex:1;min-width:0;}
@@ -147,8 +158,8 @@ body{
 /* ======================================================================
    BOTTOM NAV
 ====================================================================== */
-.screens-wrap{position:absolute;inset:0;bottom:60px;max-width:520px;left:50%;transform:translateX(-50%);border-left:1px solid var(--line);border-right:1px solid var(--line);}
-.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;height:60px;background:var(--panel);border-top:1px solid var(--line);border-left:1px solid var(--line);border-right:1px solid var(--line);z-index:40;display:flex;align-items:stretch;justify-content:space-around;}
+.screens-wrap{position:absolute;inset:0;bottom:calc(60px + env(safe-area-inset-bottom, 0px));width:100%;max-width:520px;left:50%;transform:translateX(-50%);border-left:1px solid var(--line);border-right:1px solid var(--line);}
+.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;height:calc(60px + env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px);background:var(--panel);border-top:1px solid var(--line);border-left:1px solid var(--line);border-right:1px solid var(--line);z-index:40;display:flex;align-items:stretch;justify-content:space-around;}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--sub);cursor:pointer;font-size:19px;position:relative;}
 .nav-btn span.lbl{font-size:9.5px;font-weight:700;letter-spacing:.3px;}
 .nav-btn.active{color:var(--acid);}
