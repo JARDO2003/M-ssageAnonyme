@@ -882,36 +882,91 @@ function listenAvailIcharters(){
 /* ======================================================================
    CHAT LIST
 ====================================================================== */
+/* La liste de messagerie fusionne deux sources en temps réel :
+   - userChats : les conversations déjà entamées (triées par nb de messages échangés,
+     puis par dernier message, façon WhatsApp — on parle le plus souvent en haut) ;
+   - directory : TOUS les utilisateurs inscrits sur KRYPT, pour pouvoir démarrer une
+     discussion avec n'importe qui, même sans avoir encore échangé de message. */
+let chatListRows = [];      // conversations existantes {otherUid, lastMessage, lastTimestamp, messageCount}
+let directoryUsers = null;  // {uid: {codeName, photoURL}} — tous les inscrits
+let directoryUnsub = null;
+
 function listenChatList(){
   if(chatListUnsub) chatListUnsub();
   chatListUnsub = db.collection('userChats')
     .where('owner','==',currentUser.uid)
-    .onSnapshot(async (snap)=>{
-      const listEl = document.getElementById('chatList');
-      if(snap.empty){ listEl.innerHTML = '<div class="empty-list">Aucune conversation. Cherche un identifiant KRYPT pour démarrer.</div>'; return; }
-      const rows = snap.docs.map(d=>d.data()).sort((a,b)=> tsToMillis(b.lastTimestamp)-tsToMillis(a.lastTimestamp));
-      let html = '';
-      for(const meta of rows){
-        const otherUid = meta.otherUid;
-        const dirSnap = await db.collection('directory').doc(otherUid).get();
-        const dir = dirSnap.exists ? dirSnap.data() : {codeName:'???'};
-        const presSnap = await db.collection('presence').doc(otherUid).get();
-        const online = presSnap.exists && presSnap.data().state==='online' && (Date.now()-tsToMillis(presSnap.data().lastSeen) < ONLINE_WINDOW_MS);
-        const t = tsToMillis(meta.lastTimestamp);
-        html += `<div class="chat-row" data-uid="${otherUid}" data-cn="${dir.codeName}" data-photo="${dir.photoURL||''}">
-          <div class="avatar">${dir.photoURL?`<img src="${dir.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(dir.codeName)}</div>
-          ${online?'<div class="dot-online"></div>':''}
-          <div class="info">
-            <div class="top"><span class="cn">${dir.codeName}</span><span class="time">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
-            <div class="preview">${meta.lastMessage||''}</div>
-          </div>
-        </div>`;
-      }
-      listEl.innerHTML = html;
-      listEl.querySelectorAll('.chat-row').forEach(row=>{
-        row.onclick = ()=>openChat(row.dataset.uid, row.dataset.cn, row.dataset.photo);
-      });
+    .onSnapshot(snap=>{
+      chatListRows = snap.docs.map(d=>d.data());
+      renderChatList();
     });
+
+  if(directoryUnsub) directoryUnsub();
+  directoryUnsub = db.collection('directory').onSnapshot(snap=>{
+    const map = {};
+    snap.forEach(doc=>{ if(doc.id!==currentUser.uid) map[doc.id] = doc.data(); });
+    directoryUsers = map;
+    renderChatList();
+  });
+}
+
+async function renderChatList(){
+  const listEl = document.getElementById('chatList');
+  if(directoryUsers===null) return; // annuaire pas encore chargé
+
+  const chatsByUid = {};
+  chatListRows.forEach(meta=>{ chatsByUid[meta.otherUid] = meta; });
+
+  // 1) Conversations déjà entamées : triées par nb de messages échangés (desc),
+  //    puis par horodatage du dernier message (desc) — comme WhatsApp.
+  const withHistory = chatListRows.slice().sort((a,b)=>
+    (b.messageCount||0)-(a.messageCount||0) || tsToMillis(b.lastTimestamp)-tsToMillis(a.lastTimestamp)
+  );
+
+  // 2) Tous les autres inscrits, jamais contactés, triés par identifiant.
+  const withoutHistory = Object.keys(directoryUsers)
+    .filter(uid=>!chatsByUid[uid])
+    .sort((a,b)=>(directoryUsers[a].codeName||'').localeCompare(directoryUsers[b].codeName||''));
+
+  if(withHistory.length===0 && withoutHistory.length===0){
+    listEl.innerHTML = '<div class="empty-list">Aucun autre utilisateur inscrit pour le moment.</div>';
+    return;
+  }
+
+  const presSnap = await db.collection('presence').get();
+  const onlineSet = new Set();
+  presSnap.forEach(doc=>{
+    const d = doc.data();
+    if(d.state==='online' && (Date.now()-tsToMillis(d.lastSeen) < ONLINE_WINDOW_MS)) onlineSet.add(doc.id);
+  });
+
+  let html = '';
+  const rowHtml = (uid, cn, photo, previewText, t)=>`
+    <div class="chat-row" data-uid="${uid}" data-cn="${cn}" data-photo="${photo||''}">
+      <div class="avatar">${photo?`<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(cn)}</div>
+      ${onlineSet.has(uid)?'<div class="dot-online"></div>':''}
+      <div class="info">
+        <div class="top"><span class="cn">${cn}</span><span class="time">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+        <div class="preview">${previewText}</div>
+      </div>
+    </div>`;
+
+  for(const meta of withHistory){
+    const otherUid = meta.otherUid;
+    const dir = directoryUsers[otherUid] || {codeName:'???', photoURL:''};
+    html += rowHtml(otherUid, dir.codeName, dir.photoURL, meta.lastMessage||'', tsToMillis(meta.lastTimestamp));
+  }
+  if(withHistory.length && withoutHistory.length){
+    html += `<div class="empty-list" style="padding:10px 16px;text-align:left;text-transform:uppercase;letter-spacing:1px;font-size:10.5px;">Autres inscrits</div>`;
+  }
+  for(const uid of withoutHistory){
+    const dir = directoryUsers[uid];
+    html += rowHtml(uid, dir.codeName, dir.photoURL, 'Aucun message pour l\'instant', 0);
+  }
+
+  listEl.innerHTML = html;
+  listEl.querySelectorAll('.chat-row').forEach(row=>{
+    row.onclick = ()=>openChat(row.dataset.uid, row.dataset.cn, row.dataset.photo);
+  });
 }
 
 /* ======================================================================
@@ -999,8 +1054,8 @@ async function sendMessage({text, mediaURL, type}){
   const preview = type==='text' ? text : (type==='image' ? '📷 Photo' : '🎥 Vidéo');
   const myChatDocId = currentUser.uid+'__'+activePeer.uid;
   const peerChatDocId = activePeer.uid+'__'+currentUser.uid;
-  await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:activePeer.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp()}, {merge:true});
-  await db.collection('userChats').doc(peerChatDocId).set({owner:activePeer.uid, otherUid:currentUser.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp()}, {merge:true});
+  await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:activePeer.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
+  await db.collection('userChats').doc(peerChatDocId).set({owner:activePeer.uid, otherUid:currentUser.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
 }
 
 document.getElementById('sendBtn').onclick = doSendText;
@@ -1043,7 +1098,12 @@ function listenFeed(){
   postsUnsub = db.collection('posts').orderBy('createdAt','desc').limit(60)
     .onSnapshot(snap=>{
       const posts = [];
-      snap.forEach(doc=>posts.push({id:doc.id, ...doc.data()}));
+      snap.forEach(doc=>{
+        const p = {id:doc.id, ...doc.data()};
+        // Une publication sans photo (post vide/orphelin) ne doit jamais s'afficher dans le fil.
+        if(!p.photos || !Array.isArray(p.photos) || p.photos.length===0 || !p.photos[0]) return;
+        posts.push(p);
+      });
       // Les publications avec le plus de likes/commentaires sont "boostées" en tête de fil
       posts.sort((a,b)=> boostScore(b)-boostScore(a) || tsToMillis(b.createdAt)-tsToMillis(a.createdAt));
       renderFeed(posts);
@@ -1551,6 +1611,8 @@ document.getElementById('logoutBtn').onclick = ()=>{
   if(messagesUnsub) messagesUnsub();
   if(peerPresenceUnsub) peerPresenceUnsub();
   if(chatListUnsub) chatListUnsub();
+  if(directoryUnsub){ directoryUnsub(); directoryUnsub=null; }
+  chatListRows = []; directoryUsers = null;
   if(availIchartersUnsub){ availIchartersUnsub(); availIchartersUnsub=null; }
   if(postsUnsub){ postsUnsub(); postsUnsub=null; }
   if(commentsUnsub){ commentsUnsub(); commentsUnsub=null; }
