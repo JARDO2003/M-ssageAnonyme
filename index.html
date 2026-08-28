@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>KRYPT — Messagerie</title>
+<title>i-chat — Messagerie</title>
 <style>
 :root{
   --bg:#08080d;
@@ -349,11 +349,11 @@ body{
 </head>
 <body>
 
-<div id="loader"><div class="logo">KRYPT</div><div class="sub">Chiffrement en cours…</div></div>
+<div id="loader"><div class="logo">i-chat</div><div class="sub">Chiffrement en cours…</div></div>
 
 <div class="auth-wrap" id="authWrap">
   <div class="auth-card">
-    <div class="brand">KRYPT</div>
+    <div class="brand">i-chat</div>
     <div class="brand-tag">Ton identité réelle ne quitte jamais ce cercle.</div>
 
     <div class="tabs">
@@ -389,7 +389,7 @@ body{
       </div>
 
       <div class="codename-reveal" id="codenameReveal">
-        <div class="lbl">Ton identifiant KRYPT généré</div>
+        <div class="lbl">Ton identifiant i-chat généré</div>
         <div class="cn" id="codenameValue"></div>
       </div>
 
@@ -443,7 +443,7 @@ body{
         <button class="icon-btn" id="logoutBtn" title="Déconnexion">⎋</button>
       </div>
       <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Rechercher un identifiant KRYPT…" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Rechercher un identifiant i-chat…" autocomplete="off">
       </div>
       <div class="search-results" id="searchResults" style="display:none;"></div>
       <div class="avail-icharters-strip" id="availIchartersStrip" style="display:none;">
@@ -451,7 +451,7 @@ body{
         <div class="avail-icharters-row" id="availIchartersRow"></div>
       </div>
       <div class="chat-list" id="chatList">
-        <div class="empty-list">Aucune conversation. Cherche un identifiant KRYPT pour démarrer.</div>
+        <div class="empty-list">Aucune conversation. Cherche un identifiant i-chat pour démarrer.</div>
       </div>
     </div>
 
@@ -1075,7 +1075,7 @@ function listenAvailIcharters(){
 /* La liste de messagerie fusionne deux sources en temps réel :
    - userChats : les conversations déjà entamées (triées par nb de messages échangés,
      puis par dernier message, façon WhatsApp — on parle le plus souvent en haut) ;
-   - directory : TOUS les utilisateurs inscrits sur KRYPT, pour pouvoir démarrer une
+   - directory : TOUS les utilisateurs inscrits sur i-chat, pour pouvoir démarrer une
      discussion avec n'importe qui, même sans avoir encore échangé de message. */
 let chatListRows = [];      // conversations existantes {otherUid, lastMessage, lastTimestamp, messageCount}
 let directoryUsers = null;  // {uid: {codeName, photoURL}} — tous les inscrits
