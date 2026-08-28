@@ -636,6 +636,12 @@ const CLOUDINARY_UPLOAD_PRESET = "krypt_unsigned"; // ⚠️ à créer dans ton 
    STATE (en mémoire uniquement — jamais de localStorage)
 ====================================================================== */
 let currentUser = null;
+
+/* ---------- Session persistée (pour rester connecté après un refresh) ---------- */
+const SESSION_KEY = 'ichat_session_uid';
+function saveSession(uid){ try{ localStorage.setItem(SESSION_KEY, uid); }catch(e){} }
+function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+function getSavedSession(){ try{ return localStorage.getItem(SESSION_KEY); }catch(e){ return null; } }
 let activeChatId = null;
 let activePeer = null;
 let messagesUnsub = null;
@@ -850,6 +856,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
     btn.type='button';
     btn.onclick = ()=>{
       currentUser = {uid, phone, fullName:name, codeName, photoURL, location};
+      saveSession(uid);
       enterApp();
     };
   }catch(err){
@@ -874,6 +881,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
     const passHash = await sha256(pass + '::krypt::' + phone);
     if(passHash !== user.passHash){ showError("Mot de passe incorrect."); btn.disabled=false; btn.textContent="Se connecter"; return; }
     currentUser = user;
+    saveSession(uid);
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition((pos)=>{
         const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
@@ -2168,6 +2176,7 @@ document.getElementById('logoutBtn').onclick = ()=>{
   if(currentCallId) endCall('ended'); else cleanupCall();
   icharterMode=false; myOrderId=null; myAcceptedOrderId=null; activePostId=null; activePost=null;
   currentUser = null; activeChatId = null; activePeer = null;
+  clearSession();
   document.getElementById('appShell').style.display='none';
   document.getElementById('authWrap').style.display='flex';
   document.getElementById('loginForm').reset();
@@ -2184,10 +2193,32 @@ document.getElementById('logoutBtn').onclick = ()=>{
 /* ======================================================================
    BOOT
 ====================================================================== */
+async function tryAutoLogin(){
+  const savedUid = getSavedSession();
+  if(!savedUid) return false;
+  try{
+    const snap = await db.collection('users').doc(savedUid).get();
+    if(!snap.exists){ clearSession(); return false; }
+    currentUser = snap.data();
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition((pos)=>{
+        const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+        currentUser.location = loc;
+        db.collection('users').doc(savedUid).update({location:loc}).catch(()=>{});
+      }, ()=>{}, {enableHighAccuracy:true, timeout:8000});
+    }
+    enterApp();
+    return true;
+  }catch(err){
+    console.warn("Reconnexion automatique impossible :", err.message);
+    return false;
+  }
+}
 window.addEventListener('load', ()=>{
-  setTimeout(()=>{
+  setTimeout(async ()=>{
+    const restored = await tryAutoLogin();
     document.getElementById('loader').style.display='none';
-    document.getElementById('authWrap').style.display='flex';
+    if(!restored) document.getElementById('authWrap').style.display='flex';
   }, 700);
 });
 </script>
