@@ -207,6 +207,11 @@ body{
 .feed-card .loc-tag .dist{color:var(--acid);font-weight:700;}
 .feed-card .order-btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acid),#7be032);color:#08080d;font-weight:900;font-size:13.5px;letter-spacing:.3px;cursor:pointer;}
 .feed-card .order-btn:disabled{opacity:.55;cursor:not-allowed;}
+.feed-card .profile-actions{display:flex;gap:8px;}
+.feed-card .profile-actions .order-btn{flex:1;}
+.tel-call-btn{flex:1;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--violet),var(--pink));color:#fff;font-weight:900;font-size:13.5px;letter-spacing:.3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.tel-call-btn:hover{filter:brightness(1.08);}
+.tel-call-btn:disabled{opacity:.5;cursor:not-allowed;}
 .feed-side{position:absolute;right:10px;bottom:90px;display:flex;flex-direction:column;align-items:center;gap:18px;z-index:5;}
 .side-act{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:#fff;cursor:pointer;}
 .side-act .circle{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-size:20px;}
@@ -569,7 +574,8 @@ body{
           <input type="text" id="commentInput" placeholder="Ajouter un commentaire…">
           <button id="sendCommentBtn">OK</button>
         </div>
-        <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;">📍 Commander cet i-chat</button>
+        <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;">📍 Commander ce produit</button>
+        <button class="tel-call-btn" id="viewerCallBtn" style="width:100%;margin-top:10px;">📞 Appeler le fournisseur</button>
         <div id="viewerOwnerActions" style="display:none;gap:10px;margin-top:14px;">
           <button class="obtn primary" id="viewerEditBtn" style="flex:1;">✏️ Modifier</button>
           <button class="obtn danger" id="viewerDeleteBtn" style="flex:1;">🗑️ Supprimer</button>
@@ -588,7 +594,10 @@ body{
         <div class="avatar" id="viewedProfAvatar" style="width:84px;height:84px;font-size:26px;margin:0 auto 12px;"></div>
         <div class="cn" id="viewedProfCodeName"></div>
         <div class="phone" id="viewedProfPostCount">0 publication(s)</div>
-        <button class="btn-main" id="viewedProfMsgBtn" style="max-width:240px;margin:16px auto 0;">💬 Envoyer un message</button>
+        <div style="display:flex;gap:10px;max-width:320px;margin:16px auto 0;">
+          <button class="btn-main" id="viewedProfMsgBtn" style="margin:0;">💬 Message</button>
+          <button class="tel-call-btn" id="viewedProfCallBtn" style="margin:0;">📞 Appeler</button>
+        </div>
       </div>
       <div id="viewedProfGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;"></div>
     </div>
@@ -755,6 +764,23 @@ function formatCityCountry(g){
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+/* ---------- Appeler un fournisseur (i-chatter) depuis son i-chat/profil ---------- */
+async function callFournisseur(uid, btn){
+  if(!uid) return;
+  if(currentUser && uid === currentUser.uid){ alert("C'est ton propre i-chat."); return; }
+  const originalLabel = btn ? btn.innerHTML : null;
+  if(btn){ btn.disabled = true; btn.innerHTML = '…'; }
+  try{
+    const snap = await db.collection('users').doc(uid).get();
+    const phone = snap.exists ? (snap.data().phone || '') : '';
+    if(!phone){ alert("Numéro de téléphone indisponible pour ce fournisseur."); return; }
+    window.location.href = 'tel:' + phone;
+  }catch(err){
+    alert("Impossible de récupérer le numéro : " + err.message);
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = originalLabel; }
+  }
 }
 function cleanPhone(p){ return p.replace(/[^0-9+]/g,''); }
 function uidFromPhone(p){ return 'u_' + cleanPhone(p).replace('+',''); }
@@ -1314,6 +1340,9 @@ async function openUserProfile(uid, codeName, photo){
     document.getElementById('closeUserProfileModal').click();
     openChat(uid, codeName, photo);
   };
+  const profCallBtn = document.getElementById('viewedProfCallBtn');
+  profCallBtn.style.display = (currentUser && uid === currentUser.uid) ? 'none' : 'flex';
+  profCallBtn.onclick = ()=>callFournisseur(uid, profCallBtn);
   const grid = document.getElementById('viewedProfGrid');
   grid.innerHTML = '';
   document.getElementById('userProfileModal').classList.add('show');
@@ -1533,7 +1562,10 @@ function renderFeed(posts){
         ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
         ${(p.city||p.country||p.location) ? `<div class="loc-tag" data-act="loc" data-id="${p.id}">📍 ${escapeHtml(formatCityCountry({city:p.city,country:p.country}) || 'Voir la localisation')}</div>` : ''}
         ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
-        <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander cet i-chat'}</button>
+        <div class="profile-actions">
+          <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander ce produit'}</button>
+          ${!isMine?`<button class="tel-call-btn" data-act="call" data-uid="${p.uid}">📞 Appeler</button>`:''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1553,6 +1585,9 @@ function renderFeed(posts){
       const post = posts.find(p=>p.id===b.dataset.id);
       if(post) orderFromPost(post);
     };
+  });
+  grid.querySelectorAll('[data-act="call"]').forEach(b=>{
+    b.onclick = (e)=>{ e.stopPropagation(); callFournisseur(b.dataset.uid, b); };
   });
   grid.querySelectorAll('[data-act="loc"]').forEach(el=>{
     el.onclick = (e)=>{
@@ -1730,10 +1765,13 @@ async function openViewer(postId){
   updateLikeUI();
   const isMine = activePost.uid === currentUser.uid;
   const orderBtn = document.getElementById('viewerOrderBtn');
+  const callBtn = document.getElementById('viewerCallBtn');
   const ownerActions = document.getElementById('viewerOwnerActions');
   orderBtn.style.display = isMine ? 'none' : 'block';
   orderBtn.disabled = false;
-  orderBtn.textContent = '📍 Commander cet i-chat';
+  orderBtn.textContent = '📍 Commander ce produit';
+  callBtn.style.display = isMine ? 'none' : 'flex';
+  callBtn.onclick = ()=>callFournisseur(activePost.uid, callBtn);
   ownerActions.style.display = isMine ? 'flex' : 'none';
   viewerModal.classList.add('show');
   listenComments(postId);
