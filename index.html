@@ -1691,8 +1691,15 @@ document.getElementById('closeViewerModal').onclick = ()=>{
   activePostId=null; activePost=null;
 };
 async function openViewer(postId){
-  const snap = await db.collection('posts').doc(postId).get();
-  if(!snap.exists) return;
+  let snap;
+  try{
+    snap = await db.collection('posts').doc(postId).get();
+  }catch(err){
+    console.error('openViewer: lecture Firestore échouée', err);
+    alert("Impossible d'ouvrir cette publication : " + err.message);
+    return;
+  }
+  if(!snap.exists){ alert("Cette publication n'existe plus."); return; }
   activePostId = postId;
   activePost = snap.data();
   viewerIndex = 0;
@@ -1795,6 +1802,10 @@ function listenComments(postId){
         return `<div class="comment-row"><b>${escapeHtml(c.codeName||'')}</b> ${escapeHtml(c.text||'')}</div>`;
       }).join('');
       list.scrollTop = list.scrollHeight;
+    }, err=>{
+      console.error('listenComments error', err);
+      const list = document.getElementById('commentList');
+      if(list) list.innerHTML = '<div class="empty-list" style="padding:10px 0;">Impossible de charger les commentaires (' + err.message + ').</div>';
     });
 }
 document.getElementById('sendCommentBtn').onclick = sendComment;
