@@ -1527,7 +1527,6 @@ function renderFeed(posts){
       <div class="feed-side">
         <div class="avatar" style="width:40px;height:40px;font-size:13px;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
         <button class="side-act ${liked?'liked':''}" data-act="like" data-id="${p.id}"><div class="circle">♥</div><span class="n">${p.likesCount||0}</span></button>
-        <button class="side-act" data-act="comment" data-id="${p.id}"><div class="circle">💬</div><span class="n">${p.commentsCount||0}</span></button>
       </div>
       <div class="content">
         <div class="author"><span class="cn">@${escapeHtml(p.codeName||'')}</span></div>
