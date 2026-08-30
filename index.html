@@ -356,6 +356,43 @@
         .call-round-btn.toggle{background:var(--panel2);border:1px solid var(--line);width:48px;height:48px;font-size:18px;}
         .call-round-btn.toggle.off{background:rgba(255,77,77,.15);border-color:var(--danger);color:var(--danger);}
 
+        /* ---------- Réputation / notation des i-charters ---------- */
+        .rating-badge{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;color:var(--acid);font-weight:700;background:rgba(200,255,63,.08);border:1px solid var(--acid-dim);border-radius:8px;padding:2px 8px;margin-top:4px;}
+        .rating-badge .cnt{color:var(--sub);font-weight:400;}
+        .rating-stars{display:flex;gap:6px;justify-content:center;margin:14px 0;}
+        .rating-stars .star{font-size:34px;cursor:pointer;color:#33333f;transition:.12s;}
+        .rating-stars .star.active,.rating-stars .star:hover,.rating-stars .star.hover{color:var(--acid);transform:scale(1.08);}
+        .rating-comment{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:11px 13px;border-radius:12px;font-size:13px;outline:none;resize:none;margin-top:10px;font-family:inherit;}
+
+        /* ---------- Signalement & blocage ---------- */
+        .prof-mod-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+        .prof-mod-btn{background:transparent;border:1px solid var(--line);color:var(--sub);font-size:11.5px;padding:7px 12px;border-radius:10px;cursor:pointer;transition:.15s;}
+        .prof-mod-btn:hover{border-color:var(--danger);color:var(--danger);}
+        .prof-mod-btn.blocked{border-color:var(--danger);color:var(--danger);background:rgba(255,77,77,.08);}
+        .report-reasons{display:flex;flex-direction:column;gap:8px;margin:14px 0;}
+        .report-reason-opt{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;font-size:13px;color:var(--text);}
+        .report-reason-opt input{accent-color:var(--pink);}
+        .report-reason-opt:has(input:checked){border-color:var(--pink);background:rgba(255,63,174,.06);}
+
+        /* ---------- File d'attente hors-ligne ---------- */
+        .offline-banner{display:none;background:linear-gradient(135deg,#5a3d00,#3d2900);color:#ffcf70;font-size:12px;text-align:center;padding:8px 12px;border-bottom:1px solid rgba(255,207,112,.25);letter-spacing:.3px;}
+        .offline-banner.show{display:block;}
+        .msg-row.queued .bubble{opacity:.65;}
+        .queued-tick{opacity:.7;}
+
+        /* ---------- Traduction de message ---------- */
+        .translate-btn{font-size:10px;color:var(--acid-dim);cursor:pointer;margin-top:4px;display:inline-block;letter-spacing:.3px;}
+        .translate-btn:hover{color:var(--acid);}
+        .translated-text{margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.12);font-style:italic;color:var(--sub);font-size:12.5px;}
+
+        /* ---------- Vérification OTP ---------- */
+        .otp-inputs{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+        .otp-inputs input{width:42px;height:52px;text-align:center;font-size:20px;font-weight:800;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:12px;outline:none;}
+        .otp-inputs input:focus{border-color:var(--violet);}
+        .otp-resend{text-align:center;font-size:12px;color:var(--sub);margin-top:10px;}
+        .otp-resend b{color:var(--acid);cursor:pointer;}
+        .otp-resend b.disabled{color:var(--sub);cursor:default;}
+
     </style>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
@@ -423,7 +460,30 @@
     </div>
 </div>
 
+<!-- ============ MODAL: VÉRIFICATION DU NUMÉRO PAR SMS (OTP) ============ -->
+<div class="auth-wrap" id="otpWrap">
+    <div class="auth-card">
+        <div class="brand">Vérification</div>
+        <div class="brand-tag" id="otpPhoneLabel">Code envoyé par SMS</div>
+        <div class="otp-inputs" id="otpInputs">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+        </div>
+        <div class="auth-error" id="otpErr"></div>
+        <button class="btn-main" id="otpVerifyBtn">Vérifier le code</button>
+        <div class="otp-resend">Aucun SMS reçu ? <b id="otpResendBtn">Renvoyer le code</b> <span id="otpCountdown"></span></div>
+        <div style="text-align:center;margin-top:14px;">
+            <a href="#" style="font-size:12px;color:var(--sub);" id="otpCancelBtn">← Retour</a>
+        </div>
+    </div>
+</div>
+
 <div class="app with-nav" id="appShell">
+    <div class="offline-banner" id="offlineBanner">📡 Hors-ligne — tes messages seront envoyés dès le retour du réseau</div>
     <div class="screens-wrap">
 
         <!-- ============ ÉCRAN FEED (i-chat) — façon TikTok ============ -->
@@ -603,12 +663,61 @@
                 <div class="avatar" id="viewedProfAvatar" style="width:84px;height:84px;font-size:26px;margin:0 auto 12px;"></div>
                 <div class="cn" id="viewedProfCodeName"></div>
                 <div class="phone" id="viewedProfPostCount">0 publication(s)</div>
+                <div id="viewedProfRating"></div>
                 <div style="display:flex;gap:10px;max-width:320px;margin:16px auto 0;">
                     <button class="btn-main" id="viewedProfMsgBtn" style="margin:0;">💬 Message</button>
                     <button class="tel-call-btn" id="viewedProfCallBtn" style="margin:0;">📞 Appeler</button>
                 </div>
+                <div class="prof-mod-actions" id="viewedProfModActions">
+                    <button class="prof-mod-btn" id="viewedProfBlockBtn">🚫 Bloquer</button>
+                    <button class="prof-mod-btn" id="viewedProfReportBtn">⚠️ Signaler</button>
+                </div>
             </div>
             <div id="viewedProfGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: SIGNALER UN UTILISATEUR ============ -->
+<div class="modal-overlay" id="reportModal">
+    <div class="modal-card">
+        <div class="modal-head"><div class="t">Signaler ce profil</div><button class="modal-close" id="closeReportModal">✕</button></div>
+        <div class="modal-body">
+            <p style="font-size:12.5px;color:var(--sub);">Ton signalement est envoyé de façon confidentielle à l'équipe i-chat pour vérification.</p>
+            <div class="report-reasons" id="reportReasons">
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="spam"> Spam / publicité non sollicitée</label>
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="harcelement"> Harcèlement / propos abusifs</label>
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="arnaque"> Arnaque / fraude</label>
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="contenu"> Contenu inapproprié</label>
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="faux_profil"> Faux profil / usurpation</label>
+                <label class="report-reason-opt"><input type="radio" name="reportReason" value="autre"> Autre</label>
+            </div>
+            <textarea class="rating-comment" id="reportDetails" rows="3" placeholder="Détails (optionnel)…"></textarea>
+            <div class="auth-error" id="reportErr"></div>
+            <button class="btn-main" id="reportSubmitBtn" style="margin-top:14px;">Envoyer le signalement</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MODAL: NOTER UN I-CHATER (fin de course) ============ -->
+<div class="modal-overlay" id="ratingModal">
+    <div class="modal-card">
+        <div class="modal-head"><div class="t">Note ta course</div></div>
+        <div class="modal-body" style="text-align:center;">
+            <div id="ratingPeerInfo" style="margin-bottom:4px;"></div>
+            <p style="font-size:12.5px;color:var(--sub);">Comment s'est passée ta livraison avec cet i-chater ?</p>
+            <div class="rating-stars" id="ratingStars">
+                <span class="star" data-v="1">★</span>
+                <span class="star" data-v="2">★</span>
+                <span class="star" data-v="3">★</span>
+                <span class="star" data-v="4">★</span>
+                <span class="star" data-v="5">★</span>
+            </div>
+            <textarea class="rating-comment" id="ratingComment" rows="2" placeholder="Un commentaire ? (optionnel)"></textarea>
+            <div style="display:flex;gap:10px;margin-top:16px;">
+                <button class="prof-mod-btn" id="ratingSkipBtn" style="flex:1;">Passer</button>
+                <button class="btn-main" id="ratingSubmitBtn" style="margin:0;flex:1;">Envoyer</button>
+            </div>
         </div>
     </div>
 </div>
@@ -681,6 +790,32 @@
     const CLOUDINARY_CLOUD_NAME = "djxcqczh1";
     const CLOUDINARY_UPLOAD_PRESET = "database"; // ⚠️ à créer dans ton dashboard Cloudinary (Unsigned)
 
+    /* ---------- Compression d'image avant upload (économie de data / rapidité) ---------- */
+    const IMG_COMPRESS_CONFIG = {
+      maxDim: 1600,      // plus grande dimension autorisée (px) — au-delà, redimensionnement
+      quality: 0.72      // qualité JPEG de sortie (0 à 1)
+    };
+
+    /* ---------- Vérification du numéro par OTP SMS ----------
+       ⚠️ Aucun fournisseur SMS n'est branché par défaut : en attendant, le code généré
+       est affiché dans la console + une alerte navigateur (mode démo/dev), pour que le
+       flux soit testable sans dépense. Pour brancher un vrai SMS (ex : Twilio, Africa's
+       Talking, Orange SMS API…), déploie la Cloud Function "sendOtpSms" fournie à part et
+       mets SMS_PROVIDER_ENDPOINT sur son URL — le reste du code n'a rien à changer. ---------- */
+    const SMS_PROVIDER_ENDPOINT = ""; // ex: "https://us-central1-data-fae4a.cloudfunctions.net/sendOtpSms"
+    const OTP_TTL_MS = 5 * 60 * 1000;   // validité du code : 5 minutes
+    const OTP_RESEND_DELAY_MS = 30 * 1000;
+
+    /* ---------- Traduction automatique des messages ----------
+       ⚠️ Nécessite une clé API d'un service de traduction (ex : LibreTranslate,
+       DeepL, Google Cloud Translation…). Tant qu'aucune clé n'est renseignée,
+       le bouton "Traduire" affichera un message l'indiquant clairement. ---------- */
+    const TRANSLATE_CONFIG = {
+      apiUrl: "",         // ex: "https://libretranslate.com/translate"
+      apiKey: "",         // ta clé API du service choisi
+      targetLang: "fr"    // langue cible par défaut
+    };
+
     /* ======================================================================
        STATE (en mémoire uniquement — jamais de localStorage)
     ====================================================================== */
@@ -733,6 +868,21 @@
     let incomingCallsUnsub = null;    // écoute globale des appels entrants
     let callRingTimeout = null;       // auto-annulation si pas de réponse
     let handledCallIds = new Set();   // évite de retraiter deux fois le même appel entrant
+
+    /* ---- File d'attente d'envoi hors-ligne ---- */
+    let outbox = [];                  // messages en attente d'envoi {tempId, chatId, peer, msg}
+    let isOnline = navigator.onLine;
+
+    /* ---- Blocage utilisateurs ---- */
+    let blockedUids = new Set();      // utilisateurs que JE bloque
+    let viewedProfileUid = null;      // uid actuellement affiché dans userProfileModal
+
+    /* ---- Vérification OTP à l'inscription ---- */
+    let pendingRegistration = null;   // données du formulaire d'inscription en attente de vérif OTP
+    let otpResendAt = 0;
+
+    /* ---- Notation des i-charters ---- */
+    let pendingRatingOrder = null;    // commande en attente de notation après complétion
 
     function haversineKm(a,b){
       if(!a||!b) return null;
@@ -826,13 +976,45 @@
       return generateCodeCandidate() + Date.now().toString().slice(-4);
     }
 
+    /* ---------- Compression d'image avant upload ----------
+       Redimensionne (si besoin) et ré-encode en JPEG pour réduire le poids envoyé —
+       important sur les connexions mobiles limitées. Les vidéos et fichiers non-image
+       ne sont jamais touchés. En cas d'échec (format exotique, etc.), on retombe
+       silencieusement sur le fichier d'origine plutôt que de bloquer l'envoi. */
+    async function compressImage(file){
+      if(!file.type || !file.type.startsWith('image/') || file.type==='image/gif'){
+        return file; // on ne touche pas aux GIF (animation) ni aux non-images
+      }
+      try{
+        const bitmap = await createImageBitmap(file);
+        const { maxDim, quality } = IMG_COMPRESS_CONFIG;
+        let { width, height } = bitmap;
+        if(width > maxDim || height > maxDim){
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        const blob = await new Promise(res=>canvas.toBlob(res, 'image/jpeg', quality));
+        if(!blob || blob.size >= file.size) return file; // pas de gain réel, on garde l'original
+        return new File([blob], (file.name||'photo').replace(/\.[^.]+$/,'') + '.jpg', {type:'image/jpeg'});
+      }catch(err){
+        console.warn('compressImage: retombe sur le fichier original —', err.message);
+        return file;
+      }
+    }
+
     /* ---------- Cloudinary upload ---------- */
     async function uploadToCloudinary(file, onProgress){
+      const isVideo = file.type.startsWith('video');
+      const toSend = isVideo ? file : await compressImage(file);
       return new Promise((resolve,reject)=>{
-        const isVideo = file.type.startsWith('video');
         const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${isVideo?'video':'image'}/upload`;
         const form = new FormData();
-        form.append('file', file);
+        form.append('file', toSend);
         form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
@@ -905,7 +1087,108 @@
     geoBtn.onclick = requestGeo;
     tabRegister.addEventListener('click', ()=>{ if(!pendingGeo) requestGeo(); });
 
-    /* ---------- REGISTER ---------- */
+    /* ======================================================================
+       VÉRIFICATION OTP (SMS)
+    ====================================================================== */
+    function generateOtpCode(){
+      return String(Math.floor(100000 + Math.random()*900000));
+    }
+    async function sendOtp(phone){
+      const code = generateOtpCode();
+      await db.collection('otps').doc(phone).set({
+        code, createdAt: FieldValue.serverTimestamp(), expiresAt: Date.now() + OTP_TTL_MS, attempts: 0
+      });
+      if(SMS_PROVIDER_ENDPOINT){
+        // Envoi réel via la Cloud Function branchée sur un fournisseur SMS (Twilio, Africa's Talking…)
+        const res = await fetch(SMS_PROVIDER_ENDPOINT, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({phone, code})
+        });
+        if(!res.ok) throw new Error("Échec de l'envoi du SMS. Réessaie.");
+      } else {
+        // Aucun fournisseur SMS configuré : mode démo — le code s'affiche localement
+        // pour permettre de tester le flux sans dépense. À retirer une fois
+        // SMS_PROVIDER_ENDPOINT branché sur un vrai service.
+        console.warn('[OTP — mode démo, aucun fournisseur SMS branché] Code pour '+phone+' : '+code);
+        alert("Mode démo (aucun SMS envoyé) — ton code de vérification est : " + code);
+      }
+      otpResendAt = Date.now() + OTP_RESEND_DELAY_MS;
+    }
+    function openOtpScreen(phone){
+      document.getElementById('authWrap').style.display='none';
+      document.getElementById('otpWrap').style.display='flex';
+      document.getElementById('otpPhoneLabel').textContent = 'Code envoyé au ' + phone;
+      document.getElementById('otpErr').style.display='none';
+      const inputs = document.querySelectorAll('#otpInputs input');
+      inputs.forEach(i=>i.value='');
+      inputs[0].focus();
+      updateOtpResendUI();
+    }
+    function updateOtpResendUI(){
+      const btn = document.getElementById('otpResendBtn');
+      const cd = document.getElementById('otpCountdown');
+      const tick = ()=>{
+        const remain = Math.max(0, Math.ceil((otpResendAt - Date.now())/1000));
+        if(remain>0){
+          btn.classList.add('disabled');
+          cd.textContent = `(${remain}s)`;
+          setTimeout(tick, 1000);
+        } else {
+          btn.classList.remove('disabled');
+          cd.textContent = '';
+        }
+      };
+      tick();
+    }
+    const otpInputEls = document.querySelectorAll('#otpInputs input');
+    otpInputEls.forEach((input, idx)=>{
+      input.addEventListener('input', ()=>{
+        input.value = input.value.replace(/\D/g,'').slice(0,1);
+        if(input.value && otpInputEls[idx+1]) otpInputEls[idx+1].focus();
+      });
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Backspace' && !input.value && otpInputEls[idx-1]) otpInputEls[idx-1].focus();
+      });
+    });
+    document.getElementById('otpResendBtn').onclick = async ()=>{
+      if(Date.now() < otpResendAt || !pendingRegistration) return;
+      try{ await sendOtp(pendingRegistration.phone); updateOtpResendUI(); }
+      catch(err){ document.getElementById('otpErr').textContent = err.message; document.getElementById('otpErr').style.display='block'; }
+    };
+    document.getElementById('otpCancelBtn').onclick = (e)=>{
+      e.preventDefault();
+      pendingRegistration = null;
+      document.getElementById('otpWrap').style.display='none';
+      document.getElementById('authWrap').style.display='flex';
+    };
+    document.getElementById('otpVerifyBtn').onclick = async ()=>{
+      const code = Array.from(otpInputEls).map(i=>i.value).join('');
+      const errEl = document.getElementById('otpErr');
+      errEl.style.display='none';
+      if(code.length!==6){ errEl.textContent='Saisis les 6 chiffres du code.'; errEl.style.display='block'; return; }
+      if(!pendingRegistration){ errEl.textContent='Session expirée, recommence l\'inscription.'; errEl.style.display='block'; return; }
+      const btn = document.getElementById('otpVerifyBtn');
+      btn.disabled = true; btn.textContent = 'Vérification…';
+      try{
+        const snap = await db.collection('otps').doc(pendingRegistration.phone).get();
+        if(!snap.exists){ throw new Error("Code introuvable, redemande un SMS."); }
+        const d = snap.data();
+        if(Date.now() > d.expiresAt){ throw new Error("Code expiré, redemande un SMS."); }
+        if((d.attempts||0) >= 5){ throw new Error("Trop de tentatives. Redemande un nouveau code."); }
+        if(d.code !== code){
+          await db.collection('otps').doc(pendingRegistration.phone).update({attempts: FieldValue.increment(1)});
+          throw new Error("Code incorrect.");
+        }
+        await db.collection('otps').doc(pendingRegistration.phone).delete().catch(()=>{});
+        await finalizeRegistration();
+      }catch(err){
+        errEl.textContent = err.message; errEl.style.display='block';
+      }finally{
+        btn.disabled = false; btn.textContent = 'Vérifier le code';
+      }
+    };
+
+    /* ---------- REGISTER (étape 1 : validation + envoi du code OTP) ---------- */
     document.getElementById('registerForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const btn = document.getElementById('registerBtn');
@@ -916,51 +1199,65 @@
       if(!document.getElementById('ageCheck').checked){ showError("Tu dois confirmer avoir 18 ans ou plus pour t'inscrire."); return; }
       if(!pendingGeo){ showError("La localisation est obligatoire pour t'inscrire sur i chat."); requestGeo(); return; }
 
-      btn.disabled = true; btn.textContent = "Création…";
+      btn.disabled = true; btn.textContent = "Vérification…";
       try{
         const uid = uidFromPhone(phone);
         const existing = await db.collection('users').doc(uid).get();
         if(existing.exists){ showError("Un compte existe déjà avec ce numéro."); btn.disabled=false; btn.textContent="Créer mon identité"; return; }
 
-        let photoURL = "";
-        if(pendingPhotoFile){
-          try{
-            const up = await uploadToCloudinary(pendingPhotoFile);
-            photoURL = up.url;
-          }catch(err){ console.warn("Upload photo échoué:", err.message); }
-        }
-
-        const codeName = await generateUniqueCodeName();
-        const passHash = await sha256(pass + '::krypt::' + phone);
-        const location = pendingGeo;
-        const geoInfo = await reverseGeocode(location);
-        const city = geoInfo ? geoInfo.city : '';
-        const country = geoInfo ? geoInfo.country : '';
-
-        await db.collection('users').doc(uid).set({
-          uid, phone, fullName:name, codeName, photoURL,
-          passHash, location, city, country, isIcharter:false, icharterAvailable:false,
-          createdAt: FieldValue.serverTimestamp()
-        });
-        await db.collection('codeNames').doc(codeName).set({uid});
-        await db.collection('directory').doc(uid).set({codeName, photoURL, city, country});
-
-        document.getElementById('codenameReveal').style.display='block';
-        document.getElementById('codenameValue').textContent = codeName;
-        btn.textContent = "Entrer dans i chat →";
-        btn.disabled = false;
-        btn.type='button';
-        btn.onclick = ()=>{
-          currentUser = {uid, phone, fullName:name, codeName, photoURL, location, city, country};
-          saveSession(uid);
-          enterApp();
-        };
+        pendingRegistration = { uid, name, phone, pass };
+        await sendOtp(phone);
+        openOtpScreen(phone);
       }catch(err){
         console.error(err);
         showError("Erreur : " + err.message);
+      }finally{
         btn.disabled = false; btn.textContent = "Créer mon identité";
       }
     });
+
+    /* ---------- REGISTER (étape 2 : création du compte, appelée après OTP validé) ---------- */
+    async function finalizeRegistration(){
+      const { uid, name, phone, pass } = pendingRegistration;
+      let photoURL = "";
+      if(pendingPhotoFile){
+        try{
+          const up = await uploadToCloudinary(pendingPhotoFile);
+          photoURL = up.url;
+        }catch(err){ console.warn("Upload photo échoué:", err.message); }
+      }
+
+      const codeName = await generateUniqueCodeName();
+      const passHash = await sha256(pass + '::krypt::' + phone);
+      const location = pendingGeo;
+      const geoInfo = await reverseGeocode(location);
+      const city = geoInfo ? geoInfo.city : '';
+      const country = geoInfo ? geoInfo.country : '';
+
+      await db.collection('users').doc(uid).set({
+        uid, phone, fullName:name, codeName, photoURL,
+        passHash, location, city, country, isIcharter:false, icharterAvailable:false,
+        phoneVerified:true, blockedUsers:[], ratingSum:0, ratingCount:0,
+        createdAt: FieldValue.serverTimestamp()
+      });
+      await db.collection('codeNames').doc(codeName).set({uid});
+      await db.collection('directory').doc(uid).set({codeName, photoURL, city, country});
+
+      document.getElementById('otpWrap').style.display='none';
+      document.getElementById('authWrap').style.display='flex';
+      document.getElementById('codenameReveal').style.display='block';
+      document.getElementById('codenameValue').textContent = codeName;
+      const btn = document.getElementById('registerBtn');
+      btn.textContent = "Entrer dans i chat →";
+      btn.disabled = false;
+      btn.type='button';
+      btn.onclick = ()=>{
+        currentUser = {uid, phone, fullName:name, codeName, photoURL, location, city, country};
+        saveSession(uid);
+        enterApp();
+      };
+      pendingRegistration = null;
+    }
 
     /* ---------- LOGIN ---------- */
     document.getElementById('loginForm').addEventListener('submit', async (e)=>{
@@ -1035,6 +1332,8 @@
       document.getElementById('appShell').style.display='block';
 
       linkOneSignalIdentity();
+      blockedUids = new Set(currentUser.blockedUsers || []);
+      initOfflineQueue();
 
       document.getElementById('myCodeName').textContent = currentUser.codeName;
       const myAv = document.getElementById('myAvatar');
@@ -1208,7 +1507,7 @@
       const qLower = q.toLowerCase();
       // La recherche matche soit l'identifiant i-chat, soit la ville ou le pays de l'i-chatter.
       const matches = Object.entries(all).filter(([uid,d])=>
-        d.codeName && uid !== currentUser.uid && (
+        d.codeName && uid !== currentUser.uid && !blockedUids.has(uid) && (
           d.codeName.toLowerCase().includes(qLower) ||
           (d.city && d.city.toLowerCase().includes(qLower)) ||
           (d.country && d.country.toLowerCase().includes(qLower))
@@ -1244,7 +1543,7 @@
           const strip = document.getElementById('availIchartersStrip');
           const row = document.getElementById('availIchartersRow');
           const list = [];
-          snap.forEach(doc=>{ if(doc.id!==currentUser.uid) list.push({uid:doc.id, ...doc.data()}); });
+          snap.forEach(doc=>{ if(doc.id!==currentUser.uid && !blockedUids.has(doc.id)) list.push({uid:doc.id, ...doc.data()}); });
           if(list.length===0){ strip.style.display='none'; row.innerHTML=''; return; }
           // Suggère en priorité les i-chatters du même pays que l'utilisateur (ex : le Cameroun).
           const myCountry = (currentUser.country||'').toLowerCase();
@@ -1312,13 +1611,13 @@
 
       // 1) Conversations déjà entamées : triées par nb de messages échangés (desc),
       //    puis par horodatage du dernier message (desc) — comme WhatsApp.
-      const withHistory = chatListRows.slice().sort((a,b)=>
+      const withHistory = chatListRows.filter(m=>!blockedUids.has(m.otherUid)).sort((a,b)=>
         (b.messageCount||0)-(a.messageCount||0) || tsToMillis(b.lastTimestamp)-tsToMillis(a.lastTimestamp)
       );
 
       // 2) Tous les autres inscrits, jamais contactés, triés par identifiant.
       const withoutHistory = Object.keys(directoryUsers)
-        .filter(uid=>!chatsByUid[uid])
+        .filter(uid=>!chatsByUid[uid] && !blockedUids.has(uid))
         .sort((a,b)=>(directoryUsers[a].codeName||'').localeCompare(directoryUsers[b].codeName||''));
 
       if(withHistory.length===0 && withoutHistory.length===0){
@@ -1370,23 +1669,47 @@
        PROFIL D'UN AUTRE UTILISATEUR (façon TikTok) — depuis la messagerie
     ====================================================================== */
     async function openUserProfile(uid, codeName, photo){
+      viewedProfileUid = uid;
       const av = document.getElementById('viewedProfAvatar');
       av.innerHTML = photo ? `<img src="${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(codeName);
       av.style.background = photo ? 'transparent' : 'linear-gradient(135deg,var(--violet),var(--pink))';
       av.style.color = '#fff'; av.style.fontWeight = '800';
       document.getElementById('viewedProfCodeName').textContent = codeName;
       document.getElementById('viewedProfPostCount').textContent = 'Chargement…';
+      document.getElementById('viewedProfRating').innerHTML = '';
       document.getElementById('viewedProfMsgBtn').onclick = ()=>{
         document.getElementById('closeUserProfileModal').click();
         openChat(uid, codeName, photo);
       };
       const profCallBtn = document.getElementById('viewedProfCallBtn');
-      profCallBtn.style.display = (currentUser && uid === currentUser.uid) ? 'none' : 'flex';
+      const isSelf = currentUser && uid === currentUser.uid;
+      profCallBtn.style.display = isSelf ? 'none' : 'flex';
       profCallBtn.onclick = ()=>callFournisseur(uid, profCallBtn);
+
+      const modActions = document.getElementById('viewedProfModActions');
+      modActions.style.display = isSelf ? 'none' : 'flex';
+      if(!isSelf){
+        const blockBtn = document.getElementById('viewedProfBlockBtn');
+        const isBlocked = blockedUids.has(uid);
+        blockBtn.textContent = isBlocked ? '✓ Débloquer' : '🚫 Bloquer';
+        blockBtn.classList.toggle('blocked', isBlocked);
+        blockBtn.onclick = ()=> isBlocked ? unblockUser(uid, codeName) : blockUser(uid, codeName);
+        document.getElementById('viewedProfReportBtn').onclick = ()=>openReportModal(uid, codeName);
+      }
+
       const grid = document.getElementById('viewedProfGrid');
       grid.innerHTML = '';
       document.getElementById('userProfileModal').classList.add('show');
       try{
+        const uSnap = await db.collection('users').doc(uid).get();
+        if(uSnap.exists){
+          const u = uSnap.data();
+          const cnt = u.ratingCount||0;
+          if(cnt>0){
+            const avg = (u.ratingSum/cnt).toFixed(1);
+            document.getElementById('viewedProfRating').innerHTML = `<div class="rating-badge">★ ${avg} <span class="cnt">(${cnt} avis)</span></div>`;
+          }
+        }
         // Pas de orderBy() combiné au where() : évite l'exigence d'un index composite Firestore.
         const snap = await db.collection('posts').where('uid','==',uid).get();
         document.getElementById('viewedProfPostCount').textContent = snap.size + ' publication(s)';
@@ -1410,6 +1733,55 @@
     }
     document.getElementById('closeUserProfileModal').onclick = ()=>document.getElementById('userProfileModal').classList.remove('show');
     document.getElementById('closePrivacyModal').onclick = ()=>document.getElementById('privacyModal').classList.remove('show');
+
+    /* ======================================================================
+       BLOCAGE & SIGNALEMENT
+    ====================================================================== */
+    async function blockUser(uid, codeName){
+      if(!confirm(`Bloquer ${codeName||'cet utilisateur'} ? Vous ne verrez plus ses messages, publications ni disponibilités, et il ne pourra plus vous contacter.`)) return;
+      blockedUids.add(uid);
+      await db.collection('users').doc(currentUser.uid).update({blockedUsers: FieldValue.arrayUnion(uid)}).catch(()=>{});
+      document.getElementById('closeUserProfileModal').click();
+      renderChatList(); listenFeed(); listenAvailIcharters();
+      if(activePeer && activePeer.uid===uid){ activeChatId=null; activePeer=null; document.getElementById('chatView').style.display='none'; document.getElementById('noChat').style.display='flex'; }
+    }
+    async function unblockUser(uid, codeName){
+      blockedUids.delete(uid);
+      await db.collection('users').doc(currentUser.uid).update({blockedUsers: FieldValue.arrayRemove(uid)}).catch(()=>{});
+      document.getElementById('closeUserProfileModal').click();
+      renderChatList(); listenFeed(); listenAvailIcharters();
+    }
+    let reportTargetUid = null, reportTargetName = null;
+    function openReportModal(uid, codeName){
+      reportTargetUid = uid; reportTargetName = codeName;
+      document.getElementById('closeUserProfileModal').click();
+      document.querySelectorAll('input[name="reportReason"]').forEach(r=>r.checked=false);
+      document.getElementById('reportDetails').value='';
+      document.getElementById('reportErr').style.display='none';
+      document.getElementById('reportModal').classList.add('show');
+    }
+    document.getElementById('closeReportModal').onclick = ()=>document.getElementById('reportModal').classList.remove('show');
+    document.getElementById('reportSubmitBtn').onclick = async ()=>{
+      const errEl = document.getElementById('reportErr');
+      const reasonEl = document.querySelector('input[name="reportReason"]:checked');
+      if(!reasonEl){ errEl.textContent='Choisis un motif.'; errEl.style.display='block'; return; }
+      const btn = document.getElementById('reportSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      try{
+        await db.collection('reports').add({
+          reportedUid: reportTargetUid, reportedCodeName: reportTargetName,
+          reporterUid: currentUser.uid, reporterCodeName: currentUser.codeName,
+          reason: reasonEl.value, details: document.getElementById('reportDetails').value.trim(),
+          status:'pending', createdAt: FieldValue.serverTimestamp()
+        });
+        document.getElementById('reportModal').classList.remove('show');
+        alert("Signalement envoyé. Merci — notre équipe va l'examiner.");
+      }catch(err){
+        errEl.textContent = "Erreur : " + err.message; errEl.style.display='block';
+      }finally{
+        btn.disabled = false; btn.textContent = 'Envoyer le signalement';
+      }
+    };
 
     /* ======================================================================
        OPEN / RENDER CHAT
@@ -1466,25 +1838,37 @@
         if(m.type==='image') body = `<img src="${m.mediaURL}">`;
         else if(m.type==='video') body = `<video src="${m.mediaURL}" controls></video>`;
         if(m.text) body += `<div>${escapeHtml(m.text)}</div>`;
-        const ticks = mine ? (m.status==='read' ? '✓✓' : '✓') : '';
+        let ticks = '';
+        if(mine) ticks = m._queued ? '<span class="queued-tick">🕐</span>' : (m.status==='read' ? '✓✓' : '✓');
         const t = tsToMillis(m.timestamp);
-        return `<div class="msg-row ${mine?'me':'them'}"><div class="bubble">${body}<div class="meta">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''} ${ticks}</div></div></div>`;
+        return `<div class="msg-row ${mine?'me':'them'}${m._queued?' queued':''}"><div class="bubble">${body}<div class="meta">${t?new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):(m._queued?'En attente…':'')} ${ticks}</div></div></div>`;
       }).join('');
       el.scrollTop = el.scrollHeight;
 
       entries.forEach(m=>{
-        if(m.senderId !== currentUser.uid && m.status !== 'read'){
+        if(!m._queued && m.senderId !== currentUser.uid && m.status !== 'read'){
           db.collection('chats').doc(activeChatId).collection('messages').doc(m.id).update({status:'read'}).catch(()=>{});
         }
       });
+    }
+    let lastFirestoreMsgs = [];
+    function renderMessagesMerged(msgs){
+      lastFirestoreMsgs = msgs;
+      const queuedForChat = outbox.filter(o=>o.chatId===activeChatId).map(o=>({
+        id:'queued_'+o.tempId, senderId:currentUser.uid, text:o.msg.text||'', type:o.msg.type||'text',
+        mediaURL:o.msg.mediaURL||null, timestamp:null, status:'queued', _queued:true
+      }));
+      renderMessages([...msgs, ...queuedForChat]);
     }
     function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
     /* ======================================================================
        SEND MESSAGE
     ====================================================================== */
-    async function sendMessage({text, mediaURL, type}){
-      if(!activeChatId) return;
+    async function sendMessage({text, mediaURL, type, chatId, peer}){
+      chatId = chatId || activeChatId;
+      peer = peer || activePeer;
+      if(!chatId || !peer) return;
       const msg = {
         senderId: currentUser.uid,
         text: text || '',
@@ -1493,13 +1877,58 @@
         timestamp: FieldValue.serverTimestamp(),
         status: 'sent'
       };
-      await db.collection('chats').doc(activeChatId).collection('messages').add(msg);
+      await db.collection('chats').doc(chatId).collection('messages').add(msg);
 
       const preview = type==='text' ? text : (type==='image' ? '📷 Photo' : '🎥 Vidéo');
-      const myChatDocId = currentUser.uid+'__'+activePeer.uid;
-      const peerChatDocId = activePeer.uid+'__'+currentUser.uid;
-      await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:activePeer.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
-      await db.collection('userChats').doc(peerChatDocId).set({owner:activePeer.uid, otherUid:currentUser.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
+      const myChatDocId = currentUser.uid+'__'+peer.uid;
+      const peerChatDocId = peer.uid+'__'+currentUser.uid;
+      await db.collection('userChats').doc(myChatDocId).set({owner:currentUser.uid, otherUid:peer.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
+      await db.collection('userChats').doc(peerChatDocId).set({owner:peer.uid, otherUid:currentUser.uid, lastMessage:preview, lastTimestamp: FieldValue.serverTimestamp(), messageCount: FieldValue.increment(1)}, {merge:true});
+    }
+
+    /* ======================================================================
+       FILE D'ATTENTE D'ENVOI HORS-LIGNE
+       Si le réseau est coupé au moment d'envoyer un texte, le message est
+       conservé en mémoire + localStorage (pour survivre à un refresh) et
+       envoyé automatiquement dès le retour de la connexion. ---------- */
+    const OUTBOX_KEY = 'ichat_outbox';
+    function persistOutbox(){ try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox)); }catch(e){} }
+    function loadOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||'[]'); }catch(e){ return []; } }
+    function initOfflineQueue(){
+      outbox = loadOutbox();
+      isOnline = navigator.onLine;
+      updateOfflineBanner();
+      window.addEventListener('online', ()=>{ isOnline = true; updateOfflineBanner(); flushOutbox(); });
+      window.addEventListener('offline', ()=>{ isOnline = false; updateOfflineBanner(); });
+      if(isOnline) flushOutbox();
+    }
+    function updateOfflineBanner(){
+      document.getElementById('offlineBanner').classList.toggle('show', !isOnline);
+    }
+    async function queueOrSendMessage(payload){
+      if(isOnline){
+        try{ await sendMessage(payload); return; }
+        catch(err){ /* réseau instable malgré navigator.onLine=true : on met en file par sécurité */ }
+      }
+      const tempId = 'q'+Date.now()+Math.random().toString(36).slice(2,7);
+      outbox.push({tempId, chatId:activeChatId, peer:{uid:activePeer.uid, codeName:activePeer.codeName, photoURL:activePeer.photoURL}, msg:payload});
+      persistOutbox();
+      renderMessagesMerged(lastFirestoreMsgs);
+    }
+    async function flushOutbox(){
+      if(!isOnline || outbox.length===0) return;
+      const items = outbox.slice();
+      for(const item of items){
+        try{
+          await sendMessage({...item.msg, chatId:item.chatId, peer:item.peer});
+          outbox = outbox.filter(o=>o.tempId!==item.tempId);
+          persistOutbox();
+        }catch(err){
+          console.warn('Envoi en attente échoué, nouvelle tentative plus tard :', err.message);
+          break; // on arrête ici pour respecter l'ordre — on réessaiera au prochain "online"
+        }
+      }
+      if(activeChatId) renderMessagesMerged(lastFirestoreMsgs);
     }
 
     document.getElementById('sendBtn').onclick = doSendText;
@@ -1511,13 +1940,18 @@
       const text = input.value.trim();
       if(!text) return;
       input.value='';
-      sendMessage({text, type:'text'});
+      queueOrSendMessage({text, type:'text'});
     }
 
     document.getElementById('attachBtn').onclick = ()=>document.getElementById('fileInput').click();
     document.getElementById('fileInput').addEventListener('change', async (e)=>{
       const file = e.target.files[0];
       if(!file) return;
+      if(!isOnline){
+        alert("Tu es hors-ligne. L'envoi de photos/vidéos nécessite une connexion — réessaie dès que le réseau revient (les messages texte, eux, partiront automatiquement).");
+        e.target.value='';
+        return;
+      }
       const progEl = document.getElementById('uploadProgress');
       progEl.style.display='block';
       progEl.textContent = 'Envoi… 0%';
@@ -1525,7 +1959,7 @@
         const up = await uploadToCloudinary(file, (pct)=>{ progEl.textContent = 'Envoi… '+pct+'%'; });
         await sendMessage({type: up.type, mediaURL: up.url});
       }catch(err){
-        alert("Échec de l'envoi : " + err.message + "\n\n(Vérifie que le preset Cloudinary 'krypt_unsigned' existe et est en mode Unsigned)");
+        alert("Échec de l'envoi : " + err.message + "\n\n(Vérifie que le preset Cloudinary 'database' existe et est en mode Unsigned)");
       }finally{
         progEl.style.display='none';
         e.target.value='';
@@ -1546,6 +1980,7 @@
             const p = {id:doc.id, ...doc.data()};
             // Une publication sans photo (post vide/orphelin) ne doit jamais s'afficher dans le fil.
             if(!p.photos || !Array.isArray(p.photos) || p.photos.length===0 || !p.photos[0]) return;
+            if(blockedUids.has(p.uid)) return; // auteur bloqué : masqué du fil
             posts.push(p);
           });
           // Priorité 1 : les publications du même pays que l'utilisateur (ex: le Cameroun) sont suggérées en premier.
@@ -2103,8 +2538,63 @@
       const cancelBtn = document.getElementById('cancelOrderBtn');
       if(cancelBtn) cancelBtn.onclick = ()=>db.collection('orders').doc(order.id).update({status:'cancelled'});
       const recvBtn = document.getElementById('orderReceivedBtn');
-      if(recvBtn) recvBtn.onclick = ()=>db.collection('orders').doc(order.id).update({status:'completed'});
+      if(recvBtn) recvBtn.onclick = ()=>openRatingModal(order);
     }
+
+    /* ======================================================================
+       NOTATION DES I-CHATERS (à la fin d'une course)
+    ====================================================================== */
+    let selectedRatingValue = 0;
+    function openRatingModal(order){
+      pendingRatingOrder = order;
+      selectedRatingValue = 0;
+      document.getElementById('ratingPeerInfo').innerHTML = `<b style="color:var(--acid);">@${escapeHtml(order.icharterCodeName||'')}</b>`;
+      document.getElementById('ratingComment').value = '';
+      document.querySelectorAll('#ratingStars .star').forEach(s=>s.classList.remove('active'));
+      document.getElementById('ratingModal').classList.add('show');
+    }
+    document.querySelectorAll('#ratingStars .star').forEach(star=>{
+      star.addEventListener('mouseenter', ()=>{
+        const v = +star.dataset.v;
+        document.querySelectorAll('#ratingStars .star').forEach(s=>s.classList.toggle('hover', +s.dataset.v<=v));
+      });
+      star.addEventListener('mouseleave', ()=>{
+        document.querySelectorAll('#ratingStars .star').forEach(s=>s.classList.remove('hover'));
+      });
+      star.addEventListener('click', ()=>{
+        selectedRatingValue = +star.dataset.v;
+        document.querySelectorAll('#ratingStars .star').forEach(s=>s.classList.toggle('active', +s.dataset.v<=selectedRatingValue));
+      });
+    });
+    async function closeOrderAfterRating(){
+      if(pendingRatingOrder) await db.collection('orders').doc(pendingRatingOrder.id).update({status:'completed'}).catch(()=>{});
+      document.getElementById('ratingModal').classList.remove('show');
+      pendingRatingOrder = null;
+    }
+    document.getElementById('ratingSkipBtn').onclick = closeOrderAfterRating;
+    document.getElementById('ratingSubmitBtn').onclick = async ()=>{
+      if(!pendingRatingOrder) return;
+      const order = pendingRatingOrder;
+      const btn = document.getElementById('ratingSubmitBtn');
+      if(selectedRatingValue<1){ await closeOrderAfterRating(); return; }
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      try{
+        await db.collection('ratings').add({
+          orderId: order.id, icharterUid: order.icharterUid, icharterCodeName: order.icharterCodeName,
+          clientUid: currentUser.uid, clientCodeName: currentUser.codeName,
+          value: selectedRatingValue, comment: document.getElementById('ratingComment').value.trim(),
+          createdAt: FieldValue.serverTimestamp()
+        });
+        await db.collection('users').doc(order.icharterUid).update({
+          ratingSum: FieldValue.increment(selectedRatingValue),
+          ratingCount: FieldValue.increment(1)
+        });
+      }catch(err){ console.warn('rating error', err.message); }
+      finally{
+        btn.disabled = false; btn.textContent = 'Envoyer';
+        await closeOrderAfterRating();
+      }
+    };
 
     /* ---------- Mode i-chater (livreur) ---------- */
     const icharterSwitch = document.getElementById('icharterSwitch');
@@ -2470,6 +2960,7 @@
             const d = change.doc.data();
             if(handledCallIds.has(id)) return;
             if(currentCallId) return; // déjà en communication : on ignore (façon "occupé")
+            if(d.callerUid && blockedUids.has(d.callerUid)) return; // appelant bloqué : ignoré silencieusement
             const createdMs = d.createdAt ? tsToMillis(d.createdAt) : Date.now();
             if(Date.now() - createdMs > 40000) return; // trop vieux, ignoré
             handledCallIds.add(id);
