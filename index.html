@@ -393,6 +393,12 @@
         /* ---------- File d'attente hors-ligne ---------- */
         .offline-banner{display:none;background:linear-gradient(135deg,#5a3d00,#3d2900);color:#ffcf70;font-size:12px;text-align:center;padding:8px 12px;border-bottom:1px solid rgba(255,207,112,.25);letter-spacing:.3px;}
         .offline-banner.show{display:block;}
+        .notif-banner{display:none;align-items:center;gap:10px;background:linear-gradient(135deg,#1c2d0e,#233a10);color:var(--acid);font-size:12.5px;padding:10px 14px;border-bottom:1px solid rgba(200,255,63,.25);}
+        .notif-banner.show{display:flex;}
+        .notif-banner .txt{flex:1;line-height:1.35;}
+        .notif-banner button{border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;padding:7px 12px;}
+        .notif-banner .enable-btn{background:var(--acid);color:#08080d;}
+        .notif-banner .dismiss-btn{background:transparent;color:var(--sub);padding:7px 8px;}
         .msg-row.queued .bubble{opacity:.65;}
         .queued-tick{opacity:.7;}
 
@@ -500,6 +506,11 @@
 
 <div class="app with-nav" id="appShell">
     <div class="offline-banner" id="offlineBanner">📡 Hors-ligne — tes messages seront envoyés dès le retour du réseau</div>
+    <div class="notif-banner" id="notifBanner">
+        <div class="txt">🔔 Active les notifications pour ne rater aucun message, appel ou commande.</div>
+        <button class="enable-btn" id="notifEnableBtn">Activer</button>
+        <button class="dismiss-btn" id="notifDismissBtn">Plus tard</button>
+    </div>
     <div class="screens-wrap">
 
         <!-- ============ ÉCRAN FEED (i-chat) — façon TikTok ============ -->
@@ -1333,11 +1344,12 @@
           try{
             // Relie cet appareil à l'utilisateur i-chat (external_id = uid Firestore)
             await OneSignal.login(currentUser.uid);
-            // Demande la permission navigateur si pas encore répondu
-            if(OneSignal.Notifications && OneSignal.Notifications.permission !== true){
-              OneSignal.Notifications.requestPermission().catch(()=>{});
-            }
-            // Sauvegarde le player_id (subscription id) sur le profil pour un ciblage direct côté serveur
+            // Si la permission est DÉJÀ accordée (ex: reconnexion), on sauvegarde
+            // simplement l'abonnement. On ne redemande JAMAIS la permission ici :
+            // un appel à requestPermission() sans clic utilisateur est bloqué en
+            // silence par les navigateurs (Chrome/Firefox) — c'est pour ça qu'aucune
+            // popup n'apparaissait jamais. La vraie demande se fait via la bannière
+            // (bouton "Activer" -> voir enableNotifications()).
             const subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
             if(subId){
               db.collection('users').doc(currentUser.uid).update({oneSignalId: subId}).catch(()=>{});
@@ -1351,6 +1363,45 @@
       }
     }
 
+    /* ---------- Bannière "Activer les notifications" ---------- */
+    const NOTIF_DISMISS_KEY = 'ichat_notif_dismissed_at';
+    const NOTIF_DISMISS_COOLDOWN_MS = 3*24*60*60*1000; // ne pas reproposer avant 3 jours
+    function notifPermissionSupported(){
+      return typeof Notification !== 'undefined';
+    }
+    function shouldOfferNotifBanner(){
+      if(!notifPermissionSupported()) return false;
+      if(Notification.permission !== 'default') return false; // déjà accepté ou refusé
+      let dismissedAt = 0;
+      try{ dismissedAt = parseInt(localStorage.getItem(NOTIF_DISMISS_KEY)||'0', 10); }catch(e){}
+      if(dismissedAt && (Date.now()-dismissedAt) < NOTIF_DISMISS_COOLDOWN_MS) return false;
+      return true;
+    }
+    function showNotifBanner(){ document.getElementById('notifBanner').classList.add('show'); }
+    function hideNotifBanner(){ document.getElementById('notifBanner').classList.remove('show'); }
+    async function enableNotifications(){
+      // Appelé DEPUIS un clic réel du bouton -> le navigateur autorise la popup native.
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function(OneSignal){
+        try{
+          await OneSignal.Notifications.requestPermission();
+          if(currentUser){
+            await OneSignal.login(currentUser.uid).catch(()=>{});
+            const subId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
+            if(subId) db.collection('users').doc(currentUser.uid).update({oneSignalId: subId}).catch(()=>{});
+          }
+        }catch(err){
+          console.warn('enableNotifications error', err && err.message);
+        }
+        hideNotifBanner();
+      });
+    }
+    document.getElementById('notifEnableBtn').onclick = ()=>{ enableNotifications(); };
+    document.getElementById('notifDismissBtn').onclick = ()=>{
+      try{ localStorage.setItem(NOTIF_DISMISS_KEY, String(Date.now())); }catch(e){}
+      hideNotifBanner();
+    };
+
     /* ======================================================================
        ENTER APP
     ====================================================================== */
@@ -1359,6 +1410,7 @@
       document.getElementById('appShell').style.display='block';
 
       linkOneSignalIdentity();
+      if(shouldOfferNotifBanner()) showNotifBanner();
       blockedUids = new Set(currentUser.blockedUsers || []);
       initOfflineQueue();
 
