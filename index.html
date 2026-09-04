@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>i-chat — Messagerie</title>
+    <title>Finavex — Investissement</title>
     <style>
         :root{
           --bg:#08080d;
@@ -428,12 +428,12 @@
 </head>
 <body>
 
-<div id="loader"><div class="logo">i-chat</div><div class="sub">Chiffrement en cours…</div></div>
+<div id="loader"><div class="logo">Finavex</div><div class="sub">Chargement en cours…</div></div>
 
 <div class="auth-wrap" id="authWrap">
     <div class="auth-card">
-        <div class="brand">i-chat</div>
-        <div class="brand-tag">Ton identité réelle ne quitte jamais ce cercle.</div>
+        <div class="brand">Finavex</div>
+        <div class="brand-tag">Investis court terme, gagne en toute confiance.</div>
 
         <div class="tabs">
             <button class="tab-btn active" id="tabLogin">Connexion</button>
@@ -458,7 +458,7 @@
             <div class="field"><label>Numéro de téléphone</label><input type="tel" id="regPhone" placeholder="+229 00 00 00 00" required></div>
             <div class="field"><label>Mot de passe</label><input type="password" id="regPass" placeholder="8 caractères minimum" required minlength="6"></div>
 
-            <div class="geo-box" id="geoBox">
+            <div class="geo-box" id="geoBox" style="display:none;">
                 <div class="icon" id="geoIcon">📍</div>
                 <div class="txt">
                     <div class="t1" id="geoT1">Localisation requise</div>
@@ -468,7 +468,7 @@
             </div>
 
             <div class="codename-reveal" id="codenameReveal">
-                <div class="lbl">Ton identifiant i-chat généré</div>
+                <div class="lbl">Ton identifiant Finavex généré</div>
                 <div class="cn" id="codenameValue"></div>
             </div>
 
@@ -518,7 +518,7 @@
             <div class="screen-body" style="position:relative;padding:0;">
                 <div class="feed-scroll" id="feedGrid"><div class="empty-list" style="padding-top:60px;">Aucune publication pour l'instant.</div></div>
                 <button class="fab-search" id="fabFeedSearch" title="Rechercher">🔍</button>
-                <button class="fab-post" id="fabPost" title="Publier">+</button>
+                <button class="fab-post" id="fabPost" title="Publier" style="display:none;">+</button>
                 <div class="feed-search-overlay" id="feedSearchOverlay" style="display:none;">
                     <div class="feed-search-bar">
                         <input type="text" id="feedSearchInput" placeholder="Rechercher n'importe quoi… (ex: relation, ville, produit)" autocomplete="off">
@@ -612,13 +612,13 @@
                     <div class="phone" id="profPhone"></div>
                 </div>
                 <div class="profile-list">
-                    <div class="profile-item"><div class="ic">📍</div><div id="profLocStatus">Localisation active</div></div>
-                    <div class="profile-item"><div class="ic">🖼️</div><div id="profPostCount">0 publication(s)</div></div>
+                    <div class="profile-item" id="profLocRow" style="display:none;"><div class="ic">📍</div><div id="profLocStatus">Localisation active</div></div>
+                    <div class="profile-item" id="profPostCountRow" style="display:none;"><div class="ic">🖼️</div><div id="profPostCount">0 publication(s)</div></div>
                     <div class="profile-item" id="profPrivacyRow"><div class="ic">🔒</div><div>Politique de confidentialité</div></div>
                     <div class="profile-item" id="profLogoutRow"><div class="ic">⎋</div><div>Déconnexion</div></div>
                     <div class="profile-item" id="profDeleteAccountRow" style="color:var(--danger);"><div class="ic">🗑️</div><div>Supprimer mon compte</div></div>
                 </div>
-                <div class="my-posts-section">
+                <div class="my-posts-section" style="display:none;">
                     <div class="lbl">Mes publications</div>
                     <div class="my-posts-grid" id="myPostsGrid"><div class="empty-list" style="grid-column:1/-1;">Chargement…</div></div>
                 </div>
@@ -628,8 +628,7 @@
     </div><!-- /screens-wrap -->
 
     <div class="bottom-nav" id="bottomNav">
-        <button class="nav-btn active" data-screen="screenFeed"><span>◈</span><span class="lbl">i-chat</span></button>
-        <button class="nav-btn" data-screen="screenOrder"><span>📍</span><span class="lbl">Commander</span><span class="badge" id="navOrderBadge" style="display:none;"></span></button>
+        <button class="nav-btn active" data-screen="screenFeed"><span>◈</span><span class="lbl">Finavex</span></button>
         <button class="nav-btn" data-screen="screenChat"><span>💬</span><span class="lbl">Messages</span><span class="badge" id="navChatBadge" style="display:none;"></span></button>
         <button class="nav-btn" data-screen="screenProfile"><span>👤</span><span class="lbl">Profil</span></button>
     </div>
@@ -657,7 +656,7 @@
 <!-- ============ MODAL: VOIR UN i-CHAT ============ -->
 <div class="modal-overlay" id="viewerModal">
     <div class="modal-card" style="max-width:420px;">
-        <div class="modal-head"><div class="t">i-chat</div><button class="modal-close" id="closeViewerModal">✕</button></div>
+        <div class="modal-head"><div class="t">Publication</div><button class="modal-close" id="closeViewerModal">✕</button></div>
         <div class="modal-body" style="padding:0;">
             <div class="viewer-photos" id="viewerPhotos">
                 <div class="viewer-dots" id="viewerDots"></div>
@@ -680,8 +679,7 @@
                     <input type="text" id="commentInput" placeholder="Ajouter un commentaire…">
                     <button id="sendCommentBtn">OK</button>
                 </div>
-                <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;">📍 Commander ce produit</button>
-                <button class="tel-call-btn" id="viewerCallBtn" style="width:100%;margin-top:10px;">📞 Appeler le fournisseur</button>
+                <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;display:none;">📍 Commander ce produit</button>
                 <div id="viewerOwnerActions" style="display:none;gap:10px;margin-top:14px;">
                     <button class="obtn primary" id="viewerEditBtn" style="flex:1;">✏️ Modifier</button>
                     <button class="obtn danger" id="viewerDeleteBtn" style="flex:1;">🗑️ Supprimer</button>
@@ -720,7 +718,7 @@
     <div class="modal-card">
         <div class="modal-head"><div class="t">Signaler ce profil</div><button class="modal-close" id="closeReportModal">✕</button></div>
         <div class="modal-body">
-            <p style="font-size:12.5px;color:var(--sub);">Ton signalement est envoyé de façon confidentielle à l'équipe i-chat pour vérification.</p>
+            <p style="font-size:12.5px;color:var(--sub);">Ton signalement est envoyé de façon confidentielle à l'équipe Finavex pour vérification.</p>
             <div class="report-reasons" id="reportReasons">
                 <label class="report-reason-opt"><input type="radio" name="reportReason" value="spam"> Spam / publicité non sollicitée</label>
                 <label class="report-reason-opt"><input type="radio" name="reportReason" value="harcelement"> Harcèlement / propos abusifs</label>
@@ -774,20 +772,17 @@
     <div class="modal-card" style="max-width:520px;">
         <div class="modal-head"><div class="t">Politique de confidentialité</div><button class="modal-close" id="closePrivacyModal">✕</button></div>
         <div class="modal-body" style="line-height:1.55;font-size:13px;color:var(--text);">
-            <p style="margin-bottom:12px;"><b style="color:var(--acid);">Qu'est-ce qu'un « i-chat » ?</b><br>
-                Sur cette application, un <b>i-chat</b> désigne toute publication créée par un utilisateur (un « i-chatter ») pour proposer un <b>produit</b> ou un <b>service</b> : une annonce, une offre, une prestation, accompagnée d'une description, d'un prix optionnel et de photos. Un i-chat n'est donc pas un simple message : c'est le contenu (produit/service) qu'un i-chatter met à disposition des autres utilisateurs de l'application, consultable dans le fil et localisable sur une carte.</p>
+            <p style="margin-bottom:12px;"><b style="color:var(--acid);">Qu'est-ce qu'une publication Finavex ?</b><br>
+                Sur Finavex, une <b>publication</b> présente un <b>produit</b> proposé à l'investissement à court terme (ex : un sac de maïs), avec une mise à investir, un bénéfice attendu à l'échéance, une description et des photos. Les publications sont créées par l'équipe Finavex ; les utilisateurs les consultent dans le fil, peuvent les liker et les commenter.</p>
 
             <p style="margin-bottom:12px;"><b style="color:var(--acid);">Données que nous collectons</b><br>
-                Pour fonctionner, l'application traite : ton numéro de téléphone et ton mot de passe (sous forme chiffrée), ton nom et ton identifiant i-chat (codeName), ta photo de profil, ta localisation (latitude/longitude) ainsi que la ville et le pays qui en sont déduits, le contenu de tes publications (photos, description, prix), tes messages, appels, likes et commentaires.</p>
-
-            <p style="margin-bottom:12px;"><b style="color:var(--acid);">Pourquoi nous utilisons ta localisation</b><br>
-                Ta localisation est utilisée pour : afficher la ville/pays sous chaque i-chat, te permettre de savoir si un i-chat se trouve à une distance qui t'arrange, te suggérer en priorité des i-chats et des i-chatters proches de toi ou situés dans ton pays, et permettre la mise en relation lors d'une commande. Elle n'est jamais vendue à des tiers.</p>
+                Pour fonctionner, l'application traite : ton numéro de téléphone et ton mot de passe (sous forme chiffrée), ton nom et ton identifiant Finavex (codeName), ta photo de profil, tes messages, appels, likes et commentaires.</p>
 
             <p style="margin-bottom:12px;"><b style="color:var(--acid);">Partage des informations</b><br>
-                Ton identifiant i-chat, ta photo, tes publications et ta localisation approximative (ville/pays) sont visibles par les autres utilisateurs de l'application. Ton numéro de téléphone et ton nom complet ne sont jamais affichés publiquement.</p>
+                Ton identifiant Finavex, ta photo, tes likes et commentaires sont visibles par les autres utilisateurs de l'application. Ton numéro de téléphone et ton nom complet ne sont jamais affichés publiquement.</p>
 
             <p style="margin-bottom:0;"><b style="color:var(--acid);">Tes droits</b><br>
-                Tu peux à tout moment modifier ou supprimer tes publications, et supprimer ton compte en nous contactant. Tu peux aussi désactiver la localisation depuis les réglages de ton navigateur ou de ton téléphone, sachant que certaines fonctionnalités (suggestions de proximité, commandes) ne fonctionneront plus correctement sans elle.</p>
+                Tu peux à tout moment supprimer ton compte en nous contactant.</p>
         </div>
     </div>
 </div>
@@ -1014,11 +1009,6 @@
       return generateCodeCandidate() + Date.now().toString().slice(-4);
     }
 
-    /* ---------- Compression d'image avant upload ----------
-       Redimensionne (si besoin) et ré-encode en JPEG pour réduire le poids envoyé —
-       important sur les connexions mobiles limitées. Les vidéos et fichiers non-image
-       ne sont jamais touchés. En cas d'échec (format exotique, etc.), on retombe
-       silencieusement sur le fichier d'origine plutôt que de bloquer l'envoi. */
     async function compressImage(file){
       if(!file.type || !file.type.startsWith('image/') || file.type==='image/gif'){
         return file; // on ne touche pas aux GIF (animation) ni aux non-images
@@ -1123,7 +1113,7 @@
       );
     }
     geoBtn.onclick = requestGeo;
-    tabRegister.addEventListener('click', ()=>{ if(!pendingGeo) requestGeo(); });
+    /* Localisation non requise pour Finavex : plus de déclenchement automatique à l'inscription. */
 
     /* ======================================================================
        VÉRIFICATION OTP (SMS)
@@ -1235,7 +1225,6 @@
       const pass = document.getElementById('regPass').value;
       if(!name || !phone || pass.length<6){ showError("Remplis tous les champs (mot de passe ≥ 6 caractères)."); return; }
       if(!document.getElementById('ageCheck').checked){ showError("Tu dois confirmer avoir 18 ans ou plus pour t'inscrire."); return; }
-      if(!pendingGeo){ showError("La localisation est obligatoire pour t'inscrire sur i chat."); requestGeo(); return; }
 
       btn.disabled = true; btn.textContent = "Vérification…";
       try{
@@ -1286,7 +1275,7 @@
       document.getElementById('codenameReveal').style.display='block';
       document.getElementById('codenameValue').textContent = codeName;
       const btn = document.getElementById('registerBtn');
-      btn.textContent = "Entrer dans i chat →";
+      btn.textContent = "Entrer dans Finavex →";
       btn.disabled = false;
       btn.type='button';
       btn.onclick = ()=>{
@@ -1313,7 +1302,7 @@
         if(passHash !== user.passHash){ showError("Mot de passe incorrect."); btn.disabled=false; btn.textContent="Se connecter"; return; }
         currentUser = user;
         saveSession(uid);
-        if(navigator.geolocation){
+        if(false && navigator.geolocation){
           navigator.geolocation.getCurrentPosition((pos)=>{
             const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
             currentUser.location = loc;
@@ -1333,9 +1322,6 @@
       }
     });
 
-    /* ======================================================================
-       ONESIGNAL — liaison identité (pour cibler les push : messages, appels…)
-    ====================================================================== */
     async function linkOneSignalIdentity(){
       if(!currentUser || !currentUser.uid) return;
       try{
@@ -1402,9 +1388,6 @@
       hideNotifBanner();
     };
 
-    /* ======================================================================
-       ENTER APP
-    ====================================================================== */
     function enterApp(){
       document.getElementById('authWrap').style.display='none';
       document.getElementById('appShell').style.display='block';
@@ -1432,9 +1415,6 @@
       switchScreen('screenFeed');
     }
 
-    /* ======================================================================
-       NAVIGATION ENTRE ÉCRANS
-    ====================================================================== */
     function switchScreen(id){
       currentScreen = id;
       document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
@@ -1447,9 +1427,6 @@
       btn.onclick = ()=>switchScreen(btn.dataset.screen);
     });
 
-    /* ======================================================================
-       PROFIL
-    ====================================================================== */
     function initProfileScreen(){
       const pAv = document.getElementById('profAvatar');
       pAv.innerHTML = currentUser.photoURL ? `<img src="${currentUser.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(currentUser.fullName);
@@ -1466,7 +1443,7 @@
 
     async function deleteMyAccount(){
       if(!currentUser) return;
-      const sure = confirm("Supprimer définitivement ton compte i-chat ?\n\nTon profil, tes publications et ton identifiant seront supprimés. Cette action est irréversible.");
+      const sure = confirm("Supprimer définitivement ton compte Finavex ?\n\nTon profil et ton identifiant seront supprimés. Cette action est irréversible.");
       if(!sure) return;
       const confirmAgain = confirm("Dernière confirmation : veux-tu vraiment supprimer ton compte ?");
       if(!confirmAgain) return;
@@ -1566,9 +1543,6 @@
       db.collection('presence').doc(currentUser.uid).set({state, lastSeen: FieldValue.serverTimestamp()}).catch(()=>{});
     }
 
-    /* ======================================================================
-       SEARCH
-    ====================================================================== */
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
     let searchTimer = null;
@@ -1649,9 +1623,7 @@
       });
     }
 
-    /* ======================================================================
-       i-CHATTERS DISPONIBLES DANS LA BOITE DE MESSAGERIE
-    ====================================================================== */
+   
     function listenAvailIcharters(){
       if(availIchartersUnsub) availIchartersUnsub();
       availIchartersUnsub = db.collection('users').where('icharterAvailable','==',true)
@@ -2224,12 +2196,9 @@
           <div class="content">
             <div class="author"><span class="cn" data-act="author" data-id="${p.id}" style="cursor:pointer;">@${escapeHtml(p.codeName||'')}</span></div>
             ${p.caption?`<div class="caption">${escapeHtml(p.caption)}</div>`:''}
-            ${(p.city||p.country||p.location) ? `<div class="loc-tag" data-act="loc" data-id="${p.id}">📍 ${escapeHtml(formatCityCountry({city:p.city,country:p.country}) || 'Voir la localisation')}</div>` : ''}
-            ${p.price?`<div class="price-tag">${escapeHtml(p.price)}</div>`:''}
-            <div class="profile-actions">
-              <button class="order-btn" data-act="order" data-id="${p.id}" ${isMine?'disabled':''}>${isMine?'C\'est ton i-chat':'📍 Commander ce produit'}</button>
-              ${!isMine?`<button class="tel-call-btn" data-act="call" data-uid="${p.uid}">📞 Appeler</button>`:''}
-            </div>
+            ${p.price?`<div class="price-tag">💰 Mise : ${escapeHtml(p.price)}</div>`:''}
+            ${p.profit?`<div class="price-tag" style="background:rgba(200,255,63,.12);">📈 Bénéfice estimé : ${escapeHtml(p.profit)}</div>`:''}
+            ${p.deadline?`<div class="price-tag" style="opacity:.85;">⏳ ${escapeHtml(p.deadline)}</div>`:''}
           </div>
         </div>`;
       }).join('');
@@ -2424,18 +2393,14 @@
       const av = document.getElementById('viewerAvatar');
       av.innerHTML = activePost.photoURL ? `<img src="${activePost.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials(activePost.codeName);
       document.getElementById('viewerCn').textContent = activePost.codeName;
-      document.getElementById('viewerPrice').textContent = activePost.price||'';
-      document.getElementById('viewerCaption').textContent = activePost.caption||'';
+      document.getElementById('viewerPrice').textContent = activePost.price ? ('💰 '+activePost.price) : '';
+      let capText = activePost.caption||'';
+      if(activePost.profit) capText += '\n\n📈 Bénéfice estimé : ' + activePost.profit;
+      if(activePost.deadline) capText += '\n⏳ ' + activePost.deadline;
+      document.getElementById('viewerCaption').textContent = capText;
       updateLikeUI();
       const isMine = activePost.uid === currentUser.uid;
-      const orderBtn = document.getElementById('viewerOrderBtn');
-      const callBtn = document.getElementById('viewerCallBtn');
       const ownerActions = document.getElementById('viewerOwnerActions');
-      orderBtn.style.display = isMine ? 'none' : 'block';
-      orderBtn.disabled = false;
-      orderBtn.textContent = '📍 Commander ce produit';
-      callBtn.style.display = isMine ? 'none' : 'flex';
-      callBtn.onclick = ()=>callFournisseur(activePost.uid, callBtn);
       ownerActions.style.display = isMine ? 'flex' : 'none';
       viewerModal.classList.add('show');
       listenComments(postId);
@@ -3209,7 +3174,7 @@
         const snap = await db.collection('users').doc(savedUid).get();
         if(!snap.exists){ clearSession(); return false; }
         currentUser = snap.data();
-        if(navigator.geolocation){
+        if(false && navigator.geolocation){
           navigator.geolocation.getCurrentPosition((pos)=>{
             const loc = {lat:pos.coords.latitude, lng:pos.coords.longitude};
             currentUser.location = loc;
