@@ -680,6 +680,7 @@
                     <button id="sendCommentBtn">OK</button>
                 </div>
                 <button class="btn-main" id="viewerOrderBtn" style="margin-top:14px;display:none;">📍 Commander ce produit</button>
+                <button class="btn-main" id="viewerInvestBtn" style="margin-top:14px;">💸 Investir</button>
                 <div id="viewerOwnerActions" style="display:none;gap:10px;margin-top:14px;">
                     <button class="obtn primary" id="viewerEditBtn" style="flex:1;">✏️ Modifier</button>
                     <button class="obtn danger" id="viewerDeleteBtn" style="flex:1;">🗑️ Supprimer</button>
@@ -821,6 +822,21 @@
 
     const CLOUDINARY_CLOUD_NAME = "djxcqczh1";
     const CLOUDINARY_UPLOAD_PRESET = "database"; // ⚠️ à créer dans ton dashboard Cloudinary (Unsigned)
+
+    /* ⚠️ Numéro WhatsApp du service client Finavex, format international sans "+" ni espaces (ex: 22961000000) */
+    const FINAVEX_WHATSAPP_NUMBER = "2250508463003";
+    function investInPost(post){
+      const lignes = [
+        "Bonjour Finavex, je souhaite investir dans cette publication :",
+        post.caption ? ("Produit : " + post.caption) : null,
+        post.price ? ("Mise : " + post.price) : null,
+        post.profit ? ("Bénéfice attendu : " + post.profit) : null,
+        post.deadline ? ("Échéance : " + post.deadline) : null,
+        "Réf. publication : " + post.id
+      ].filter(Boolean);
+      const url = `https://wa.me/${FINAVEX_WHATSAPP_NUMBER}?text=${encodeURIComponent(lignes.join('\n'))}`;
+      window.open(url, '_blank');
+    }
 
     /* ---------- Compression d'image avant upload (économie de data / rapidité) ---------- */
     const IMG_COMPRESS_CONFIG = {
@@ -1000,13 +1016,17 @@
       const num = 10 + randInt(90);
       return `${a}${n}${num}`;
     }
-    async function generateUniqueCodeName(){
+    async function generateUniqueCodeName(baseName){
+      const clean = (baseName||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,'').trim();
+      const base = clean || generateCodeCandidate();
+      let snap = await db.collection('codeNames').doc(base).get();
+      if(!snap.exists) return base;
       for(let i=0;i<25;i++){
-        const candidate = generateCodeCandidate();
-        const snap = await db.collection('codeNames').doc(candidate).get();
+        const candidate = base + (10 + randInt(90));
+        snap = await db.collection('codeNames').doc(candidate).get();
         if(!snap.exists) return candidate;
       }
-      return generateCodeCandidate() + Date.now().toString().slice(-4);
+      return base + Date.now().toString().slice(-4);
     }
 
     async function compressImage(file){
@@ -1216,7 +1236,7 @@
       }
     };
 
-    /* ---------- REGISTER (étape 1 : validation + envoi du code OTP) ---------- */
+    /* ---------- REGISTER (création directe du compte, sans vérification SMS) ---------- */
     document.getElementById('registerForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const btn = document.getElementById('registerBtn');
@@ -1226,24 +1246,22 @@
       if(!name || !phone || pass.length<6){ showError("Remplis tous les champs (mot de passe ≥ 6 caractères)."); return; }
       if(!document.getElementById('ageCheck').checked){ showError("Tu dois confirmer avoir 18 ans ou plus pour t'inscrire."); return; }
 
-      btn.disabled = true; btn.textContent = "Vérification…";
+      btn.disabled = true; btn.textContent = "Création du compte…";
       try{
         const uid = uidFromPhone(phone);
         const existing = await db.collection('users').doc(uid).get();
         if(existing.exists){ showError("Un compte existe déjà avec ce numéro."); btn.disabled=false; btn.textContent="Créer mon identité"; return; }
 
         pendingRegistration = { uid, name, phone, pass };
-        await sendOtp(phone);
-        openOtpScreen(phone);
+        await finalizeRegistration();
       }catch(err){
         console.error(err);
         showError("Erreur : " + err.message);
-      }finally{
         btn.disabled = false; btn.textContent = "Créer mon identité";
       }
     });
 
-    /* ---------- REGISTER (étape 2 : création du compte, appelée après OTP validé) ---------- */
+    /* ---------- REGISTER (étape 2 : création du compte, finalise l'inscription) ---------- */
     async function finalizeRegistration(){
       const { uid, name, phone, pass } = pendingRegistration;
       let photoURL = "";
@@ -1254,7 +1272,7 @@
         }catch(err){ console.warn("Upload photo échoué:", err.message); }
       }
 
-      const codeName = await generateUniqueCodeName();
+      const codeName = await generateUniqueCodeName(name);
       const passHash = await sha256(pass + '::krypt::' + phone);
       const location = pendingGeo;
       const geoInfo = await reverseGeocode(location);
@@ -2192,6 +2210,7 @@
           <div class="feed-side">
             <div class="avatar" data-act="author" data-id="${p.id}" style="width:40px;height:40px;font-size:13px;cursor:pointer;">${p.photoURL?`<img src="${p.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:initials(p.codeName)}</div>
             <button class="side-act ${liked?'liked':''}" data-act="like" data-id="${p.id}"><div class="circle">♥</div><span class="n">${p.likesCount||0}</span></button>
+            <button class="side-act" data-act="comment" data-id="${p.id}"><div class="circle">💬</div><span class="n">${p.commentsCount||0}</span></button>
           </div>
           <div class="content">
             <div class="author"><span class="cn" data-act="author" data-id="${p.id}" style="cursor:pointer;">@${escapeHtml(p.codeName||'')}</span></div>
@@ -2199,9 +2218,13 @@
             ${p.price?`<div class="price-tag">💰 Mise : ${escapeHtml(p.price)}</div>`:''}
             ${p.profit?`<div class="price-tag" style="background:rgba(200,255,63,.12);">📈 Bénéfice estimé : ${escapeHtml(p.profit)}</div>`:''}
             ${p.deadline?`<div class="price-tag" style="opacity:.85;">⏳ ${escapeHtml(p.deadline)}</div>`:''}
+            <button class="order-btn" data-act="invest" data-id="${p.id}">💸 Investir</button>
           </div>
         </div>`;
       }).join('');
+      grid.querySelectorAll('[data-act="invest"]').forEach(b=>{
+        b.onclick = (e)=>{ e.stopPropagation(); const post = posts.find(p=>p.id===b.dataset.id); if(post) investInPost(post); };
+      });
       grid.querySelectorAll('[data-act="author"]').forEach(el=>{
         el.onclick = (e)=>{
           e.stopPropagation();
@@ -2388,6 +2411,7 @@
       if(!snap.exists){ alert("Cette publication n'existe plus."); return; }
       activePostId = postId;
       activePost = snap.data();
+      activePost.id = postId;
       viewerIndex = 0;
       renderViewerPhotos();
       const av = document.getElementById('viewerAvatar');
@@ -2468,6 +2492,10 @@
       if(!activePost) return;
       document.getElementById('closeViewerModal').click();
       orderFromPost(activePost);
+    };
+    document.getElementById('viewerInvestBtn').onclick = ()=>{
+      if(!activePost) return;
+      investInPost(activePost);
     };
     document.getElementById('viewerEditBtn').onclick = ()=>{
       if(!activePost || !activePostId) return;
