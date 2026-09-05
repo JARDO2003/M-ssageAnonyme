@@ -395,7 +395,7 @@ const db = firebase.firestore();
 const CLOUDINARY_CLOUD_NAME = "djxcqczh1";
 const CLOUDINARY_UPLOAD_PRESET = "database";
 
-const DEFAULT_CENTER = [6.3703, 2.3912]; // Cotonou
+const DEFAULT_CENTER = [6.3703, 2.3912]; // Cotonou — used only until a real fix arrives
 const ACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000; // considered "on the map" if active in last 24h
 
 /* ==========================================================================
@@ -422,7 +422,7 @@ function initMap(){
     preferCanvas:true,          // faster marker rendering on Android
     fadeAnimation:false,        // skip the tile fade-in — feels snappier on low-end phones
     zoomSnap:0.5
-  }).setView(DEFAULT_CENTER, 13);
+  }).setView(DEFAULT_CENTER, 15);
 
   // CARTO's free dark basemap now requires a paid API key (they changed policy),
   // so we're back on standard OpenStreetMap tiles — free forever, no key needed.
@@ -572,12 +572,16 @@ function autoFitToNearby(){
   if(myLat === null || myLng === null) return;
   const ids = Object.keys(markers);
   if(ids.length === 0){
-    map.setView([myLat, myLng], 15);
+    map.setView([myLat, myLng], 16);
+    hasAutoFitted = true;
     return;
   }
   const points = [[myLat, myLng], ...ids.map(id => markers[id].getLatLng())];
   const bounds = L.latLngBounds(points);
-  map.fitBounds(bounds, {padding:[70,110], maxZoom:16, minZoom:13});
+  // minZoom 14 keeps this a tight neighborhood view — it should never drift
+  // out to a city- or country-wide zoom, even if nearby i-chatters are
+  // spread across the full 25km radius.
+  map.fitBounds(bounds, {padding:[70,110], maxZoom:16, minZoom:14});
   hasAutoFitted = true;
 }
 
@@ -801,11 +805,20 @@ function locate({firstFix, silent}){
     if(!silent) showToast("Géolocalisation non supportée par ton navigateur.");
     return;
   }
+
+  // Fast, coarse fix (network/cell-based) so the map zooms in almost instantly,
+  // instead of waiting on a full GPS lock which can take several seconds.
   navigator.geolocation.getCurrentPosition(pos => {
     onLocationFix(pos, firstFix);
   }, err => {
     if(!silent) showToast("Position refusée — active-la dans les réglages pour apparaître sur la carte.");
-  }, {enableHighAccuracy:true, timeout:10000, maximumAge:5000});
+  }, {enableHighAccuracy:false, timeout:5000, maximumAge:60000});
+
+  // Then refine silently with a precise GPS fix — this corrects the dot's
+  // exact position without yanking the zoom around again.
+  navigator.geolocation.getCurrentPosition(pos => {
+    onLocationFix(pos, false);
+  }, ()=>{}, {enableHighAccuracy:true, timeout:12000, maximumAge:0});
 }
 
 function onLocationFix(pos, firstFix){
