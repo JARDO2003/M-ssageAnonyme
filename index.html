@@ -36,8 +36,10 @@
   #map{position:absolute;inset:0;background:#0A0E16;}
 
   /* Leaflet dark tune */
-  /* Dark tiles now come pre-styled from CARTO — no CSS filter needed (filters on
-     the tile pane were the main cause of the slow, laggy rendering on Android). */
+  /* Cheap dark-mode filter for standard OSM tiles: grayscale + reduced brightness
+     only. Deliberately avoids invert()/hue-rotate() — those are the expensive
+     operations that caused the earlier slowdown on Android. */
+  .leaflet-tile-pane{filter:grayscale(0.35) brightness(0.58) contrast(1.08);}
   .leaflet-control-attribution{background:rgba(10,14,22,.7) !important;color:var(--text-lo) !important;font-size:9px;}
   .leaflet-control-attribution a{color:var(--text-lo) !important;}
   .leaflet-control-zoom{display:none;}
@@ -422,12 +424,14 @@ function initMap(){
     zoomSnap:0.5
   }).setView(DEFAULT_CENTER, 13);
 
-  // Pre-styled dark tiles (CARTO) instead of OSM + CSS filter: much lighter to
-  // render, which is the main fix for the sluggish loading on Android.
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    subdomains: 'abcd',
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+  // CARTO's free dark basemap now requires a paid API key (they changed policy),
+  // so we're back on standard OpenStreetMap tiles — free forever, no key needed.
+  // The CSS filter below is intentionally cheap (grayscale + brightness only,
+  // no invert/hue-rotate) so it stays smooth even on low-end Android phones.
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    subdomains: 'abc',
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
   map.whenReady(() => {
