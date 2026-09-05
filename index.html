@@ -469,15 +469,20 @@ async function searchPlace(){
   showToast('Recherche…');
 
   try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fr&q=${encodeURIComponent(q)}`);
+    const res = await fetch(`https://photon.komoot.io/api/?limit=1&lang=fr&q=${encodeURIComponent(q)}`);
+    if(!res.ok) throw new Error('geocode failed');
     const data = await res.json();
-    if(!data || !data.length){
+    const feature = data && data.features && data.features[0];
+    if(!feature){
       showToast(`Aucun résultat pour "${q}".`);
       searchBusy = false;
       return;
     }
-    const {lat, lon, display_name} = data[0];
-    const latlng = [parseFloat(lat), parseFloat(lon)];
+    const [lon, lat] = feature.geometry.coordinates;
+    const p = feature.properties || {};
+    const label = [p.name, p.city && p.city !== p.name ? p.city : null, p.country]
+      .filter(Boolean).join(', ');
+    const latlng = [lat, lon];
 
     hasAutoFitted = true; // stop the location-based auto-fit from fighting this manual move
     map.flyTo(latlng, 12, {duration:1.1});
@@ -491,7 +496,7 @@ async function searchPlace(){
     }).addTo(map);
 
     input.blur();
-    showToast(display_name.split(',').slice(0,2).join(','));
+    showToast(label || q);
   }catch(e){
     console.error(e);
     showToast('Recherche indisponible, réessaie.');
