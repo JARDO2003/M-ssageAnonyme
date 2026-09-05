@@ -36,7 +36,8 @@
   #map{position:absolute;inset:0;background:#0A0E16;}
 
   /* Leaflet dark tune */
-  .leaflet-tile-pane{filter:brightness(0.62) contrast(1.12) saturate(0.35) invert(1) hue-rotate(180deg);}
+  /* Dark tiles now come pre-styled from CARTO — no CSS filter needed (filters on
+     the tile pane were the main cause of the slow, laggy rendering on Android). */
   .leaflet-control-attribution{background:rgba(10,14,22,.7) !important;color:var(--text-lo) !important;font-size:9px;}
   .leaflet-control-attribution a{color:var(--text-lo) !important;}
   .leaflet-control-zoom{display:none;}
@@ -211,6 +212,41 @@
   }
   #inviteHint b{color:var(--text-hi);}
   #inviteHint button{background:var(--amber);border:none;color:#1A1200;padding:8px 14px;border-radius:99px;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+
+  /* ===== Map loading overlay ===== */
+  #mapLoading{
+    position:absolute;inset:0;z-index:600;background:var(--bg-0);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    transition:opacity .35s ease;
+  }
+  #mapLoading.hide{opacity:0;pointer-events:none;}
+  .spinner{
+    width:34px;height:34px;border-radius:50%;
+    border:3px solid var(--line);border-top-color:var(--amber);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #mapLoading .lbl{font-family:'Space Grotesk',sans-serif;font-size:14px;color:var(--text-lo);}
+
+  /* ===== Search bar ===== */
+  #searchBar{
+    position:absolute;top:74px;left:18px;right:18px;z-index:480;
+    display:flex;align-items:center;gap:10px;
+    background:rgba(18,24,38,.92);border:1px solid var(--line);
+    border-radius:16px;padding:12px 16px;backdrop-filter:blur(8px);
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  #searchBar .ic{font-size:16px;color:var(--text-lo);flex-shrink:0;}
+  #searchBar input{
+    flex:1;background:none;border:none;color:var(--text-hi);font-size:14.5px;
+    font-family:inherit;outline:none;padding:0;
+  }
+  #searchBar input::placeholder{color:var(--text-lo);}
+  #searchBar .go{
+    background:none;border:none;color:var(--amber);font-weight:700;font-size:13px;
+    cursor:pointer;padding:0 2px;display:none;
+  }
+  #searchBar.has-text .go{display:block;}
 </style>
 </head>
 <body>
@@ -218,9 +254,19 @@
 <div id="app">
   <div id="map"></div>
 
+  <div id="mapLoading"><div class="spinner"></div><div class="lbl">Chargement de la carte…</div></div>
+
   <div id="topbar">
     <div class="brand">i<span>-</span>chat</div>
     <div id="authArea"></div>
+  </div>
+
+  <div id="searchBar">
+    <span class="ic">🔍</span>
+    <input type="text" id="searchInput" placeholder="Rechercher une ville, un pays…"
+           oninput="document.getElementById('searchBar').classList.toggle('has-text', this.value.trim().length>0)"
+           onkeydown="if(event.key==='Enter') searchPlace();">
+    <button class="go" onclick="searchPlace()">Aller</button>
   </div>
 
   <div id="inviteHint" style="display:none;">
@@ -369,11 +415,25 @@ let watchId = null;
    MAP INIT
    ========================================================================== */
 function initMap(){
-  map = L.map('map', {zoomControl:false, attributionControl:true}).setView(DEFAULT_CENTER, 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
+  map = L.map('map', {
+    zoomControl:false, attributionControl:true,
+    preferCanvas:true,          // faster marker rendering on Android
+    fadeAnimation:false,        // skip the tile fade-in — feels snappier on low-end phones
+    zoomSnap:0.5
+  }).setView(DEFAULT_CENTER, 13);
+
+  // Pre-styled dark tiles (CARTO) instead of OSM + CSS filter: much lighter to
+  // render, which is the main fix for the sluggish loading on Android.
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
   }).addTo(map);
+
+  map.whenReady(() => {
+    const el = document.getElementById('mapLoading');
+    if(el) el.classList.add('hide');
+  });
 }
 
 function makeIcon(user){
@@ -393,6 +453,50 @@ function fallbackAvatar(user){
 
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ==========================================================================
+   SEARCH (city / country)
+   ========================================================================== */
+let searchMarker = null;
+let searchBusy = false;
+
+async function searchPlace(){
+  const input = document.getElementById('searchInput');
+  const q = input.value.trim();
+  if(!q || searchBusy) return;
+  searchBusy = true;
+  showToast('Recherche…');
+
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fr&q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if(!data || !data.length){
+      showToast(`Aucun résultat pour "${q}".`);
+      searchBusy = false;
+      return;
+    }
+    const {lat, lon, display_name} = data[0];
+    const latlng = [parseFloat(lat), parseFloat(lon)];
+
+    hasAutoFitted = true; // stop the location-based auto-fit from fighting this manual move
+    map.flyTo(latlng, 12, {duration:1.1});
+
+    if(searchMarker) map.removeLayer(searchMarker);
+    searchMarker = L.marker(latlng, {
+      icon: L.divIcon({
+        html:`<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;background:#F2A93B;transform:rotate(-45deg);border:2px solid #1A1200;"></div>`,
+        className:'', iconSize:[16,16], iconAnchor:[8,16]
+      })
+    }).addTo(map);
+
+    input.blur();
+    showToast(display_name.split(',').slice(0,2).join(','));
+  }catch(e){
+    console.error(e);
+    showToast('Recherche indisponible, réessaie.');
+  }
+  searchBusy = false;
 }
 
 /* ==========================================================================
@@ -712,12 +816,33 @@ function onLocationFix(pos, firstFix){
   }
 }
 
+let heartbeatTimer = null;
+
 function beginWatch(){
   if(!myId) return;
+
   if(watchId) navigator.geolocation.clearWatch(watchId);
   watchId = navigator.geolocation.watchPosition(pos => {
     onLocationFix(pos, false);
-  }, ()=>{}, {enableHighAccuracy:true, maximumAge:15000});
+  }, ()=>{}, {enableHighAccuracy:true, maximumAge:0, timeout:15000});
+
+  // Android browsers often throttle or silently drop watchPosition once a tab
+  // is backgrounded, which is exactly why a registered i-chatter's pin could
+  // stay frozen at their sign-up spot after they'd actually moved. This
+  // periodic fallback forces a fresh fix even if the watch stalls.
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => {
+    if(!myId) return;
+    navigator.geolocation.getCurrentPosition(pos => onLocationFix(pos, false), ()=>{}, {enableHighAccuracy:true, maximumAge:0, timeout:15000});
+  }, 45000);
+
+  // And the moment someone comes back to the tab (e.g. reopens the app after
+  // walking somewhere), grab a fresh position right away instead of waiting.
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && myId){
+      navigator.geolocation.getCurrentPosition(pos => onLocationFix(pos, false), ()=>{}, {enableHighAccuracy:true, maximumAge:0, timeout:15000});
+    }
+  });
 }
 
 async function saveMyLocation(lat, lng){
