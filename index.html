@@ -398,34 +398,74 @@ function escapeHtml(s){
 /* ==========================================================================
    LIVE USERS ON MAP
    ========================================================================== */
+const NEARBY_RADIUS_KM = 25; // only show i-chatters within this radius once we know our position
+let hasAutoFitted = false;
+let latestSnapUsers = []; // cache so we can re-render when myLat/myLng resolves later
+
+function haversineKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function listenUsers(){
   if(usersUnsub) usersUnsub();
   usersUnsub = db.collection('users').onSnapshot(snap => {
-    const seen = new Set();
+    latestSnapUsers = [];
     snap.forEach(doc => {
       const u = doc.data();
-      const id = doc.id;
-      if(id === myId) return; // don't show my own pin, topbar shows me
+      if(doc.id === myId) return; // don't show my own pin, topbar shows me
       if(!u.lat || !u.lng) return;
       if(!u.lastActive || (Date.now() - u.lastActive) > ACTIVE_WINDOW_MS) return;
-      seen.add(id);
-      const latlng = [u.lat, u.lng];
-      if(markers[id]){
-        markers[id].setLatLng(latlng);
-      } else {
-        const m = L.marker(latlng, {icon: makeIcon(u)}).addTo(map);
-        m.on('click', () => openProfile(id));
-        markers[id] = m;
-      }
+      latestSnapUsers.push({id: doc.id, ...u});
     });
-    // remove stale markers
-    Object.keys(markers).forEach(id => {
-      if(!seen.has(id)){
-        map.removeLayer(markers[id]);
-        delete markers[id];
-      }
-    });
+    renderNearbyMarkers();
   });
+}
+
+function renderNearbyMarkers(){
+  const seen = new Set();
+  const haveMyLoc = myLat !== null && myLng !== null;
+
+  latestSnapUsers.forEach(u => {
+    const id = u.id;
+    const dist = haveMyLoc ? haversineKm(myLat, myLng, u.lat, u.lng) : null;
+    if(haveMyLoc && dist > NEARBY_RADIUS_KM) return; // filtre "à proximité"
+    seen.add(id);
+    const latlng = [u.lat, u.lng];
+    if(markers[id]){
+      markers[id].setLatLng(latlng);
+    } else {
+      const m = L.marker(latlng, {icon: makeIcon(u)}).addTo(map);
+      m.on('click', () => openProfile(id));
+      markers[id] = m;
+    }
+  });
+
+  Object.keys(markers).forEach(id => {
+    if(!seen.has(id)){
+      map.removeLayer(markers[id]);
+      delete markers[id];
+    }
+  });
+
+  autoFitToNearby();
+}
+
+function autoFitToNearby(){
+  if(hasAutoFitted) return;
+  if(myLat === null || myLng === null) return;
+  const ids = Object.keys(markers);
+  if(ids.length === 0){
+    map.setView([myLat, myLng], 15);
+    return;
+  }
+  const points = [[myLat, myLng], ...ids.map(id => markers[id].getLatLng())];
+  const bounds = L.latLngBounds(points);
+  map.fitBounds(bounds, {padding:[70,110], maxZoom:16, minZoom:13});
+  hasAutoFitted = true;
 }
 
 /* ==========================================================================
@@ -607,32 +647,76 @@ document.getElementById('meBackdrop').addEventListener('click', e=>{ if(e.target
 /* ==========================================================================
    LOCATION
    ========================================================================== */
+let myLat = null, myLng = null;
+let myDotMarker = null;
+
+const meDotIcon = L.divIcon({
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#3FD6C2;border:3px solid #0A0E16;box-shadow:0 0 0 4px rgba(63,214,194,.28);"></div>`,
+  className:'', iconSize:[18,18], iconAnchor:[9,9]
+});
+
+function placeMyDot(lat, lng){
+  const latlng = [lat, lng];
+  if(myDotMarker){
+    myDotMarker.setLatLng(latlng);
+  } else {
+    myDotMarker = L.marker(latlng, {icon: meDotIcon, zIndexOffset:-100}).addTo(map);
+  }
+}
+
 function startLocationFlow(forSelf){
   if(!navigator.geolocation){
     showToast("Géolocalisation non supportée par ton navigateur.");
     return;
   }
   if(forSelf){
-    document.getElementById('locGate').classList.add('show');
+    // give the silent boot-time locate a moment to succeed (common on repeat
+    // visits once permission is already granted) before bothering the user
+    setTimeout(() => {
+      if(myLat === null) document.getElementById('locGate').classList.add('show');
+    }, 1200);
   }
 }
 
 function requestLocation(){
   document.getElementById('locGate').classList.remove('show');
+  locate({ firstFix:true, silent:false });
+}
+
+function locate({firstFix, silent}){
+  if(!navigator.geolocation){
+    if(!silent) showToast("Géolocalisation non supportée par ton navigateur.");
+    return;
+  }
   navigator.geolocation.getCurrentPosition(pos => {
-    map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    if(myId) saveMyLocation(pos.coords.latitude, pos.coords.longitude);
-    beginWatch();
+    onLocationFix(pos, firstFix);
   }, err => {
-    showToast("Position refusée — active-la dans les réglages pour apparaître sur la carte.");
-  }, {enableHighAccuracy:true, timeout:10000});
+    if(!silent) showToast("Position refusée — active-la dans les réglages pour apparaître sur la carte.");
+  }, {enableHighAccuracy:true, timeout:10000, maximumAge:5000});
+}
+
+function onLocationFix(pos, firstFix){
+  myLat = pos.coords.latitude;
+  myLng = pos.coords.longitude;
+  placeMyDot(myLat, myLng);
+  document.getElementById('locGate').classList.remove('show'); // we already have a fix, no need to ask
+
+  if(firstFix){
+    hasAutoFitted = false; // let the fit-to-bounds logic run once with real data
+  }
+  renderNearbyMarkers(); // re-filters "nearby" and re-fits zoom now that we know where we are
+
+  if(myId){
+    saveMyLocation(myLat, myLng);
+    beginWatch();
+  }
 }
 
 function beginWatch(){
   if(!myId) return;
   if(watchId) navigator.geolocation.clearWatch(watchId);
   watchId = navigator.geolocation.watchPosition(pos => {
-    saveMyLocation(pos.coords.latitude, pos.coords.longitude);
+    onLocationFix(pos, false);
   }, ()=>{}, {enableHighAccuracy:true, maximumAge:15000});
 }
 
@@ -750,11 +834,10 @@ listenUsers();
 restoreSession();
 renderTopbar();
 
-// Anyone (even guests) gets a soft, non-blocking attempt to center the map
-navigator.geolocation && navigator.geolocation.getCurrentPosition(
-  pos => map.setView([pos.coords.latitude, pos.coords.longitude], 14),
-  ()=>{}, {timeout:6000}
-);
+// Everyone (guest or logged in) gets one silent attempt to locate + zoom in
+// properly right away — this only succeeds instantly if permission was
+// already granted in a previous visit, so it never blocks or prompts twice.
+locate({firstFix:true, silent:true});
 </script>
 </body>
 </html>
